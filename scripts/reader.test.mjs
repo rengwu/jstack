@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
-const source=fileURLToPath(new URL('../skills/planning-wiki/assets/_build.mjs',import.meta.url));
+const source=fileURLToPath(new URL('../skills/wiki/assets/_build.mjs',import.meta.url));
 async function fixture(t, files={}) {
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'jstack-reader-'));
   t.after(()=>fs.rm(root,{recursive:true,force:true}));
@@ -41,43 +41,48 @@ test('nested report resolves an encoded evidence link relative to the HTML and h
   fails(f.run('--check'),/stale/);
 });
 
-test('planning status and verification outcome are separate; results cannot certify feature pages',async t=>{
-  const f=await fixture(t,{'verification/runs/one.md':'---\nstatus: Accepted\nresult: Untested\n---\n# Run\n'});
+test('custom metadata renders generically on any page with escaped labels and values',async t=>{
+  const f=await fixture(t,{'catalog/item.md':'---\nstatus: Available\nresult: In stock\nowner: <img src=x onerror=alert(1)>\nupdated: 2026-09-28\n---\n# Item\n'});
   passes(f.run());
-  assert.match(await f.html(),/"status":"Accepted","result":"Untested"/);
-  await fs.mkdir(path.join(f.root,'features'));
-  await fs.writeFile(path.join(f.root,'features/one.md'),'---\nresult: Passed\n---\n# Feature\n');
-  fails(f.run(),/Verification result/);
+  const data=JSON.parse((await f.html()).match(/<script type="application\/json" id="wiki-data">([\s\S]*?)<\/script>/)[1]);
+  const page=data.pages.find(p=>p.id==='catalog/item');
+  assert.equal(page.metadata.status,'Available');
+  assert.equal(page.metadata.result,'In stock');
+  assert.match(page.metadataHtml,/Status: Available/);
+  assert.match(page.metadataHtml,/Result: In stock/);
+  assert.match(page.metadataHtml,/&lt;img/);
+  assert.doesNotMatch(page.metadataHtml,/<img/);
+  assert.match(page.metadataHtml,/Last updated: 2026-09-28/);
 });
 
-test('missing evidence, invalid outcome, and broken Markdown targets fail the build',async t=>{
+test('missing attachments, invalid dates, and broken Markdown targets fail the build',async t=>{
   const f=await fixture(t,{'index.md':'# Test wiki\n[Evidence](evidence/missing.png)\n'});
-  fails(f.run(),/Missing or symlinked evidence/);
+  fails(f.run(),/Missing or symlinked attachment/);
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Missing](missing.md)\n');
   fails(f.run(),/Broken link/);
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n');
   await fs.mkdir(path.join(f.root,'verification/runs'),{recursive:true});
-  await fs.writeFile(path.join(f.root,'verification/runs/one.md'),'---\nresult: Green\n---\n# Run\n');
-  fails(f.run(),/Verification result/);
+  await fs.writeFile(path.join(f.root,'verification/runs/one.md'),'---\nupdated: 2026-02-30\n---\n# Run\n');
+  fails(f.run(),/Invalid updated date/);
 });
 
 test('attachments cannot escape evidence, follow symlinks, or link executable HTML',async t=>{
   const f=await fixture(t,{'outside.txt':'outside','evidence/one.txt':'inside','evidence/page.html':'<script>alert(1)</script>'});
   for (const href of ['outside.txt','../outside.txt','%2Fetc/passwd','evidence/page.html']) {
     await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad]('+href+')\n');
-    fails(f.run(),/Unsupported evidence|relative link/);
+    fails(f.run(),/Unsupported attachment|relative link/);
   }
   await fs.symlink(path.join(f.root,'outside.txt'),path.join(f.root,'evidence/link.txt'));
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad](evidence/link.txt)\n');
-  fails(f.run(),/symlinked evidence/);
+  fails(f.run(),/symlinked attachment/);
   await fs.symlink(f.root,path.join(f.root,'evidence/linked-dir'));
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad](evidence/linked-dir/outside.txt)\n');
-  fails(f.run(),/symlinked evidence/);
+  fails(f.run(),/symlinked attachment/);
 });
 
 test('a duplicate attachment cannot bypass fragment validation',async t=>{
   const f=await fixture(t,{'index.md':'# Test wiki\n[One](evidence/a.txt)\n[Two](evidence/a.txt#fragment)\n','evidence/a.txt':'text'});
-  fails(f.run(),/Unsupported evidence/);
+  fails(f.run(),/Unsupported attachment/);
 });
 
 test('inline images remain unsupported and HTML injection is sanitized',async t=>{
@@ -96,4 +101,13 @@ test('evidence is not treated as wiki content',async t=>{
   const f=await fixture(t,{'evidence/raw.md':'---\ninvalid metadata\n---\n# Raw capture\n'});
   passes(f.run());
   assert.match(f.run('--check').stdout,/1 pages/);
+});
+
+test('generic attachments directory works without a planning or verification page',async t=>{
+  const f=await fixture(t,{'index.md':'# Test wiki\n[Manual](attachments/manual.txt)\n','attachments/manual.txt':'reference material','attachments/raw.md':'---\ninvalid metadata\n---\n'});
+  passes(f.run());passes(f.run('--check'));
+  const data=JSON.parse((await f.html()).match(/<script type="application\/json" id="wiki-data">([\s\S]*?)<\/script>/)[1]);
+  assert.equal(data.pages.length,1);
+  assert.equal(data.pages[0].attachments[0].path,'attachments/manual.txt');
+  assert.equal(data.pages[0].metadataHtml,'');
 });

@@ -4,7 +4,7 @@ description: Verify a requested code change or feature against the running produ
 ---
 # Verify a change
 
-Read [the shared conventions](../planning-wiki/references/stack-contract.md), the relevant feature files, and `verification/setup.md`. Use the bundled `feature-map` skill for missing feature knowledge and `planning-wiki` for a missing wiki. Preserve the user's current scope; verification by itself does not authorize fixing product code or shipping it.
+Read [the shared conventions](../../references/stack-contract.md), the relevant feature files, and `verification/setup.md`. Use the bundled `feature-map` skill for missing feature knowledge and [wiki](../wiki/SKILL.md) for page operations and a missing wiki. Preserve the user's current scope; verification by itself does not authorize fixing product code or shipping it.
 
 ## Prepare a bounded check
 
@@ -24,4 +24,12 @@ Discover existing browser, desktop, CLI, API, or test drivers. Write or update s
 
 Write `verification/runs/<run-id>.md` following the shared report contract. Use explicit Passed/Failed/Untested results per scenario and the conservative aggregate rule. Include what was actually observed, not another agent's self-report. Label independent review only if a different verifier actually performed it.
 
-Link the report from each affected feature's history; have the coordinator update common navigation if workers are concurrent. Rebuild and check the wiki. In the handoff, provide the verdict, report link, and material untested paths. A successful wiki build is not product verification.
+Link the report from each affected feature's history; have the coordinator update common navigation if workers are concurrent. Run [scripts/check-reports.mjs](scripts/check-reports.mjs) with the target wiki directory, then use wiki to rebuild and check its document structure. The checker validates report outcome metadata, not the truth of observations. In the handoff, provide the verdict, report link, and material untested paths. A successful wiki build is not product verification.
+
+## Report metadata check
+
+```sh
+node <this-skill>/scripts/check-reports.mjs <target-project>/docs/wiki
+```
+
+Resolve `<this-skill>` to this skill directory. The checker reads `verification/runs/` by default; pass `--runs-dir <relative-directory>` when the target project uses another report location. Each report needs a Passed, Failed, or Untested result. Unrelated pages may use metadata with other meanings; this skill validates only its report directory.

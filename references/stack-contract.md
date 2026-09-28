@@ -27,8 +27,9 @@ Create folders only when used. Markdown is authoritative; HTML is a generated sn
 
 ## Ownership and scope
 
-- `grill-me` owns requested design interviews: batched questions that resolve decision prerequisites. It uses `planning-wiki` to persist accepted decisions and open questions in the target project; it does not create a parallel record system or authorize implementation.
-- `planning-wiki` owns planning records, navigation, and the reader. It distinguishes requirements, proposals, observations, and accepted decisions.
+- `grill-me` owns requested design interviews: batched questions that resolve decision prerequisites. It uses `plan` to interpret and persist accepted decisions and open questions in the target project; it does not create a parallel record system or authorize implementation.
+- `plan` owns planning discussions and records. It distinguishes requirements, proposals, observations, and accepted decisions and uses `wiki` for document operations.
+- `wiki` owns generic page operations, navigation, attachment handling, structural validation, and rendering. It does not define content workflows or interpret domain metadata. Other skills use it directly without starting a planning workflow.
 - `feature-map` owns feature descriptions and verification recipes. It records intended behavior and separately labels observed or unresolved behavior.
 - `verify-change` owns verification setup, any needed project-local drivers, run reports, and evidence. Verification alone does not authorize product fixes, commits, merges, deployments, or external messages. Continue fixes when the enclosing task already authorizes them.
 - `maintain-verification` audits map/driver drift; it corrects documentation and verification tooling within scope, and reports product regressions separately.
@@ -50,7 +51,7 @@ Assign a stable ID such as `FEAT-session-rename`; never reuse it for another beh
 
 `verification/setup.md` records the real launch command, readiness and build-identity checks, available interaction tools, test data/auth prerequisites, instance isolation, observable effects, evidence location, and cleanup. Prefer tools already available in the project or session. Add small project-local scripts only when they make repeated work reliable; execute them before treating them as usable.
 
-Choose a unique run ID, for example `2026-09-27T103000Z-session-rename`. Reports use normal wiki frontmatter plus `result: Passed`, `Failed`, or `Untested`. `result` is reserved for `verification/runs/` pages; `status` remains planning/document state. Use these report sections:
+Choose a unique run ID, for example `2026-09-27T103000Z-session-rename`. Reports use normal wiki frontmatter plus `result: Passed`, `Failed`, or `Untested`. For verification reports, `result` carries the run outcome; planning records use `status` independently. The reader treats both as generic metadata. `verify-change/scripts/check-reports.mjs` validates outcome metadata within the report directory; unrelated pages are outside its scope. Feature maps must not use historical run results as permanent feature certification. Use these report sections:
 
 - **Scope:** feature IDs with relative links, the requested change, selected scenarios, and why these cover it.
 - **Build and environment:** exact tested revision; if dirty, record that and a patch/content fingerprint. If no git exists, record a reproducible file manifest with hashes. Include platform, runtime, flags, fixtures, and instance identity without secrets.

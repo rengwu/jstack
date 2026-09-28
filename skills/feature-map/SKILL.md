@@ -4,7 +4,7 @@ description: Create or update a project's user-facing feature map with expected 
 ---
 # Feature map
 
-Read [the shared conventions](../planning-wiki/references/stack-contract.md). Work in the target project's wiki, normally `docs/wiki/`. If no wiki exists, use the bundled `planning-wiki` skill to establish it without inventing project requirements.
+Read [the shared conventions](../../references/stack-contract.md). Work in the target project's wiki, normally `docs/wiki/`. If no wiki exists, use [wiki](../wiki/SKILL.md) to establish it without inventing project requirements.
 
 ## Map behavior
 
@@ -18,4 +18,4 @@ Prefer a small map that another agent can follow without reading the entire code
 
 ## Finish
 
-Link features from the home page and relevant planning pages. Preserve verification history and record when a behavior change requires re-verification; never carry an old pass forward as proof of new code. Build and check the wiki. Report what is mapped, what is uncertain, and which recipes still need execution.
+Link features from the home page and relevant planning pages. Preserve verification history and record when a behavior change requires re-verification; never carry an old pass forward as proof of new code. Use wiki to maintain links and build/check the reader. Report what is mapped, what is uncertain, and which recipes still need execution.

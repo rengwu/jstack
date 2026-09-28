@@ -1,4 +1,4 @@
-// Wiki builder v1.1.0. Node.js 22+. No package installation or network access.
+// Wiki builder v1.2.0. Node.js 22+. No package installation or network access.
 // This script scans Markdown beside itself and writes index.html in that directory.
 // Copy it into another wiki folder to reuse it. Templates and dependencies are embedded below.
 // Usage: node path/to/_build.mjs [--check | --help]
@@ -532,7 +532,7 @@ const template = `<!doctype html>
     <section id="search-results" aria-label="Search results" hidden><p id="result-count" role="status"></p><div id="results"></div></section>
     <div id="article-view"><article id="article" tabindex="-1"></article><section id="backlinks"><h2>Linked from</h2><div id="backlink-list"></div></section></div>
     <div id="source-view" hidden><p class="source-note">Source: <code id="source-path"></code> · Edit the Markdown file, then rebuild this reader.</p><pre id="source-text"></pre></div>
-    <footer id="page-meta"><span id="status"></span><span id="result"></span><span id="updated"></span></footer>
+    <footer id="page-meta"></footer>
   </main>
   <aside id="contents" class="contents" aria-label="Article contents"><div class="contents-title">Contents</div><nav id="toc"></nav></aside>
 </div>
@@ -653,17 +653,13 @@ const js = `(() => {
     current=p||null;mode(false);
     if(!p){
       $('page-title').textContent='Page not found';
-      $('article').replaceChildren(link('Return to the main page',route('index')));$('toc').replaceChildren();$('backlinks').hidden=true;$('updated').textContent='';document.title='Page not found — '+wikiTitle;return;
+      $('article').replaceChildren(link('Return to the main page',route('index')));$('toc').replaceChildren();$('backlinks').hidden=true;document.title='Page not found — '+wikiTitle;return;
     }
     $('search').value='';$('page-title').textContent=p.title;
-    $('status').textContent='Status: '+p.status;
-    $('status').hidden=!['Exploring','Open','Accepted','Superseded'].includes(p.status);
-    $('result').textContent=p.result?'Verification: '+p.result:'';
-    $('result').hidden=!p.result;
+    $('page-meta').innerHTML=p.metadataHtml;
+    $('page-meta').hidden=!p.metadataHtml;
     $('article').innerHTML=p.html;
     $('source-text').textContent=p.source;$('source-path').textContent=p.id+'.md';
-    $('updated').textContent=p.updated?'Last updated '+new Date(p.updated+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}):'';
-    $('page-meta').hidden=$('status').hidden&&$('result').hidden&&!p.updated;
     $('toc').replaceChildren();
     p.toc.forEach(h=>{const a=link(h.title,route(p.id)+'~'+h.id);if(h.depth>2)a.className='nested';$('toc').append(a);});
     $('backlink-list').replaceChildren();$('backlinks').hidden=!p.backlinks.length;
@@ -699,7 +695,7 @@ async function markdownFiles(dir) {
   const result = [];
   for (const entry of entries.sort((a,b)=>compare(a.name,b.name))) {
     // Don't follow symlinks or scan hidden directories/dependency folders.
-    if (entry.name.startsWith('.') || entry.name === 'node_modules' || (dir === root && entry.name === 'evidence')) continue;
+    if (entry.name.startsWith('.') || entry.name === 'node_modules' || (dir === root && ['attachments','evidence'].includes(entry.name))) continue;
     const file = path.join(dir,entry.name);
     if (entry.isDirectory()) result.push(...await markdownFiles(file));
     else if (entry.isFile() && /\.md$/i.test(entry.name)) result.push(file);
@@ -732,7 +728,9 @@ function readPage(source, id) {
   const order = meta.order ? Number(meta.order) : 0;
   if (!Number.isFinite(order)) throw new Error(`Invalid order: ${id}.md`);
   if (meta.updated && (!/^\d{4}-\d{2}-\d{2}$/.test(meta.updated) || !Number.isFinite(Date.parse(meta.updated)) || new Date(meta.updated).toISOString().slice(0,10)!==meta.updated)) throw new Error(`Invalid updated date: ${id}.md`);
-  if (meta.result && (!id.startsWith('verification/runs/') || !['Passed','Failed','Untested'].includes(meta.result))) throw new Error(`Verification result must be Passed, Failed, or Untested on a verification/runs/ page: ${id}.md`);
+  const presentationKeys=new Set(['title','section','order','updated','summary']);
+  const metadata=Object.fromEntries(Object.entries(meta).filter(([key])=>!presentationKeys.has(key)));
+  const metadataHtml=Object.entries(metadata).filter(([,value])=>value).map(([key,value])=>`<span>${escape(label(key))}: ${escape(value)}</span>`).concat(meta.updated?[`<span>Last updated: ${escape(meta.updated)}</span>`]:[]).join(' ');
   const toc = [], anchors = [], counts = new Map();
   new Marked().walkTokens(tokens, token => {
     if (token.type === 'heading') {
@@ -744,7 +742,7 @@ function readPage(source, id) {
       if (!token.isTitle) toc.push({id:token.anchor,title:token.text,depth:token.depth});
     }
   });
-  return {id,title,section,order,status:meta.status||'',result:meta.result||'',updated:meta.updated||'',summary:meta.summary||'',source,tokens,toc,anchors,titleAnchor:titleHeading?.anchor||'',links:[],evidence:[]};
+  return {id,title,section,order,metadata,metadataHtml,updated:meta.updated||'',summary:meta.summary||'',source,tokens,toc,anchors,titleAnchor:titleHeading?.anchor||'',links:[],attachments:[]};
 }
 
 const attachmentExtensions = new Set(['.png','.jpg','.jpeg','.gif','.webp','.mp4','.webm','.pdf','.txt','.log','.json','.csv']);
@@ -759,7 +757,7 @@ function localLink(page, href) {
   return {file,anchor,target,attachment:!!file&&!/\.md$/i.test(file)};
 }
 
-async function collectEvidence(page) {
+async function collectAttachments(page) {
   const pending=[];
   new Marked().walkTokens(page.tokens, token => {
     if (token.type === 'link' && !/^https?:\/\//i.test(token.href)) {
@@ -768,19 +766,19 @@ async function collectEvidence(page) {
     }
   });
   for (const {target,anchor} of pending) {
-    if (!target.startsWith('evidence/') || !attachmentExtensions.has(path.posix.extname(target).toLowerCase()) || anchor) throw new Error(`Unsupported evidence link in ${page.id}.md: ${target}`);
-    if (page.evidence.some(item=>item.path===target)) continue;
+    if (!['attachments/','evidence/'].some(prefix=>target.startsWith(prefix)) || !attachmentExtensions.has(path.posix.extname(target).toLowerCase()) || anchor) throw new Error(`Unsupported attachment link in ${page.id}.md: ${target}`);
+    if (page.attachments.some(item=>item.path===target)) continue;
     let absolute=root;
     for (const segment of target.split('/')) {
-      if (segment.startsWith('.')) throw new Error(`Hidden evidence path in ${page.id}.md: ${target}`);
+      if (segment.startsWith('.')) throw new Error(`Hidden attachment path in ${page.id}.md: ${target}`);
       absolute=path.join(absolute,segment);
       const info=await fs.lstat(absolute).catch(()=>null);
-      if (!info || info.isSymbolicLink()) throw new Error(`Missing or symlinked evidence in ${page.id}.md: ${target}`);
+      if (!info || info.isSymbolicLink()) throw new Error(`Missing or symlinked attachment in ${page.id}.md: ${target}`);
     }
-    if (!(await fs.stat(absolute)).isFile()) throw new Error(`Evidence is not a file in ${page.id}.md: ${target}`);
+    if (!(await fs.stat(absolute)).isFile()) throw new Error(`Attachment is not a file in ${page.id}.md: ${target}`);
     const digest=createHash('sha256');
     for await (const chunk of createReadStream(absolute)) digest.update(chunk);
-    page.evidence.push({path:target,sha256:digest.digest('hex')});
+    page.attachments.push({path:target,sha256:digest.digest('hex')});
   }
 }
 
@@ -801,7 +799,7 @@ async function main() {
   if (byId.size!==pages.length) throw new Error('Duplicate page paths after removing the .md extension');
   if (!byId.has('index')) throw new Error('Add index.md next to _build.mjs. Its title names the wiki.');
   for (const page of pages) {
-    await collectEvidence(page);
+    await collectAttachments(page);
     const md = new Marked({renderer:{
       heading(token) {
         return token.isTitle ? '' : `<h${token.depth} id="${escape(token.anchor)}">${this.parser.parseInline(token.tokens)}</h${token.depth}>\n`;
@@ -813,10 +811,10 @@ async function main() {
         const resolved=localLink(page,token.href);
         const {anchor}=resolved;
         if (resolved.attachment) {
-          const evidence=page.evidence.find(item=>item.path===resolved.target);
-          if (!evidence) throw new Error(`Unvalidated evidence link in ${page.id}.md: ${token.href}`);
-          const href=evidence.path.split('/').map(encodeURIComponent).join('/');
-          return `<a href="${escape(href)}" target="_blank" rel="noreferrer" title="SHA-256: ${evidence.sha256}">${text}</a>`;
+          const attachment=page.attachments.find(item=>item.path===resolved.target);
+          if (!attachment) throw new Error(`Unvalidated attachment link in ${page.id}.md: ${token.href}`);
+          const href=attachment.path.split('/').map(encodeURIComponent).join('/');
+          return `<a href="${escape(href)}" target="_blank" rel="noreferrer" title="SHA-256: ${attachment.sha256}">${text}</a>`;
         }
         const id=resolved.target.replace(/\.md$/i,'');
         const target=byId.get(id);

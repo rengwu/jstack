@@ -1,6 +1,6 @@
 {
   "name": "jstack",
-  "version": "0.1.0+codex.20260928100609",
+  "version": "0.1.0+codex.20260928112445",
   "description": "Clarify designs, map features, and verify changes through each project\u2019s wiki.",
   "author": {
     "name": "rengwu"
@@ -9,11 +9,11 @@
   "interface": {
     "displayName": "jstack",
     "shortDescription": "Planning and verification wikis for your projects.",
-    "longDescription": "Five cooperating skills connect design interviews, decisions, feature maps, executable verification, and evidence in each target project\u2019s Markdown wiki.",
+    "longDescription": "Six cooperating skills separate generic wiki operations from planning, design interviews, feature maps, and evidence-based verification in each target project.",
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use planning-wiki to start a wiki in the current project, then map and verify one feature."
+    "defaultPrompt": "Use plan to discuss an idea and record it with wiki in the current project."
   },
   "repository": "https://github.com/rengwu/jstack"
 }

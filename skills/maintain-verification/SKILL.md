@@ -4,7 +4,7 @@ description: Audit and repair drift in a project's feature map, verification set
 ---
 # Maintain verification
 
-Read [the shared conventions](../planning-wiki/references/stack-contract.md). Locate the project's wiki, feature index, verification setup, and recent runs. If none exists, use the bundled `feature-map` and `verify-change` skills to establish a small real workflow instead of inventing audit results.
+Read [the shared conventions](../../references/stack-contract.md). Locate the project's wiki, feature index, verification setup, and recent runs. If none exists, use the bundled `feature-map` and `verify-change` skills to establish a small real workflow instead of inventing audit results.
 
 ## Check the requested scope
 
@@ -21,4 +21,4 @@ Check source findings by exercising the live app with the same build-identity an
 
 Default edits are limited to the wiki and its project-local verification tools. Product repairs, commits, or publishing need authorization from the enclosing task. Preserve old run reports. Record a new audit run with actual per-scenario outcomes using the shared run contract; link repaired recipes and remaining gaps.
 
-Rebuild and check the wiki. Report clean only when the selected coverage completed without drift or failures; otherwise report corrected items, product findings, and incomplete coverage. Don't create a branch or PR solely to report a clean audit.
+Use verify-change’s report metadata checker on the audit report directory, then [wiki](../wiki/SKILL.md) to rebuild and check the document structure. Report clean only when the selected coverage completed without drift or failures; otherwise report corrected items, product findings, and incomplete coverage. Don't create a branch or PR solely to report a clean audit.

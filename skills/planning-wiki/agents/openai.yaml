@@ -1,4 +1,0 @@
-interface:
-  display_name: "Planning Wiki"
-  short_description: "Maintain project decisions and a shared wiki."
-  default_prompt: "Use $planning-wiki to start or update this project wiki."

@@ -6,7 +6,7 @@ description: Run a batched interview to clarify a plan, design, or decision and 
 
 Build shared understanding through rounds of consequential questions. Adapted from Matt Pocock's grilling workflow; see [provenance](references/upstream.md) and [MIT license](LICENSE).
 
-Read [jstack conventions](../planning-wiki/references/stack-contract.md). Use [planning-wiki](../planning-wiki/SKILL.md) for persistent records. Resolve the target project before writing; never write project records into jstack's source, installed plugin, or examples. If the project is unclear, clarify the destination before persisting; useful discussion may continue meanwhile.
+Read [jstack conventions](../../references/stack-contract.md). Use [plan](../plan/SKILL.md) to interpret and preserve planning outcomes; plan uses wiki for document operations. Resolve the target project before writing; never write project records into jstack's source, installed plugin, or examples. If the project is unclear, clarify the destination before persisting; useful discussion may continue meanwhile.
 
 ## Ground the discussion
 
@@ -35,12 +35,12 @@ Partial answers settle only the answered decisions. Ask again only for consequen
 
 ## Keep the project record current
 
-After substantive answer rounds, use planning-wiki's existing records instead of introducing a second documentation system:
+After substantive answer rounds, use plan's existing records instead of introducing a second documentation system:
 
 - Put accepted decisions, their rationale, and links to affected features in the decision register and relevant topic pages.
 - Keep unresolved questions and dependencies in `discussions/open-questions.md`. Record explicit deferrals and their reason; do not turn them into assumed answers.
 - Capture a concise dated journal of changed understanding. Preserve superseded decisions and earlier journals.
-- Rebuild and check the target project's wiki after changes, using the bundled planning-wiki workflow. A missing target or persistence tool is a reporting limitation, not permission to store records in the plugin.
+- Rebuild and check the target project's wiki after changes, through plan and the bundled wiki operations. A missing target or persistence tool is a reporting limitation, not permission to store records in the plugin.
 
 Do not mark planned behavior as implemented or verified. Once the expected behavior is clear, feature-map can turn it into observable outcomes and verification recipes within the user's requested scope.
 
