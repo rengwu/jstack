@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Clarify designs through batched decision questions."
+  default_prompt: "Use $grill-me to clarify this idea in rounds and record our decisions in the target project's wiki."

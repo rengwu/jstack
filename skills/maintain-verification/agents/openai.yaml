@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Verification"
+  short_description: "Repair stale maps and verification tooling."
+  default_prompt: "Use $maintain-verification to audit this project’s verification recipes."

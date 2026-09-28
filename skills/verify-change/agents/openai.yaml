@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Change"
+  short_description: "Check real behavior and capture build-specific evidence."
+  default_prompt: "Use $verify-change to verify this change and record its evidence."

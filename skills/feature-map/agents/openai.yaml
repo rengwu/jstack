@@ -1,0 +1,4 @@
+interface:
+  display_name: "Feature Map"
+  short_description: "Map behavior and practical verification recipes."
+  default_prompt: "Use $feature-map to document one important feature in this project."

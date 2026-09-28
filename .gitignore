@@ -1,0 +1,17 @@
+# macOS metadata
+.DS_Store
+._*
+
+# Local historical demonstration: conversation records and machine-specific evidence.
+/examples/wiki/
+
+# Project records belong in the consuming project, never in this plugin.
+/docs/wiki/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Dependency directories are not part of this collection.
+node_modules/
