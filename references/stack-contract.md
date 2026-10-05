@@ -65,7 +65,7 @@ Overall Failed means an exercised expectation failed. Otherwise Untested means a
 
 Store evidence in `docs/wiki/evidence/<run-id>/`. Link from a run using `../../evidence/<run-id>/<file>`; spaces and special characters must be URL-encoded. Supported local attachments: PNG/JPEG/GIF/WebP, MP4/WebM, PDF, TXT/LOG, JSON, CSV. The reader validates that linked files exist inside the evidence directory, rejects symlinks, and records their SHA-256 hashes. Evidence content changes require rebuilding the reader. HTTP(S) artifact links are also allowed, but availability and content are not validated by the builder.
 
-Attachments open as separate files; images and video are not embedded. Share `index.html` together with its `evidence/` directory to preserve local evidence access. Sharing HTML alone shares readable reports but not the linked attachments. Do not store credentials or raw private account data in evidence. Cleanup must preserve evidence and only remove resources created by this run.
+Linked attachments open as separate files. Standard Markdown image syntax displays local PNG/JPEG/GIF/WebP attachments inline using the same validation and hashes; remote images and SVG are unsupported. Images remain separate files rather than being embedded into the HTML bytes. Share `index.html` together with its `evidence/` or `attachments/` directories to preserve local evidence access and image display. Sharing HTML alone shares readable reports but not those files. Do not store credentials or raw private account data in evidence. Cleanup must preserve evidence and only remove resources created by this run.
 
 After substantive changes, update relevant links and run from the project root:
 

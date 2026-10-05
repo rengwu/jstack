@@ -85,16 +85,43 @@ test('a duplicate attachment cannot bypass fragment validation',async t=>{
   fails(f.run(),/Unsupported attachment/);
 });
 
-test('inline images remain unsupported and HTML injection is sanitized',async t=>{
-  const f=await fixture(t,{'index.md':'# Test wiki\n![Inline](evidence/a.png)\n'});
-  fails(f.run(),/Images are not embedded/);
-  await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n<script>window.evil=true</script><a href="javascript:alert(1)">Unsafe</a>\n');
+test('nested inline images use validated attachments and detect content changes',async t=>{
+  const f=await fixture(t,{
+    'archive/topic.md':'# Topic\n![A <view> & details](../attachments/a%20%23%20b.png "Screenshot")\n',
+    'attachments/a # b.png':Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7S8AAAAASUVORK5CYII=','base64')
+  });
+  passes(f.run());passes(f.run('--check'));
+  const html=await f.html();
+  const data=JSON.parse(html.match(/<script type="application\/json" id="wiki-data">([\s\S]*?)<\/script>/)[1]);
+  const page=data.pages.find(p=>p.id==='archive/topic');
+  assert.match(page.html,/<img src="attachments\/a%20%23%20b.png" alt="A &lt;view&gt; &amp; details" title="Screenshot"/);
+  assert.equal(page.attachments.length,1);
+  assert.match(html,/img-src 'self' file:/);
+  assert.match(html,/article img\{[^}]*max-width:100%;height:auto/);
+  await fs.appendFile(path.join(f.root,'attachments/a # b.png'),Buffer.from([0]));
+  fails(f.run('--check'),/stale/);
+});
+
+test('images reject remote, missing, non-image and escaping paths including duplicate fragments',async t=>{
+  const f=await fixture(t,{'evidence/a.png':'fixture','evidence/a.svg':'<svg/>','evidence/a.txt':'text','outside.png':'outside'});
+  for (const href of ['https://example.com/a.png','//example.com/a.png','data:image/png;base64,AA==','evidence/missing.png','evidence/a.svg','evidence/a.txt','outside.png','../outside.png','%2Fetc/a.png','evidence/a.png#fragment']) {
+    await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Already linked](evidence/a.png)\n![Bad]('+href+')\n');
+    fails(f.run(),/Unsupported|Missing|relative link/);
+  }
+  await fs.symlink(path.join(f.root,'outside.png'),path.join(f.root,'evidence/link.png'));
+  await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n![Bad](evidence/link.png)\n');
+  fails(f.run(),/symlinked attachment/);
+});
+
+test('raw HTML cannot bypass image validation or inject executable attributes',async t=>{
+  const f=await fixture(t,{'index.md':'# Test wiki\n![Valid](evidence/a.png)\n\n<script>window.evil=true</script><a href="javascript:alert(1)">Unsafe</a><img src="https://example.com/tracker.png"><img src="../outside.png"><img src="evidence/unvalidated.png"><img src="evidence/a.png" onerror="alert(1)" srcset="https://example.com/a.png 2x">\n','evidence/a.png':'fixture'});
   passes(f.run());
   const html=await f.html();
   const data=JSON.parse(html.match(/<script type="application\/json" id="wiki-data">([\s\S]*?)<\/script>/)?.[1]||'null');
   // The source viewer intentionally retains raw Markdown; inspect rendered page HTML only.
   assert.ok(data,'embedded snapshot is present');
-  assert.doesNotMatch(data.pages[0].html,/<script|javascript:/);
+  assert.doesNotMatch(data.pages[0].html,/<script|javascript:|onerror|srcset|example\.com|outside\.png|unvalidated\.png/);
+  assert.match(data.pages[0].html,/<img src="evidence\/a.png"/);
 });
 
 test('evidence is not treated as wiki content',async t=>{

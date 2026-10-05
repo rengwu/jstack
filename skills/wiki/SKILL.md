@@ -36,9 +36,9 @@ Tables, lists, and fenced code work. Raw HTML is sanitized. `search.md` is reser
 
 ## Attachments
 
-Place local attachments under `attachments/`. Existing `evidence/` directories are also supported. Link files with ordinary relative Markdown links; inline image syntax remains unsupported. Supported formats are PNG/JPEG/GIF/WebP, MP4/WebM, PDF, TXT/LOG, JSON, and CSV.
+Place local attachments under `attachments/`. Existing `evidence/` directories are also supported. Link files with ordinary relative Markdown links. Standard Markdown image syntax displays local PNG/JPEG/GIF/WebP attachments inline with responsive sizing and alt text. Images use the same path validation and hashing as linked attachments; remote images, SVG, and data URLs are not supported. Supported linked formats are PNG/JPEG/GIF/WebP, MP4/WebM, PDF, TXT/LOG, JSON, and CSV.
 
-The builder checks local files, rejects symlinks and paths outside the attachment directories, and fingerprints content with SHA-256. Changed attachments require a rebuild. HTTP(S) links are allowed but their contents and availability are not checked. Attachments open separately; share their directories alongside the HTML to keep links working.
+The builder checks local files, rejects symlinks and paths outside the attachment directories, and fingerprints content with SHA-256. Changed attachments require a rebuild. HTTP(S) links are allowed but their contents and availability are not checked. Linked attachments open separately; inline images load from local files. Share the attachment directories alongside the HTML to preserve both links and images.
 
 ## Build and hand off
 

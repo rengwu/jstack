@@ -495,7 +495,7 @@ const template = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Offline Markdown wiki.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' file:; connect-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'">
   <title>/* WIKI_NAME */</title>
   <script>
     // Apply the saved preference before painting, including when opened as a local file.
@@ -548,7 +548,7 @@ const css = `:root{color-scheme:light;--ink:#202122;--muted:#54595d;--line:#c8cc
 .site-header{max-width:1600px;margin:auto;padding:28px 42px 24px;display:flex;align-items:center;gap:52px;border-bottom:1px solid var(--header-line)}.brand{color:var(--ink);min-width:204px;font:26px/1.2 Georgia,serif}.brand:hover{text-decoration:none}#search-form{display:flex;align-items:center;border:1px solid var(--border);max-width:510px;flex:1;height:36px}#search{width:100%;min-width:0;border:0;outline:none;font-size:13px;background:transparent;padding:0 10px}#search-form:focus-within{outline:2px solid var(--blue);outline-offset:-1px}#search-form button{height:100%;border:0;border-left:1px solid var(--border);background:var(--soft);font-size:12px;font-weight:600;padding:0 15px}
 .appearance{position:relative;margin-left:auto;flex:none;font-size:13px}.appearance summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:7px 8px;border-radius:2px}.appearance summary::-webkit-details-marker{display:none}.appearance summary:hover,.appearance[open] summary{background:var(--soft)}.appearance fieldset{position:absolute;right:0;top:100%;z-index:5;width:184px;margin:8px 0 0;padding:14px 16px;background:var(--paper);border:1px solid var(--border);box-shadow:0 2px 6px #0003}.appearance legend{float:left;width:100%;font-weight:600;border-bottom:1px solid var(--line);padding:0 0 8px;margin-bottom:6px}.appearance label{clear:both;display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer}.appearance input{margin:0;width:18px;height:18px;accent-color:var(--blue);flex:none}
 .workspace{max-width:1500px;margin:auto;padding:32px 42px 50px;display:grid;grid-template-columns:190px minmax(0,1fr) 164px;gap:42px}.navigation{font-size:13px}.navigation>details>summary{font-weight:600;padding:0 0 12px;border-bottom:1px solid var(--line);cursor:pointer}.nav-group{margin-top:22px}.nav-group-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}.nav-group a{display:block;padding:3px 9px;margin-left:-9px;line-height:1.65;border-left:2px solid transparent}.nav-group a[aria-current=page]{color:var(--ink);border-color:var(--blue);background:var(--selected);font-weight:600}
-main{min-width:0}h1{font:normal 38px/1.18 Georgia,"Times New Roman",serif;margin:0 0 14px;overflow-wrap:anywhere}.toolbar{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);margin-bottom:22px;font-size:12px}.toolbar>div{display:flex;gap:18px}.toolbar button{padding:0 0 9px;border:0;border-bottom:2px solid transparent;background:none;color:var(--blue);font-size:12px}.toolbar button.selected{color:var(--ink);border-bottom-color:var(--ink)}article{overflow-wrap:anywhere}h2{font:normal 24px/1.3 Georgia,"Times New Roman",serif;border-bottom:1px solid var(--line);padding-bottom:6px;margin:30px 0 14px;scroll-margin-top:24px}h3{font-size:16px;margin-top:24px}p{margin:12px 0}ul,ol{padding-left:24px}li{margin:6px 0}table{border-collapse:collapse;margin:20px 0;width:100%;font-size:13px;line-height:1.6}th,td{border:1px solid var(--line);padding:10px 13px;text-align:left;vertical-align:top}th{background:var(--table-head);font-weight:600}tr:nth-child(even) td{background:var(--stripe)}td:first-child{min-width:100px}code{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);padding:2px 4px;border-radius:2px}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;background:var(--soft);border:1px solid var(--line);font:12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace}pre code{background:transparent;padding:0}.source-note{font-size:12px;color:var(--muted)}blockquote{border-left:3px solid var(--line);margin-left:0;padding-left:18px;color:var(--muted)}#backlinks{margin-top:38px}#backlinks h2{font:600 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--muted);border-top:1px solid var(--line);border-bottom:0;padding:14px 0 0}#backlink-list{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px}footer{display:flex;justify-content:space-between;gap:15px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);margin-top:32px;padding-top:15px}
+main{min-width:0}h1{font:normal 38px/1.18 Georgia,"Times New Roman",serif;margin:0 0 14px;overflow-wrap:anywhere}.toolbar{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);margin-bottom:22px;font-size:12px}.toolbar>div{display:flex;gap:18px}.toolbar button{padding:0 0 9px;border:0;border-bottom:2px solid transparent;background:none;color:var(--blue);font-size:12px}.toolbar button.selected{color:var(--ink);border-bottom-color:var(--ink)}article{overflow-wrap:anywhere}article img{display:block;max-width:100%;height:auto;margin:16px 0}h2{font:normal 24px/1.3 Georgia,"Times New Roman",serif;border-bottom:1px solid var(--line);padding-bottom:6px;margin:30px 0 14px;scroll-margin-top:24px}h3{font-size:16px;margin-top:24px}p{margin:12px 0}ul,ol{padding-left:24px}li{margin:6px 0}table{border-collapse:collapse;margin:20px 0;width:100%;font-size:13px;line-height:1.6}th,td{border:1px solid var(--line);padding:10px 13px;text-align:left;vertical-align:top}th{background:var(--table-head);font-weight:600}tr:nth-child(even) td{background:var(--stripe)}td:first-child{min-width:100px}code{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);padding:2px 4px;border-radius:2px}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;background:var(--soft);border:1px solid var(--line);font:12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace}pre code{background:transparent;padding:0}.source-note{font-size:12px;color:var(--muted)}blockquote{border-left:3px solid var(--line);margin-left:0;padding-left:18px;color:var(--muted)}#backlinks{margin-top:38px}#backlinks h2{font:600 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--muted);border-top:1px solid var(--line);border-bottom:0;padding:14px 0 0}#backlink-list{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px}footer{display:flex;justify-content:space-between;gap:15px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);margin-top:32px;padding-top:15px}
 .contents{align-self:start;position:sticky;top:26px;font-size:12px;padding-top:1px}.contents-title{font-weight:600;padding-bottom:12px;border-bottom:1px solid var(--line)}#toc a{display:block;margin-top:12px;line-height:1.5}#toc a.nested{padding-left:12px}.result{border-bottom:1px solid var(--line);padding:17px 0}.result h2{font-size:23px;margin:0 0 5px;border:none;padding:0}.result p{font-size:13px;color:var(--muted);margin:4px 0}.result small{font-size:12px;color:var(--muted)}#result-count{font-size:13px;color:var(--muted)}mark{background:var(--highlight);color:inherit}
 @media(min-width:1600px){.workspace{gap:52px}}
 @media(max-width:1100px){.site-header{padding:24px;gap:28px}.workspace{padding:28px 24px;grid-template-columns:165px minmax(0,1fr);gap:30px}.contents{display:none}}
@@ -745,7 +745,9 @@ function readPage(source, id) {
   return {id,title,section,order,metadata,metadataHtml,updated:meta.updated||'',summary:meta.summary||'',source,tokens,toc,anchors,titleAnchor:titleHeading?.anchor||'',links:[],attachments:[]};
 }
 
-const attachmentExtensions = new Set(['.png','.jpg','.jpeg','.gif','.webp','.mp4','.webm','.pdf','.txt','.log','.json','.csv']);
+const imageExtensions = new Set(['.png','.jpg','.jpeg','.gif','.webp']);
+const attachmentExtensions = new Set([...imageExtensions,'.mp4','.webm','.pdf','.txt','.log','.json','.csv']);
+const attachmentHref = target => target.split('/').map(encodeURIComponent).join('/');
 
 function localLink(page, href) {
   if (/^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')) throw new Error(`Unsupported link in ${page.id}.md: ${href}`);
@@ -760,8 +762,9 @@ function localLink(page, href) {
 async function collectAttachments(page) {
   const pending=[];
   new Marked().walkTokens(page.tokens, token => {
-    if (token.type === 'link' && !/^https?:\/\//i.test(token.href)) {
+    if (token.type === 'image' || (token.type === 'link' && !/^https?:\/\//i.test(token.href))) {
       const link=localLink(page,token.href);
+      if (token.type === 'image' && !imageExtensions.has(path.posix.extname(link.target).toLowerCase())) throw new Error(`Unsupported image in ${page.id}.md: ${token.href}`);
       if (link.attachment) pending.push(link);
     }
   });
@@ -800,11 +803,19 @@ async function main() {
   if (!byId.has('index')) throw new Error('Add index.md next to _build.mjs. Its title names the wiki.');
   for (const page of pages) {
     await collectAttachments(page);
+    const imageHrefs=new Set();
     const md = new Marked({renderer:{
       heading(token) {
         return token.isTitle ? '' : `<h${token.depth} id="${escape(token.anchor)}">${this.parser.parseInline(token.tokens)}</h${token.depth}>\n`;
       },
-      image() { throw new Error(`Images are not embedded by this text-only reader: ${page.id}.md`); },
+      image(token) {
+        const resolved=localLink(page,token.href);
+        const attachment=page.attachments.find(item=>item.path===resolved.target);
+        if (!attachment) throw new Error(`Unvalidated image in ${page.id}.md: ${token.href}`);
+        const src=attachmentHref(attachment.path);
+        imageHrefs.add(src);
+        return `<img src="${escape(src)}" alt="${escape(token.text)}"${token.title?` title="${escape(token.title)}"`:''} loading="lazy" decoding="async">`;
+      },
       link(token) {
         const text=this.parser.parseInline(token.tokens);
         if (/^https?:\/\//i.test(token.href)) return `<a href="${escape(token.href)}" rel="noreferrer">${text}</a>`;
@@ -813,7 +824,7 @@ async function main() {
         if (resolved.attachment) {
           const attachment=page.attachments.find(item=>item.path===resolved.target);
           if (!attachment) throw new Error(`Unvalidated attachment link in ${page.id}.md: ${token.href}`);
-          const href=attachment.path.split('/').map(encodeURIComponent).join('/');
+          const href=attachmentHref(attachment.path);
           return `<a href="${escape(href)}" target="_blank" rel="noreferrer" title="SHA-256: ${attachment.sha256}">${text}</a>`;
         }
         const id=resolved.target.replace(/\.md$/i,'');
@@ -825,8 +836,10 @@ async function main() {
       }
     }});
     page.html=sanitizeHtml(md.parser(page.tokens),{
-      allowedTags:sanitizeHtml.defaults.allowedTags,
-      allowedAttributes:{...sanitizeHtml.defaults.allowedAttributes,h1:['id'],h2:['id'],h3:['id'],h4:['id'],h5:['id'],h6:['id'],code:['class'],a:['href','rel','target','title']},
+      allowedTags:[...sanitizeHtml.defaults.allowedTags,'img'],
+      allowedAttributes:{...sanitizeHtml.defaults.allowedAttributes,h1:['id'],h2:['id'],h3:['id'],h4:['id'],h5:['id'],h6:['id'],code:['class'],a:['href','rel','target','title'],img:['src','alt','title','loading','decoding']},
+      // Raw HTML cannot introduce an image that Markdown did not validate.
+      exclusiveFilter:frame=>frame.tag==='img'&&!imageHrefs.has(frame.attribs.src),
       allowedSchemes:['http','https'],allowProtocolRelative:false
     });
   }

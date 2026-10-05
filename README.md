@@ -48,7 +48,7 @@ node docs/wiki/_build.mjs
 node docs/wiki/_build.mjs --check
 ```
 
-The builder embeds its dependencies and needs no package installation. Open the generated `index.html` locally. Share its `attachments/` directory (or the supported legacy `evidence/` directory) as well if readers need linked files. Markdown remains authoritative.
+The builder embeds its dependencies and needs no package installation. Open the generated `index.html` locally. Standard Markdown images display local PNG/JPEG/GIF/WebP attachments inline. Share its `attachments/` directory (or the supported legacy `evidence/` directory) as well so images and linked files remain available. Markdown remains authoritative.
 
 ## Development
 
