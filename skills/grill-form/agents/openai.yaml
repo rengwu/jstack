@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grill Form"
+  short_description: "Answer grill-me rounds in a clean offline HTML form."
+  default_prompt: "Use $grill-form to interview me with a static questionnaire, collect my answers, and clean up the temporary files."

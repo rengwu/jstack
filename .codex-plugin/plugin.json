@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "jstack",
     "shortDescription": "Planning and verification wikis for your projects.",
-    "longDescription": "Six cooperating skills separate generic wiki operations from planning, design interviews, feature maps, and evidence-based verification in each target project.",
+    "longDescription": "Seven cooperating skills separate generic wiki operations from planning, design interviews, offline interview forms, feature maps, and evidence-based verification in each target project.",
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],
