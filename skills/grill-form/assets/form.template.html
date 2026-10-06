@@ -9,11 +9,15 @@
 <style>
 *{box-sizing:border-box}body{margin:0;background:#18181b;color:#ededf0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:640px;margin:32px auto;padding:0 24px 48px}h1{font-size:22px;line-height:1.3;margin:0 0 8px;font-weight:600}fieldset{border:0;padding:0;margin:36px 0 44px;min-width:0}legend{font-size:18px;line-height:1.3;margin-bottom:10px;padding:0;font-weight:600}p{color:#b2b2bc;margin:0 0 12px;white-space:pre-wrap}.recommendation{font-size:12px;color:#a2a0ac;margin-bottom:16px}.choices{display:grid;gap:7px;margin-bottom:16px}.choice{display:flex;gap:10px;align-items:center;border:1px solid #39393f;border-radius:7px;padding:9px 11px;cursor:pointer;font-size:13px;line-height:1.45}.choice:hover{background:#242428}.choice:has(input:checked){border-color:#9b8ce9;background:#29243b;color:#d1c7ff}input[type=radio]{margin:0;width:14px;height:14px;flex-shrink:0;accent-color:#ad9afa}.choice:focus-within{outline:2px solid #ad9afa;outline-offset:2px}.notes-label{display:block;font-size:12px;margin-bottom:7px}textarea{width:100%;resize:vertical;min-height:78px;border:1px solid #414147;border-radius:7px;padding:10px;font:inherit;font-size:13px;color:#ededf0;background:#202023}textarea:focus{outline:2px solid #ad9afa;outline-offset:1px;border-color:#ad9afa}button{font:inherit;font-size:13px;cursor:pointer;border-radius:7px;padding:10px 18px;border:0;background:#b7a6ff;color:#1e1738}button:focus-visible{outline:2px solid #ad9afa;outline-offset:3px}button:disabled{opacity:.4;cursor:default}.error{color:#ff9aac;font-size:13px}.confirmation{font-size:13px;margin-top:16px}@media(max-width:560px){main{margin:24px auto;padding:0 16px 32px}}
 </style>
+<style>
+.description{margin:0 0 16px;border:1px solid #39393f;border-radius:7px;padding:12px;min-width:0}.description[hidden]{display:none}.description-toolbar{display:flex;justify-content:flex-end;margin-top:8px}.expand{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:transparent;color:#c8bcff;padding:6px}.expand:hover{background:#323039}.expand svg{display:block;width:18px;height:18px}.rich-content{overflow-x:auto;overflow-wrap:anywhere;color:#c6c6d0}.rich-content p{white-space:normal;color:inherit;margin:0 0 12px}.rich-content>:last-child{margin-bottom:0}.rich-content h1,.rich-content h2,.rich-content h3,.rich-content h4,.rich-content h5,.rich-content h6{font-size:16px;margin:16px 0 8px;line-height:1.35}.rich-content ul,.rich-content ol{padding-left:24px}.rich-content li{margin:4px 0}.rich-content a{color:#c8bcff}.rich-content blockquote{margin:12px 0;padding:0 12px;border-left:3px solid #777084}.rich-content pre{overflow-x:auto;padding:12px;background:#121215;border-radius:5px;white-space:pre;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.rich-content code{font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;background:#121215;padding:2px 4px;border-radius:3px}.rich-content pre code{padding:0;background:none}.rich-content table{border-collapse:collapse;width:max-content;min-width:100%;margin:12px 0;font-size:13px}.rich-content th,.rich-content td{padding:8px 12px;border:1px solid #45454e;text-align:left;max-width:400px}.rich-content th{background:#29292f}.rich-content th[align=center],.rich-content td[align=center]{text-align:center}.rich-content th[align=right],.rich-content td[align=right]{text-align:right}.rich-content hr{border:0;border-top:1px solid #45454e;margin:16px 0}.diagram{margin:12px 0;overflow-x:auto}.diagram svg{display:block;max-width:100%;height:auto;margin:auto}.diagram-error{color:#ff9aac;margin:0 0 6px;font-size:13px}.diagram details summary{cursor:pointer;font-size:12px;color:#c8bcff}.description.is-expanded{width:min(1100px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%);background:#202023}.description.is-expanded .diagram svg{max-width:none}.rich-content:focus-visible{outline:2px solid #ad9afa;outline-offset:3px}@media print{.description-toolbar{display:none}.description.is-expanded{width:auto;left:auto;transform:none}}
+</style>
 </head>
 <body>
 <main><h1 id="title"></h1><form id="questions"><button type="submit" id="submit" disabled>Submit answers</button><p id="message" role="status" tabindex="-1" hidden></p></form></main>
 <noscript>Enable JavaScript to answer this offline form.</noscript>
 <script type="application/json" id="grill-data">__GRILL_FORM_DATA__</script>
+__GRILL_FORM_RENDERERS__
 <script>
 'use strict';
 const state=JSON.parse(document.getElementById('grill-data').textContent);
@@ -30,6 +34,57 @@ try{
  if(Array.isArray(draft)&&draft.length===questions.length&&draft.every((a,i)=>a&&a.questionId===questions[i].id&&typeof a.notes==='string'&&a.notes.length<=12000&&(a.choiceId===null||a.choiceId==='other'||questions[i].options.some(o=>o.id===a.choiceId))))answers=draft;
 }catch{} // Some browsers restrict storage on file://; in-memory editing still works.
 function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node}
+const escapeHTML=text=>text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let diagramNumber=0;
+let diagramQueue=Promise.resolve();
+if(globalThis.mermaid)mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'dark',fontFamily:'Arial, sans-serif',htmlLabels:false,flowchart:{htmlLabels:false},suppressErrorRendering:true,maxTextSize:12000,maxEdges:150});
+function diagramFallback(container,source,reason){
+ container.replaceChildren(element('p','Diagram could not be rendered. '+reason,'diagram-error'));
+ const details=element('details');details.open=true;
+ const pre=element('pre');pre.append(element('code',source));
+ details.append(element('summary','Diagram source'),pre);container.append(details);container.dataset.renderState='error';
+}
+async function renderDiagram(container,source){
+ const first=source.split(/\r?\n/).map(line=>line.trim()).find(line=>line&&!line.startsWith('%%'))||'';
+ if(/%%\s*\{/.test(source)||! /^(?:(?:flowchart|graph)\s+(?:TB|TD|BT|RL|LR)\b|sequenceDiagram\b|stateDiagram(?:-v2)?\b)/.test(first)){
+  diagramFallback(container,source,'Use a flowchart, sequence diagram, or state diagram without configuration directives.');return;
+ }
+ try{
+  const {svg}=await mermaid.render('grill-diagram-'+(++diagramNumber),source);
+  container.innerHTML=DOMPurify.sanitize(svg,{USE_PROFILES:{svg:true,svgFilters:true},FORBID_TAGS:['foreignObject','image','a']});
+  const drawing=container.querySelector('svg');
+  const width=drawing?.viewBox.baseVal.width;
+  if(width){drawing.style.width=Math.ceil(width)+'px';drawing.style.maxWidth='';}
+  container.dataset.renderState='ready';
+ }catch{diagramFallback(container,source,'You can still answer this question.');}
+}
+function description(source,number){
+ const wrapper=element('section',undefined,'description');wrapper.setAttribute('aria-label','Description for question '+number);
+ const toolbar=element('div',undefined,'description-toolbar');
+ const expand=element('button',undefined,'expand');expand.type='button';expand.setAttribute('aria-expanded','false');
+ const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('fill','none');icon.setAttribute('stroke','currentColor');icon.setAttribute('stroke-width','1.75');icon.setAttribute('stroke-linecap','round');icon.setAttribute('stroke-linejoin','round');icon.setAttribute('aria-hidden','true');
+ const iconPath=document.createElementNS('http://www.w3.org/2000/svg','path');icon.append(iconPath);expand.append(icon);
+ function setExpanded(expanded){const label=expanded?'Collapse description':'Expand description';expand.setAttribute('aria-expanded',String(expanded));expand.setAttribute('aria-label',label);expand.title=label;iconPath.setAttribute('d',expanded?'M3 9h6V3M9 9 3 3M21 15h-6v6M15 15l6 6':'M9 3H3v6M3 3l6 6M15 21h6v-6M21 21l-6-6');}
+ setExpanded(false);
+ const content=element('div',undefined,'rich-content');content.id='description-'+number;content.tabIndex=0;content.setAttribute('role','region');content.setAttribute('aria-label','Question '+number+' description');expand.setAttribute('aria-controls',content.id);
+ expand.addEventListener('click',()=>setExpanded(wrapper.classList.toggle('is-expanded')));
+ wrapper.addEventListener('keydown',event=>{if(event.key==='Escape'&&wrapper.classList.contains('is-expanded')){expand.click();expand.focus();}});
+ toolbar.append(expand);wrapper.append(content,toolbar);
+ try{
+  const renderer=new marked.Renderer();
+  renderer.html=({text})=>escapeHTML(text);
+  renderer.image=({text})=>escapeHTML(text);
+  const html=marked.parse(source,{gfm:true,breaks:false,renderer});
+  content.innerHTML=DOMPurify.sanitize(html,{ALLOWED_TAGS:['p','br','strong','em','del','a','ul','ol','li','blockquote','h1','h2','h3','h4','h5','h6','pre','code','table','thead','tbody','tr','th','td','hr'],ALLOWED_ATTR:['href','title','class','align','start']});
+  content.querySelectorAll('a').forEach(link=>{if(!/^https?:\/\//i.test(link.getAttribute('href')||'')){link.removeAttribute('href');return;}link.target='_blank';link.rel='noopener noreferrer';});
+  content.querySelectorAll('pre > code.language-mermaid').forEach(code=>{
+   const diagram=element('div','Rendering diagram…','diagram');diagram.dataset.renderState='pending';diagram.tabIndex=0;diagram.setAttribute('role','region');diagram.setAttribute('aria-label','Diagram for question '+number);
+   const definition=code.textContent;code.parentElement.replaceWith(diagram);
+   diagramQueue=diagramQueue.then(()=>renderDiagram(diagram,definition)).catch(()=>diagramFallback(diagram,definition,'You can still answer this question.'));
+  });
+ }catch{content.append(element('p','Description could not be rendered; original source follows.','error'),element('pre',source));}
+ return wrapper;
+}
 function complete(a){return a.choiceId==='other'?!!a.notes.trim():!!a.choiceId||!!a.notes.trim()}
 function update(){
  submit.disabled=!answers.every(complete);submit.textContent='Submit answers';message.hidden=true;
@@ -38,7 +93,7 @@ function update(){
 questions.forEach((q,i)=>{
  const fieldset=element('fieldset');
  fieldset.append(element('legend',q.number+'. '+q.prompt));
- if(q.context)fieldset.append(element('p',q.context));
+ if(q.context.trim())fieldset.append(state.richText?description(q.context,q.number):element('p',q.context));
  fieldset.append(element('p','Recommended: '+q.recommendation,'recommendation'));
  const choices=element('div',undefined,'choices');
  [...q.options,{id:'other',label:'Something else'}].forEach(option=>{

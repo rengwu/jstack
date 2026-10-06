@@ -49,10 +49,18 @@ This deletes only the session's known files and matching validated answer downlo
 
 ## Question data
 
-Each question needs `prompt`, `recommendation`, and 2–8 distinct option strings. Optional `number` continues numbering; optional `context` explains the choice. Explicit question `id` and `{ "id": "...", "label": "..." }` option objects are also supported. IDs use letters, digits, `_`, or `-`, start with a letter/digit, and are at most 80 characters; `other` is reserved.
+Each question needs `prompt`, `recommendation`, and 2–8 distinct option strings. Optional `number` continues numbering; optional `context` is the description and accepts [rich Markdown](authoring.md). Explicit question `id` and `{ "id": "...", "label": "..." }` option objects are also supported. IDs use letters, digits, `_`, or `-`, start with a letter/digit, and are at most 80 characters; `other` is reserved.
 
-Limits: title 200 characters; prompt 2,000; context/recommendation 3,000 each; option label 1,000; notes 12,000. Use 1–10 questions per round. Content is plain text. The script creates IDs, detects duplicates, safely embeds data, and validates downloads against the round's identity and question digest.
+Limits: title 200 characters; prompt 2,000; context 12,000; recommendation 3,000; option label 1,000; notes 12,000. Use 1–10 questions per round. All fields except context are plain text. The script creates IDs, detects duplicates, safely embeds data, and validates downloads against the round's identity and question digest. Existing sessions retain their original plain-text normalization and transcript format; new sessions preserve description whitespace and embed the needed renderers in one offline HTML file.
 
 ## Maintenance
 
-Only when changing this skill: edit the prepared HTML or scripts directly, then run `node --test scripts/grill-form.test.mjs` from the plugin root. Exercise the browser when changing the UI. Use disposable test sessions; do not mistake synthetic answers for user decisions. Preserve the one-way dependency on grill-me.
+Only when changing this skill: edit the prepared HTML or scripts directly, then run `node --test scripts/grill-form.test.mjs` from the plugin root. Exercise the browser when changing the UI. Use disposable test sessions; do not mistake synthetic answers for user decisions. Preserve the one-way dependency on grill-me. Prebuilt renderer versions, hashes, and licenses are in [the vendor inventory](../assets/vendor/README.md); no install or bundling step is required during interviews.
+
+The optional browser test uses an installed Chrome/Chromium executable and Node built-ins:
+
+```sh
+GRILL_FORM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node --test scripts/grill-form.test.mjs
+```
+
+It runs an isolated headless browser with page networking disabled, checks rendering and expansion, and downloads synthetic answers into a disposable test directory. Without `GRILL_FORM_BROWSER`, the browser test is skipped. `GRILL_FORM_SCREENSHOT` optionally saves a desktop PNG and a companion `.mobile.png` for visual review.

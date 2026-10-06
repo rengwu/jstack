@@ -43,4 +43,4 @@ Source: [round-three answers](../journal/2026-10-05-grill-911b2856-2c6c-45f9-8e4
 | --- | --- | --- |
 | DEC-011 | Deliver rich forms first. Plan matching wiki rendering as a separate follow-up. | Keep the first change focused on the form; preserve rich source now so the wiki can render it in the future. |
 
-The scoped interview is complete. Implementing the accepted behavior is the next step when requested; these records do not claim it has been implemented or verified.
+The scoped interview is complete. The user subsequently requested implementation, completed locally on 2026-10-06. See the wiki home for the validation scope; the original interview records remain unchanged.

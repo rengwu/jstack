@@ -15,4 +15,6 @@ Design discussion for extending grill-form. These records are here under the use
 
 The interview is complete. Rich forms are the initial scope; matching wiki rendering is a separate follow-up.
 
-The rich authoring feature is planned, not implemented. Interview completion does not authorize implementation.
+The user subsequently authorized implementation. The initial rich-form feature is now implemented locally: Markdown descriptions, tables, code blocks, the three agreed Mermaid diagram types, expansion and scrolling, error fallback, and original-source preservation. The authoring entrypoint gained one capability sentence and a linked reference. Matching wiki rendering remains deferred.
+
+Validation on 2026-10-06: all 35 repository tests passed with the optional offline Chrome test enabled. The subsequent narrow-screen diagram sizing adjustment passed the browser test again. Desktop and mobile screenshots were visually reviewed. All seven skill frontmatter checks and plugin validation passed. These checks cover the current local changes; they do not claim compatibility with every browser.

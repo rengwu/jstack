@@ -18,6 +18,6 @@ Per [DEC-011](../decisions/index.md), deliver rich forms first and plan matching
 
 ## Implementation details
 
-Renderer selection, the precise documented Markdown subset, compatibility for existing question data and saved sessions, and transcript serialization require implementation investigation. These are technical details to resolve within the accepted scope, not reasons to extend the preference interview.
+The implementation uses bundled prebuilt Marked, DOMPurify, and Mermaid Tiny browser distributions. The supported Markdown subset is documented in the skill's authoring reference. Existing saved sessions retain their prior normalization and transcript format; new descriptions preserve whitespace and are saved as source inside a protective code fence. These details are implemented and covered by form tests.
 
-Existing offline operation and the prepared-template workflow remain constraints. Implementation has not started.
+Existing offline operation and the prepared-template workflow remain constraints. The initial form implementation is complete locally; matching wiki rendering remains a separate follow-up.

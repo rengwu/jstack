@@ -8,6 +8,7 @@ import {normalizeSpec, validateSubmission, VERSION} from './model.mjs';
 
 const template = fileURLToPath(new URL('../assets/form.template.html', import.meta.url));
 const marker = '__GRILL_FORM_DATA__';
+const rendererMarker = '__GRILL_FORM_RENDERERS__';
 const hash = text => createHash('sha256').update(text).digest('hex');
 const encode = value => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 const output = value => process.stdout.write(JSON.stringify(value, null, 2) + '\n');
@@ -34,10 +35,10 @@ function outsidePlugin(project) {
   if (project === pluginRoot || project.startsWith(pluginRoot + path.sep)) fail('Choose the target project, not the jstack plugin directory');
 }
 
-async function regularFile(file) {
+async function regularFile(file, maxBytes = 2_000_000) {
   const st = await fs.lstat(file);
   if (!st.isFile() || st.isSymbolicLink()) fail(`Not a regular file: ${file}`);
-  if (st.size > 2_000_000) fail(`File too large: ${file}`);
+  if (st.size > maxBytes) fail(`File too large: ${file}`);
   return fs.readFile(file, 'utf8');
 }
 async function exists(file) {
@@ -50,7 +51,7 @@ async function loadSession(input) {
   const actual = await fs.realpath(root);
   const state = JSON.parse(await regularFile(path.join(actual, 'session.json')));
   if (state.kind !== 'jstack-grill-form' || state.schemaVersion !== VERSION || state.directory !== actual || !/^[a-f0-9-]{36}$/.test(state.sessionId)) fail('Invalid session marker');
-  state.spec = normalizeSpec(state.spec);
+  state.spec = normalizeSpec(state.spec, {richText: state.richText === true});
   if (hash(JSON.stringify(state.spec)) !== state.specDigest) fail('Session question data was modified');
   if (typeof state.project !== 'string' || !path.isAbsolute(state.project)) fail('Session has no target project; preserve it and consult references/usage.md');
   outsidePlugin(state.project);
@@ -92,12 +93,22 @@ async function create(options) {
   let input = '';
   process.stdin.setEncoding('utf8');
   for await (const chunk of process.stdin) { input += chunk; if (input.length > 200_000) fail('Question data is too large'); }
-  const spec = normalizeSpec(JSON.parse(input));
-  const raw = await fs.readFile(template, 'utf8');
+  const spec = normalizeSpec(JSON.parse(input), {richText: true});
+  let raw = await fs.readFile(template, 'utf8');
   if (raw.split(marker).length !== 2) fail('Invalid prepared template: expected one question-data placeholder');
+  if (raw.split(rendererMarker).length !== 2) fail('Invalid prepared template: expected one renderer placeholder');
+  const descriptions = spec.questions.map(q => q.context).join('\n');
+  const libraries = descriptions.trim() ? ['marked.js', 'purify.js'] : [];
+  if (/mermaid/i.test(descriptions)) libraries.push('mermaid.js');
+  const scripts = [];
+  for (const name of libraries) {
+    const source = await fs.readFile(new URL('../assets/vendor/' + name, import.meta.url), 'utf8');
+    scripts.push('<script>\n' + source.replace(/<\/script/gi, '<\\/script').replace(/^\/\/# sourceMappingURL=.*$/gm, '') + '\n</script>');
+  }
+  raw = raw.replace(rendererMarker, () => scripts.join('\n'));
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'grill-form-')));
   try {
-    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, sessionId: randomUUID(), directory: root, project, createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
+    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, richText: true, sessionId: randomUUID(), directory: root, project, createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
@@ -128,7 +139,7 @@ function transcript(state, data) {
   let text = '---\ntitle: Interview answers\nsection: Journal\nupdated: ' + state.createdAt.slice(0, 10) + '\nstatus: Submitted\n---\n# Interview answers\n\nSubmitted answers; interpretation and accepted decisions are recorded through grill-me/plan.\n\nSession: `' + state.sessionId + '`\n';
   for (const answer of data.answers) {
     const question = state.spec.questions.find(q => q.id === answer.questionId);
-    const content = ['Round: ' + data.title, 'Question: ' + question.prompt, 'Context: ' + question.context, 'Recommendation: ' + question.recommendation, 'Options: ' + question.options.map(o => o.label).join(' / '), 'Selected: ' + (answer.choice ?? '(notes only)'), 'Notes: ' + answer.notes].join('\n');
+    const content = ['Round: ' + data.title, 'Question: ' + question.prompt, (state.richText ? 'Description (Markdown source):\n' : 'Context: ') + question.context, 'Recommendation: ' + question.recommendation, 'Options: ' + question.options.map(o => o.label).join(' / '), 'Selected: ' + (answer.choice ?? '(notes only)'), 'Notes: ' + answer.notes].join('\n');
     const fence = '`'.repeat(Math.max(3, ...[...content.matchAll(/`+/g)].map(m => m[0].length + 1)));
     text += `\n## Question ${answer.number}\n\n${fence}text\n${content}\n${fence}\n`;
   }
@@ -161,7 +172,7 @@ async function cleanup(options) {
   const allowed = new Set(['form.html', 'session.json', 'receipt.json', '.DS_Store']);
   const names = await fs.readdir(root);
   if (names.some(n => !allowed.has(n))) fail('Unexpected files in the session; nothing was deleted');
-  for (const n of names) await regularFile(path.join(root, n));
+  for (const n of names) await regularFile(path.join(root, n), n === 'form.html' ? 10_000_000 : 2_000_000);
   if (await exists(path.join(root, 'form.html')) && hash(await fs.readFile(path.join(root, 'form.html'))) !== state.formDigest) fail('Form was modified; nothing was deleted');
   const hasReceipt = await exists(path.join(root, 'receipt.json'));
   if (options.recorded && !hasReceipt) fail('Collect the answers before finish');

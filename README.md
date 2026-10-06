@@ -7,7 +7,7 @@ A collection of seven cooperating skills for clarifying designs, mapping feature
 | Skill | Purpose |
 | --- | --- |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
-| [grill-form](skills/grill-form/SKILL.md) | Present grill-me rounds in a prepared offline HTML form, collect downloaded answers, and clean up temporary files |
+| [grill-form](skills/grill-form/SKILL.md) | Present offline interview forms with Markdown descriptions, tables, and Mermaid diagrams; collect answers and clean up temporary files |
 | [plan](skills/plan/SKILL.md) | Discuss ideas, scope, alternatives, decisions, and open questions using wiki |
 | [wiki](skills/wiki/SKILL.md) | Create, edit, link, validate, and render pages and attachments without prescribing their purpose |
 | [feature-map](skills/feature-map/SKILL.md) | Describe user-facing behavior, entry points, expected outcomes, and verification recipes |

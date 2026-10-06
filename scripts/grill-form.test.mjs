@@ -5,7 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {normalizeSpec, validateSubmission} from '../skills/grill-form/scripts/model.mjs';
+import {chrome} from './helpers/chrome.mjs';
 
 const cli = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
 const template = fileURLToPath(new URL('../skills/grill-form/assets/form.template.html', import.meta.url));
@@ -171,7 +173,7 @@ test('question schema enforces round boundaries and collector uses authoritative
 test('prepared template stays standalone and framework-free', async () => {
   const html = await fs.readFile(template, 'utf8');
   assert.equal(html.split('__GRILL_FORM_DATA__').length, 2);
-  assert.doesNotMatch(html, /https?:\/\/|node_modules|React|@base-ui|<link|<iframe|<script[^>]+src=/);
+  assert.doesNotMatch(html.replaceAll('http://www.w3.org/2000/svg', ''), /https?:\/\/|node_modules|React|@base-ui|<link|<iframe|<script[^>]+src=/);
   assert.match(html, /fieldset/); assert.match(html, /textarea/); assert.match(html, /type="submit"/);
 });
 
@@ -242,4 +244,98 @@ test('create refuses the plugin as the target and invalid input returns structur
   const error = JSON.parse(r.stderr);
   assert.equal(error.status, 'error'); assert.match(error.help, /references\/usage.md$/);
   assert.throws(() => normalizeSpec({title: 'x', questions: [{prompt: 'x', recommendation: 'x', options: ['Same', ' same ']}]}), /Duplicate option label/);
+});
+
+test('rich descriptions preserve whitespace, embed offline renderers, and survive collection and cleanup', async t => {
+  const input = structuredClone(spec);
+  const source = '    indented code\r\n\r\n| A | B |\n| - | - |\n| 1 | 2 |\n\n```mermaid\nflowchart LR\n A --> B\n```\n\n' + 'Detail '.repeat(600) + '\n';
+  input.questions[0].context = source;
+  const f = await fixture(t, input);
+  assert.equal(f.state.spec.questions[0].context, source);
+  assert.equal(f.state.richText, true);
+  const html = await fs.readFile(f.html, 'utf8');
+  assert.ok(Buffer.byteLength(html) > 2_000_000, 'diagram runtime should be embedded');
+  assert.doesNotMatch(html, /<script[^>]+src=|__GRILL_FORM_RENDERERS__/);
+  assert.match(html, /connect-src 'none'/);
+  await f.write(); ok(f.collect());
+  const {record} = ok(f.finish());
+  const saved = await fs.readFile(record, 'utf8');
+  assert.ok(saved.includes('Description (Markdown source):\n' + source));
+  assert.match(saved, /````text/);
+  await assert.rejects(fs.stat(f.session), {code: 'ENOENT'});
+  const wiki = path.dirname(path.dirname(record)), builder = path.join(wiki, '_build.mjs');
+  await fs.copyFile(fileURLToPath(new URL('../skills/wiki/assets/_build.mjs', import.meta.url)), builder);
+  await fs.writeFile(path.join(wiki, 'index.md'), `# Project\n\n[Answers](journal/${path.basename(record)})\n`);
+  for (const args of [[], ['--check']]) {
+    const result = spawnSync(process.execPath, [builder, ...args], {encoding: 'utf8'});
+    assert.equal(result.status, 0, result.stderr);
+  }
+  assert.throws(() => normalizeSpec({...input, questions: [{...input.questions[0], context: 'x'.repeat(12001)}]}, {richText: true}), /Invalid context/);
+});
+
+test('pre-rich sessions still collect with their old digest and retain the old transcript format', async t => {
+  const input = structuredClone(spec); input.questions[0].context = '  Plain context  ';
+  const f = await fixture(t, input);
+  const legacy = {...f.state, spec: normalizeSpec(input)};
+  delete legacy.richText;
+  legacy.specDigest = createHash('sha256').update(JSON.stringify(legacy.spec)).digest('hex');
+  await fs.writeFile(path.join(f.session, 'session.json'), JSON.stringify(legacy));
+  await f.write({...f.payload, specDigest: legacy.specDigest});
+  ok(f.collect());
+  const {record} = ok(f.finish());
+  const saved = await fs.readFile(record, 'utf8');
+  assert.match(saved, /Context: Plain context\n/);
+  assert.doesNotMatch(saved, /Description \(Markdown source\)/);
+});
+
+test('offline browser renders rich content, handles diagram errors, expands, and exports collectible answers', {skip: !process.env.GRILL_FORM_BROWSER, timeout: 60000}, async t => {
+  const input = {title: 'Rich form browser check', questions: [{
+    id: 'rich', prompt: 'Which **workflow** should we use?', recommendation: 'Review first.', options: ['Review first', 'Publish directly'],
+    context: 'A **review** step keeps changes visible.\n\n| Choice | Benefit |\n| --- | --- |\n| Review | Check before release |\n| Direct | Immediate updates |\n\n- First draft\n- Then review\n\n> Decide before publishing.\n\n```js\nconst example = "<tag>";\n```\n\n```mermaid\nflowchart LR\n Draft --> Review --> Approve --> Schedule --> Publish\n```\n\n```mermaid\nsequenceDiagram\n Editor->>Reviewer: Request review\n Reviewer-->>Editor: Approved\n```\n\n```mermaid\nstateDiagram-v2\n [*] --> Draft\n Draft --> Published\n```\n\n```mermaid\nflowchart LR\n broken [\n```\n\n```mermaid\npie\n "unsupported": 1\n```\n\n```mermaid\n%%{init: {"securityLevel": "loose"}}%%\nflowchart LR\n A-->B\n```\n\n<script>globalThis.__grillTestInjected = true</script>\n\n<img src="https://example.invalid/image" onerror="globalThis.__grillTestInjected=true">\n\n[Unsafe](javascript:alert(1)) [Reference](https://example.com) ![Image alt](https://example.invalid/image)'
+  }]};
+  const f = await fixture(t, input), browser = await chrome(t);
+  await browser.command('Browser.setDownloadBehavior', {behavior: 'allow', downloadPath: f.downloadDir});
+  await browser.command('Emulation.setDeviceMetricsOverride', {width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false});
+  await browser.command('Page.navigate', {url: f.url});
+  await browser.evaluate(`new Promise((resolve,reject)=>{const start=Date.now();const poll=()=>{const diagrams=[...document.querySelectorAll('.diagram')];if(diagrams.length===6&&diagrams.every(d=>d.dataset.renderState!=='pending'))resolve(true);else if(Date.now()-start>12000)reject(new Error('Diagram rendering timed out'));else setTimeout(poll,50)};poll()})`);
+  const rendered = await browser.evaluate(`({ready:document.querySelectorAll('.diagram[data-render-state=ready] svg').length,errors:document.querySelectorAll('.diagram-error').length,table:document.querySelectorAll('table tbody tr').length,bold:document.querySelector('strong')?.textContent,question:document.querySelector('legend').textContent,code:document.querySelector('code.language-js')?.textContent,injected:!!globalThis.__grillTestInjected,images:document.querySelectorAll('img').length,unsafeLinks:[...document.querySelectorAll('a[href]')].some(a=>!a.href.startsWith('https://')),fallbacks:[...document.querySelectorAll('.diagram[data-render-state=error] pre')].map(p=>p.textContent)})`);
+  assert.equal(rendered.ready, 3, JSON.stringify(rendered)); assert.equal(rendered.errors, 3);
+  assert.equal(rendered.table, 2); assert.equal(rendered.bold, 'review');
+  assert.equal(rendered.question, '1. Which **workflow** should we use?');
+  assert.match(rendered.code, /<tag>/); assert.equal(rendered.injected, false, JSON.stringify(rendered));
+  assert.equal(rendered.images, 0); assert.equal(rendered.unsafeLinks, false);
+  assert.ok(rendered.fallbacks.some(text => text.includes('broken [')));
+  const control = await browser.evaluate(`(()=>{const button=document.querySelector('.expand'),box=document.querySelector('.description').getBoundingClientRect(),content=document.querySelector('.rich-content').getBoundingClientRect(),rect=button.getBoundingClientRect();return {label:button.getAttribute('aria-label'),text:button.textContent,icon:!!button.querySelector('svg'),below:rect.top>=content.bottom,right:box.right-rect.right,bottom:box.bottom-rect.bottom}})()`);
+  assert.equal(control.label, 'Expand description'); assert.equal(control.text, ''); assert.equal(control.icon, true);
+  assert.ok(control.below && control.right <= 16 && control.bottom <= 16, 'icon belongs in the bottom-right corner');
+  const expansion = await browser.evaluate(`(()=>{const description=document.querySelector('.description');const before=description.getBoundingClientRect().width;document.querySelector('.expand').click();return {before,after:description.getBoundingClientRect().width,expanded:document.querySelector('.expand').getAttribute('aria-expanded')}})()`);
+  assert.ok(expansion.after > expansion.before); assert.equal(expansion.expanded, 'true');
+  assert.equal(await browser.evaluate(`document.querySelector('.expand').getAttribute('aria-label')`), 'Collapse description');
+  if (process.env.GRILL_FORM_SCREENSHOT) {
+    const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
+    await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT, Buffer.from(data, 'base64'));
+  }
+  await browser.evaluate(`document.querySelector('.description').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
+  assert.equal(await browser.evaluate(`document.querySelector('.expand').getAttribute('aria-expanded')`), 'false');
+  await browser.command('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true});
+  assert.ok(await browser.evaluate(`document.documentElement.scrollWidth <= innerWidth`), 'mobile page must not overflow horizontally');
+  await browser.evaluate(`document.querySelector('.expand').click()`);
+  assert.ok(await browser.evaluate(`document.documentElement.scrollWidth <= innerWidth`), 'expanded content must fit on mobile');
+  assert.ok(await browser.evaluate(`document.querySelector('.diagram').scrollWidth > document.querySelector('.diagram').clientWidth`), 'expanded diagrams retain readable size and scroll on narrow screens');
+  if (process.env.GRILL_FORM_SCREENSHOT) {
+    const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
+    await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.mobile.png', Buffer.from(data, 'base64'));
+  }
+  await browser.evaluate(`document.querySelector('input[type=radio]').click();document.querySelector('textarea').value='Synthetic browser test';document.querySelector('textarea').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#submit').click()`);
+  assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`), false);
+  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
+  const received = ok(f.collect());
+  assert.equal(received.status, 'received');
+  assert.equal(received.answers[0].choice, 'Review first');
+  assert.equal(received.answers[0].notes, 'Synthetic browser test');
+  const {record} = ok(f.finish());
+  assert.ok((await fs.readFile(record, 'utf8')).includes(input.questions[0].context));
+  const network = browser.events.filter(e => e.method === 'Network.requestWillBeSent').map(e => e.params.request.url);
+  assert.deepEqual(network.filter(url => /^https?:/.test(url)), []);
+  assert.deepEqual(browser.events.filter(e => e.method === 'Runtime.exceptionThrown'), []);
 });

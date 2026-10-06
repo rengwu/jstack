@@ -13,7 +13,7 @@ function id(value, name) {
   requireValue(typeof value === 'string' && idPattern.test(value) && value !== 'other', `Invalid ${name}`);
   return value;
 }
-export function normalizeSpec(input) {
+export function normalizeSpec(input, {richText = false} = {}) {
   requireValue(input && typeof input === 'object', 'Expected a question object');
   const title = string(input.title, 'title', 200);
   requireValue(Array.isArray(input.questions) && input.questions.length >= 1 && input.questions.length <= 10, 'Use 1–10 questions per round');
@@ -34,7 +34,10 @@ export function normalizeSpec(input) {
       requireValue(!labels.has(label.toLowerCase()), `Duplicate option label: ${label}`); labels.add(label.toLowerCase());
       return {id: optionId, label};
     });
-    return {id: questionId, number, prompt: string(q.prompt, 'prompt', 2000), context: string(q.context, 'context', 3000, true), recommendation: string(q.recommendation, 'recommendation', 3000), options};
+    const context = string(q.context, 'context', richText ? 12000 : 3000, true);
+    // New rich descriptions preserve indentation and line endings. Legacy sessions
+    // retain their original normalization so saved question digests still match.
+    return {id: questionId, number, prompt: string(q.prompt, 'prompt', 2000), context: richText ? q.context ?? '' : context, recommendation: string(q.recommendation, 'recommendation', 3000), options};
   });
   return {title, questions};
 }

@@ -4,7 +4,7 @@ description: Supplement grill-me with an HTML questionnaire for presenting quest
 ---
 # Grill form
 
-Follow [grill-me](../grill-me/SKILL.md) for the interview. Present each round through this form:
+Follow [grill-me](../grill-me/SKILL.md) for the interview. Descriptions (`context`) may use Markdown, tables, code blocks, and Mermaid when useful; for rich content, read [authoring](references/authoring.md). Present each round through this form:
 
 1. **Create.** Replace `SKILL_DIR` with this skill's absolute directory, `PROJECT_DIR` with the existing target project, and the example below with the round's questions.
 
