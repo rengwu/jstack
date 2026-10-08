@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit"
+  short_description: "Commit all changes in cohesive groups"
+  default_prompt: "Use $commit to commit all our changes, split however you like."
