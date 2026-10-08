@@ -1,6 +1,6 @@
 # jstack
 
-A collection of seven cooperating skills for clarifying designs, mapping features, and verifying changes. Each project's Markdown wiki holds its decisions, expected behavior, and verification evidence. A bundled offline HTML reader makes those records browsable.
+A collection of eight skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Each project's Markdown wiki holds its decisions, expected behavior, and verification evidence. A bundled offline HTML reader makes those records browsable.
 
 ## Skills
 
@@ -13,6 +13,7 @@ A collection of seven cooperating skills for clarifying designs, mapping feature
 | [feature-map](skills/feature-map/SKILL.md) | Describe user-facing behavior, entry points, expected outcomes, and verification recipes |
 | [verify-change](skills/verify-change/SKILL.md) | Exercise the real product and record build-specific results and evidence |
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
+| [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
 
 ## Using the collection
 
@@ -20,12 +21,15 @@ The collection is packaged with a Codex plugin manifest in `.codex-plugin/plugin
 
 Start in the project you want to work on. Ask for a design interview with `grill-me`, or use `plan` to start or resume a planning discussion. Use `wiki` directly for document operations. Then map an important feature and verify its behavior. Use the skills that fit the task; this is not a mandatory sequence for every change.
 
+Use `rule-lean` on its own or alongside other skills for flexible guidance on KISS, YAGNI, DRY, and simplifying relevant code. It does not require a wiki workflow.
+
 Example requests:
 
 - “Use grill-me to clarify this feature, then record our decisions in this project's wiki.”
 - “Use grill-form to interview me through a static questionnaire.”
 - “Use feature-map to document conversation renaming and its expected outcomes.”
 - “Use verify-change to check this fix and record what passed, failed, or remains untested.”
+- “Use rule-lean to implement this change and simplify the relevant code.”
 
 ## Separation of responsibilities
 

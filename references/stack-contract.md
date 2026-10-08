@@ -34,6 +34,7 @@ Create folders only when used. Markdown is authoritative; HTML is a generated sn
 - `feature-map` owns feature descriptions and verification recipes. It records intended behavior and separately labels observed or unresolved behavior.
 - `verify-change` owns verification setup, any needed project-local drivers, run reports, and evidence. Verification alone does not authorize product fixes, commits, merges, deployments, or external messages. Continue fixes when the enclosing task already authorizes them.
 - `maintain-verification` audits map/driver drift; it corrects documentation and verification tooling within scope, and reports product regressions separately.
+- `rule-lean` guides simple, efficient implementation and simplification of relevant existing code. It can be used independently; apply the record workflows only when the task calls for them.
 
 With concurrent workers, give each worker distinct feature files or run IDs. One coordinator updates shared indexes and rebuilds HTML after the writers finish. Do not add a mandatory coordinating skill or require delegation.
 

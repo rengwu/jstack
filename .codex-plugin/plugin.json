@@ -1,15 +1,15 @@
 {
   "name": "jstack",
   "version": "0.1.0+codex.20260928112445",
-  "description": "Clarify designs, map features, and verify changes through each project\u2019s wiki.",
+  "description": "Clarify designs, implement lean solutions, map features, and verify changes in your projects.",
   "author": {
     "name": "rengwu"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "jstack",
-    "shortDescription": "Planning and verification wikis for your projects.",
-    "longDescription": "Seven cooperating skills separate generic wiki operations from planning, design interviews, offline interview forms, feature maps, and evidence-based verification in each target project.",
+    "shortDescription": "Planning, lean implementation, and verification.",
+    "longDescription": "Eight skills support planning, design interviews, offline interview forms, lean implementation, feature maps, and evidence-based verification, with generic wiki operations for project records.",
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],

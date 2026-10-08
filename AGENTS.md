@@ -1,6 +1,6 @@
 # jstack development
 
-This plugin contains seven cooperating skills: grill-me, grill-form, plan, wiki, feature-map, verify-change, and maintain-verification. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules.
+This plugin contains eight skills: grill-me, grill-form, plan, wiki, feature-map, verify-change, maintain-verification, and rule-lean. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules. `rule-lean` provides independent implementation guidance and does not require a wiki workflow.
 
 The reader source is `skills/wiki/assets/_build.mjs`. Preserve its bundled licenses. `examples/wiki/` is a preserved demonstration, not this plugin's active wiki. Do not create or maintain `docs/wiki/` in jstack or add plugin-development discussions to the example. When intentionally updating the example reader, synchronize its `_build.mjs` from the asset, rebuild its HTML, and run `--check`.
 
