@@ -1,11 +1,12 @@
 # jstack
 
-A collection of nine skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Each project's Markdown wiki holds its decisions, expected behavior, and verification evidence. A bundled offline HTML reader makes those records browsable.
+A collection of ten skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Each project's Markdown wiki holds its decisions, expected behavior, and verification evidence. A bundled offline HTML reader makes those records browsable.
 
 ## Skills
 
 | Skill | Purpose |
 | --- | --- |
+| [work-until-input](skills/work-until-input/SKILL.md) | Continue authorized work autonomously and use grill-form when a consequential decision needs user input |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
 | [grill-form](skills/grill-form/SKILL.md) | Present offline interview forms with Markdown descriptions, tables, and Mermaid diagrams; collect answers and clean up temporary files |
 | [plan](skills/plan/SKILL.md) | Discuss ideas, scope, alternatives, decisions, and open questions using wiki |
@@ -25,6 +26,8 @@ Start in the project you want to work on. Ask for a design interview with `grill
 Use `rule-lean` on its own or alongside other skills for flexible guidance on KISS, YAGNI, DRY, and simplifying relevant code. It does not require a wiki workflow.
 
 Example requests:
+
+- “Use work-until-input to implement this autonomously; grill me when a consequential decision needs my input.”
 
 - “Use grill-me to clarify this feature, then record our decisions in this project's wiki.”
 - “Use grill-form to interview me through a static questionnaire.”
