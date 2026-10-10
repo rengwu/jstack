@@ -1,8 +1,8 @@
 ---
-name: work-until-input
+name: auto-to-grill
 description: Carry an authorized task forward autonomously until completion or a consequential decision requires the user's input, then use grill-form. Use when the user asks to work independently and return only when judgment or missing constraints are needed.
 ---
-# Work until input
+# Auto to grill
 
 Continue the user's authorized task through implementation, relevant verification,
 and project records. Read [jstack conventions](../../references/stack-contract.md)
