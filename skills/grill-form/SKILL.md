@@ -19,8 +19,8 @@ Follow [grill-me](../grill-me/SKILL.md) for the interview. Descriptions (`contex
    JSON
    ```
 
-2. **Present and stop.** Open the returned `url` with the OS's default browser (macOS: `open URL`; do not name a browser), or the browser the user explicitly requested. If unavailable, link the `html` path. End the turn. Do not poll or leave a running process. Keep the handoff brief; explain mechanics only if asked.
-3. **Collect on “done.”** When the user says they have submitted, run the saved `next.command` once. On `received`, run its `next.command` to save answers and clean up. On `waiting`, report that the download was not found and end the turn; retry only on user request.
+2. **Present and wait.** Open the returned `url` with the OS's default browser (macOS: `open URL`; do not name a browser), or the browser the user explicitly requested. If unavailable, link the `html` path. Use the calling workflow's wait prompt if provided; otherwise say “Say ‘done’ when you’ve finished answering” and end the turn. Do not poll or leave a running process. Keep the handoff brief; explain mechanics only if asked.
+3. **Collect on “done.”** When the user says they have submitted, run the saved `next.command` once. On `received`, run its `next.command` to save answers and clean up. On `waiting`, report that the download was not found and return to the wait prompt or end the turn; retry only on user request.
 4. **Continue.** Read the returned `record` and use those answers to continue grill-me.
 
 On `error`, read the returned `help` file. For interrupted or cancelled rounds, see [recovery](references/usage.md).

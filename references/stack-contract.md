@@ -27,7 +27,7 @@ Create folders only when used. Markdown is authoritative; HTML is a generated sn
 
 ## Ownership and scope
 
-- `auto-to-grill` carries authorized work through completion and routes consequential unresolved user decisions to `grill-form`; it does not expand scope, replace action approvals, or own a separate record format.
+- `work-until-grill` carries work through completion and routes consequential unresolved user decisions to `grill-form`; it does not expand scope, replace action approvals, or own a separate record format.
 - `grill-me` owns requested design interviews: batched questions that resolve decision prerequisites. It uses `plan` to interpret and persist accepted decisions and open questions in the target project; it does not create a parallel record system or authorize implementation.
 - `grill-form` is an optional form presentation and answer-collection layer over `grill-me`. It uses prepared offline assets and lifecycle scripts; grill-me stays unaware of it. Scripts save submitted answers as a target-wiki journal before removing temporary files; grill-me/plan interprets that journal into decisions and open questions. Explicit cancellation permits discarding an unfinished round.
 - `plan` owns planning discussions and records. It distinguishes requirements, proposals, observations, and accepted decisions and uses `wiki` for document operations.

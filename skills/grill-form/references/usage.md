@@ -1,6 +1,6 @@
 # Recovery and advanced use
 
-Normal use needs only SKILL.md and the script's returned `next.command`. When `next.when` is `user_done`, end the turn and run the command only after the user says they have submitted. No polling or background processes. Commands use Node built-ins; there is no server, package installation, or build step. `next.command` is quoted for POSIX shells; `next.argv` supplies the equivalent argument array for other runners.
+Normal use needs only SKILL.md and the script's returned `next.command`. When `next.when` is `user_done`, use the calling workflow's wait prompt or end the turn, and run the command only after the user says they have submitted. No polling or background processes. Commands use Node built-ins; there is no server, package installation, or build step. `next.command` is quoted for POSIX shells; `next.argv` supplies the equivalent argument array for other runners.
 
 ## Resume or change the download location
 
@@ -35,7 +35,7 @@ Common errors:
 | Changed answer/transcript, symlink, or unexpected session files | Preserve the files and report the conflict. Do not bypass checks or use broad deletion. |
 | Session created by an older skill version lacks a project | Preserve its answer files and recover through the previous version or an explicitly requested migration. Do not invent a destination. |
 
-Errors are JSON on stderr with exit 1. Successful results are JSON on stdout with exit 0; `waiting` means no answer was found and the process has exited. Report the missing download and end the turn.
+Errors are JSON on stderr with exit 1. Successful results are JSON on stdout with exit 0; `waiting` means no answer was found and the process has exited. Report the missing download and return to the calling workflow's wait prompt or end the turn.
 
 ## Cancel
 
