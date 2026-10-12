@@ -12,9 +12,12 @@
 <style>
 .description{margin:0 0 16px;border:1px solid #39393f;border-radius:7px;padding:12px;min-width:0}.description[hidden]{display:none}.description-toolbar{display:flex;justify-content:flex-end;margin-top:8px}.expand{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:transparent;color:#c8bcff;padding:6px}.expand:hover{background:#323039}.expand svg{display:block;width:18px;height:18px}.rich-content{overflow-x:auto;overflow-wrap:anywhere;color:#c6c6d0}.rich-content p{white-space:normal;color:inherit;margin:0 0 12px}.rich-content>:last-child{margin-bottom:0}.rich-content h1,.rich-content h2,.rich-content h3,.rich-content h4,.rich-content h5,.rich-content h6{font-size:16px;margin:16px 0 8px;line-height:1.35}.rich-content ul,.rich-content ol{padding-left:24px}.rich-content li{margin:4px 0}.rich-content a{color:#c8bcff}.rich-content blockquote{margin:12px 0;padding:0 12px;border-left:3px solid #777084}.rich-content pre{overflow-x:auto;padding:12px;background:#121215;border-radius:5px;white-space:pre;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.rich-content code{font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;background:#121215;padding:2px 4px;border-radius:3px}.rich-content pre code{padding:0;background:none}.rich-content table{border-collapse:collapse;width:max-content;min-width:100%;margin:12px 0;font-size:13px}.rich-content th,.rich-content td{padding:8px 12px;border:1px solid #45454e;text-align:left;max-width:400px}.rich-content th{background:#29292f}.rich-content th[align=center],.rich-content td[align=center]{text-align:center}.rich-content th[align=right],.rich-content td[align=right]{text-align:right}.rich-content hr{border:0;border-top:1px solid #45454e;margin:16px 0}.diagram{margin:12px 0;overflow-x:auto}.diagram svg{display:block;max-width:100%;height:auto;margin:auto}.diagram-error{color:#ff9aac;margin:0 0 6px;font-size:13px}.diagram details summary{cursor:pointer;font-size:12px;color:#c8bcff}.description.is-expanded{width:min(1100px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%);background:#202023}.description.is-expanded .diagram svg{max-width:none}.rich-content:focus-visible{outline:2px solid #ad9afa;outline-offset:3px}@media print{.description-toolbar{display:none}.description.is-expanded{width:auto;left:auto;transform:none}}
 </style>
+<style>
+header{overflow-wrap:anywhere}header h2{font-size:16px;line-height:1.4;margin:0;color:#b2b2bc;font-weight:400}.actions{display:flex;flex-wrap:wrap;gap:8px}#submit-close{background:#29292f;color:#d1c7ff;border:1px solid #45454e}
+</style>
 </head>
 <body>
-<main><h1 id="title"></h1><form id="questions"><button type="submit" id="submit" disabled>Submit answers</button><p id="message" role="status" tabindex="-1" hidden></p></form></main>
+<main><header><h1 id="project-name"></h1><h2 id="title"></h2></header><form id="questions"><div class="actions" id="actions"><button type="submit" id="submit" disabled>Submit answers</button><button type="submit" id="submit-close" disabled>Download and close form</button></div><p id="message" role="status" tabindex="-1" hidden></p></form></main>
 <noscript>Enable JavaScript to answer this offline form.</noscript>
 <script type="application/json" id="grill-data">__GRILL_FORM_DATA__</script>
 __GRILL_FORM_RENDERERS__
@@ -24,10 +27,13 @@ const state=JSON.parse(document.getElementById('grill-data').textContent);
 const questions=state.spec.questions;
 const storageKey='grill-form-'+state.sessionId;
 const form=document.getElementById('questions');
+const actions=document.getElementById('actions');
 const submit=document.getElementById('submit');
+const submitClose=document.getElementById('submit-close');
 const message=document.getElementById('message');
 const title=document.getElementById('title');
-title.textContent=state.spec.title;document.title=state.spec.title;
+document.getElementById('project-name').textContent=state.projectName;
+title.textContent=state.spec.title;document.title=state.projectName+' — '+state.spec.title;
 let answers=questions.map(q=>({questionId:q.id,choiceId:null,notes:''}));
 try{
  const draft=JSON.parse(sessionStorage.getItem(storageKey));
@@ -87,7 +93,7 @@ function description(source,number){
 }
 function complete(a){return a.choiceId==='other'?!!a.notes.trim():!!a.choiceId||!!a.notes.trim()}
 function update(){
- submit.disabled=!answers.every(complete);submit.textContent='Submit answers';message.hidden=true;
+ submit.disabled=submitClose.disabled=!answers.every(complete);submit.textContent='Submit answers';message.hidden=true;
  try{sessionStorage.setItem(storageKey,JSON.stringify(answers))}catch{}
 }
 questions.forEach((q,i)=>{
@@ -105,9 +111,9 @@ questions.forEach((q,i)=>{
  const notesLabel=element('label','Notes','notes-label');notesLabel.htmlFor='notes-'+q.id;
  const notes=element('textarea');notes.id='notes-'+q.id;notes.rows=3;notes.maxLength=12000;notes.value=answers[i].notes;notes.setAttribute('aria-label','Notes for question '+q.number);
  notes.addEventListener('input',()=>{answers[i].notes=notes.value;update()});
- fieldset.append(choices,notesLabel,notes);form.insertBefore(fieldset,submit);
+ fieldset.append(choices,notesLabel,notes);form.insertBefore(fieldset,actions);
 });
-submit.disabled=!answers.every(complete);
+submit.disabled=submitClose.disabled=!answers.every(complete);
 form.addEventListener('submit',event=>{
  event.preventDefault();
  if(!answers.every(complete))return;
@@ -118,6 +124,7 @@ form.addEventListener('submit',event=>{
   link.href=url;link.download='grill-form-'+state.sessionId+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
   submit.textContent='Download answers again';message.className='confirmation';message.textContent='Save the answer file to Downloads, then return to the conversation. This page cannot confirm receipt.';message.hidden=false;message.focus();
   try{sessionStorage.removeItem(storageKey)}catch{}
+  if(event.submitter===submitClose){message.textContent='Save the answer file to Downloads. If this tab stays open, close it after saving.';window.close();}
  }catch{message.className='error';message.textContent='Could not export your answers. Please try again.';message.hidden=false;message.focus()}
 });
 </script>

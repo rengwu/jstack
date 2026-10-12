@@ -4,9 +4,10 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {spawnSync} from 'node:child_process';
+import {spawn, spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {normalizeSpec, validateSubmission} from '../skills/grill-form/scripts/model.mjs';
+import {startPolling, pollingWindow, advancePolling} from '../skills/grill-form/scripts/polling.mjs';
 import {chrome} from './helpers/chrome.mjs';
 
 const cli = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
@@ -33,6 +34,8 @@ async function fixture(t, input = spec) {
   return {...created, state, payload, answer, downloadDir, project,
     write: (value = payload, file = answer) => fs.writeFile(file, JSON.stringify(value)),
     collect: (...args) => run(['collect', '--session', created.session, '--downloads', downloadDir, ...args]),
+    poll: () => run(['poll', '--session', created.session, '--downloads', downloadDir, '--max-wait-seconds', '1']),
+    progress: value => fs.writeFile(path.join(created.session, 'polling.json'), JSON.stringify(value)),
     cleanup: (...args) => run(['cleanup', '--session', created.session, '--downloads', downloadDir, ...args]),
     finish: (...args) => run(['finish', '--session', created.session, '--downloads', downloadDir, ...args]),
   };
@@ -49,20 +52,21 @@ test('create emits one offline HTML and one state file, with safely escaped ques
   assert.doesNotMatch(html, /<img src=x|<script>alert|<script[^>]+src=|fetch\(|XMLHttpRequest|WebSocket|__GRILL_FORM_DATA__/);
   assert.match(html, /connect-src 'none'/);
   const embedded = JSON.parse(html.match(/<script type="application\/json" id="grill-data">([\s\S]*?)<\/script>/)[1]);
+  assert.equal(embedded.projectName, path.basename(f.project));
   assert.equal(embedded.spec.title, input.title);
   assert.equal(embedded.spec.questions[0].number, 8);
   assert.match(f.url, /^file:\/\//);
 });
 
-test('collect checks once and exits without adding artifacts or scheduling an automatic retry', async t => {
+test('collect checks once and persists a stop marker without scheduling an automatic retry', async t => {
   const f = await fixture(t);
   await fs.writeFile(path.join(f.downloadDir, 'unrelated.json'), 'private');
   const result = ok(f.collect());
   assert.equal(result.status, 'waiting');
   assert.equal(result.next.when, 'user_done');
-  assert.match(result.message, /End the turn/);
+  assert.match(result.next.instruction, /End the turn/);
   assert.ok(!result.next.argv.includes('--wait-seconds'));
-  assert.equal((await fs.readdir(f.session)).length, 2);
+  assert.deepEqual((await fs.readdir(f.session)).sort(), ['form.html', 'poll.stop', 'session.json']);
   bad(f.collect('--wait-seconds', '45'), /Unknown or repeated option/);
 });
 
@@ -150,14 +154,97 @@ test('explicit cancellation removes only owned temporary data and requires a fla
   assert.equal(ok(f.cleanup('--discard')).status, 'cleaned');
 });
 
-test('created form defers collection until user completion; a later invocation receives the download', async t => {
+test('the mechanical schedule has 21 checks over 139 minutes and skips missed checks after suspension', () => {
+  let now = 1000, progress = startPolling(now);
+  const delays = [];
+  while (pollingWindow(progress, now)) {
+    const window = pollingWindow(progress, now);
+    delays.push((window.dueAt - now) / 60_000);
+    assert.ok(delays.length <= 21, 'polling must terminate');
+    now = window.dueAt;
+    progress = advancePolling(progress, now);
+  }
+  assert.deepEqual(delays, [1, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]);
+  assert.equal(delays.reduce((sum, minutes) => sum + minutes, 0), 139);
+  assert.equal(pollingWindow(startPolling(0), 139 * 60_000 + 1), null);
+  const resumed = advancePolling(startPolling(0), 5 * 60_000);
+  assert.equal(pollingWindow(resumed, 5 * 60_000).dueAt, 8 * 60_000);
+  assert.throws(() => pollingWindow({startedAt: 0, checked: 22}, 0), /Invalid polling state/);
+});
+
+test('poll owns the wait, preserves progress and command options, and checks downloads only when due', async t => {
+  const f = await fixture(t); await f.write();
+  assert.equal(f.next.when, 'now');
+  assert.equal(f.next.action, 'poll');
+  const scheduled = ok(f.poll());
+  assert.equal(scheduled.next.when, 'now');
+  assert.ok(scheduled.next.immediate.argv.includes(f.downloadDir));
+  assert.ok(scheduled.next.argv.includes('--max-wait-seconds'));
+  const progressFile = path.join(f.session, 'polling.json');
+  const progress = JSON.parse(await fs.readFile(progressFile, 'utf8'));
+  assert.equal(progress.checked, 0);
+  assert.equal(ok(f.poll()).next.when, 'now');
+  assert.deepEqual(JSON.parse(await fs.readFile(progressFile, 'utf8')), progress, 'repeated invocations must not reset the clock');
+  await assert.rejects(fs.stat(path.join(f.session, 'receipt.json')), {code: 'ENOENT'});
+  const before = Date.now();
+  await f.progress({startedAt: before - 60_000 + 500, checked: 0});
+  const received = ok(f.poll());
+  assert.ok(Date.now() - before >= 500, 'the CLI must wait for the scheduled check');
+  assert.equal(received.status, 'received');
+  assert.equal(received.next.action, 'finish');
+  assert.equal(ok(f.poll()).next.when, 'user_done');
+  assert.equal(ok(f.finish()).status, 'finished');
+});
+
+test('done cancels an in-flight poll through ordinary CLI commands and stale commands cannot restart it', async t => {
   const f = await fixture(t);
-  assert.equal(f.next.when, 'user_done');
-  assert.match(f.next.instruction, /End the turn/);
-  assert.ok(!f.next.argv.includes('--wait-seconds'));
-  assert.equal(ok(f.collect()).status, 'waiting');
+  const child = spawn(process.execPath, [cli, 'poll', '--session', f.session, '--downloads', f.downloadDir], {stdio: ['ignore', 'pipe', 'pipe']});
+  t.after(() => child.kill());
+  let stdout = '', stderr = '';
+  child.stdout.on('data', chunk => { stdout += chunk; });
+  child.stderr.on('data', chunk => { stderr += chunk; });
+  const finished = new Promise(resolve => child.on('close', status => resolve({status, stdout, stderr})));
+  const deadline = Date.now() + 3000;
+  while (!(await fs.readdir(f.session)).includes('polling.json')) {
+    assert.ok(Date.now() < deadline, 'poll should persist its progress before waiting');
+    await new Promise(resolve => setTimeout(resolve,20));
+  }
+  const before = Date.now();
+  const immediate = ok(run(f.next.immediate.argv.slice(2).concat('--downloads', f.downloadDir)));
+  assert.equal(immediate.status, 'waiting');
+  assert.equal(immediate.next.when, 'user_done');
+  assert.equal(ok(await finished).next.when, 'user_done');
+  assert.ok(Date.now() - before < 3000, 'manual collection should wake the waiting CLI promptly');
+  assert.equal(ok(f.poll()).next.when, 'user_done');
   await f.write();
   assert.equal(ok(f.collect()).status, 'received');
+  assert.equal(ok(f.finish()).status, 'finished');
+});
+
+test('an expired schedule requires manual collection even when an answer is present', async t => {
+  const f = await fixture(t); await f.write();
+  await f.progress({startedAt: Date.now() - 139 * 60_000 - 1000, checked: 0});
+  const expired = ok(f.poll());
+  assert.equal(expired.next.when, 'user_done');
+  await assert.rejects(fs.stat(path.join(f.session, 'receipt.json')), {code: 'ENOENT'});
+  assert.equal(ok(run(expired.next.argv.slice(2))).status, 'received');
+  assert.equal(ok(f.finish()).status, 'finished');
+});
+
+test('a missing scheduled download advances persisted progress and polling errors stop without deleting answers', async t => {
+  const f = await fixture(t);
+  const startedAt = Date.now() - 60_000;
+  await f.progress({startedAt, checked: 0});
+  assert.equal(ok(f.poll()).next.when, 'now');
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(f.session, 'polling.json'), 'utf8')), {startedAt, checked: 1});
+  await f.progress({startedAt: Date.now() - 60_000, checked: 0});
+  await f.write({...f.payload, sessionId: 'wrong'});
+  bad(f.poll(), /different session/);
+  await fs.stat(f.answer);
+  await f.write();
+  assert.equal(ok(f.poll()).next.when, 'user_done');
+  assert.equal(ok(f.collect()).status, 'received');
+  for (const seconds of ['0', '-1', '61', '1.5']) bad(run(['poll', '--session', f.session, '--max-wait-seconds', seconds]), /must be an integer/);
 });
 
 test('question schema enforces round boundaries and collector uses authoritative labels', () => {
@@ -288,6 +375,30 @@ test('pre-rich sessions still collect with their old digest and retain the old t
   assert.doesNotMatch(saved, /Description \(Markdown source\)/);
 });
 
+test('download-and-close exports collectible answers before the browser tab closes', {skip: !process.env.GRILL_FORM_BROWSER, timeout: 30000}, async t => {
+  const input = {title: 'Project decisions', questions: [{prompt: 'Who edits the site?', recommendation: 'Start with one owner.', options: ['One owner', 'A team']}]};
+  const f = await fixture(t, input), browser = await chrome(t);
+  await browser.command('Browser.setDownloadBehavior', {behavior: 'allow', downloadPath: f.downloadDir});
+  await browser.command('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true});
+  await browser.command('Page.navigate', {url: f.url});
+  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelector('input[type=radio]')?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.evaluate(`document.querySelector('input[type=radio]').click()`);
+  if (process.env.GRILL_FORM_SCREENSHOT) {
+    const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
+    await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.actions.png', Buffer.from(data, 'base64'));
+  }
+  // A script-opened popup is closable; the original browser-created tab may not be.
+  const html = await fs.readFile(f.html, 'utf8');
+  const opened = await browser.command('Runtime.evaluate', {expression: `globalThis.formPopup=window.open('about:blank');formPopup.document.write(${JSON.stringify(html)});formPopup.document.close();formPopup.document.querySelector('input[type=radio]').click();formPopup.document.querySelector('#submit-close').click();true`, userGesture: true});
+  assert.equal(opened.exceptionDetails, undefined);
+  const closed = await browser.evaluate(`new Promise(resolve=>{const deadline=Date.now()+5000;const check=()=>{if(formPopup.closed)resolve(true);else if(Date.now()>deadline)resolve(false);else setTimeout(check,20)};check()})`);
+  assert.equal(closed, true, 'the form tab should close');
+  const received = ok(f.collect());
+  assert.equal(received.status, 'received');
+  assert.equal(received.answers[0].choice, 'One owner');
+  assert.equal(ok(f.finish()).status, 'finished');
+});
+
 test('offline browser renders rich content, handles diagram errors, expands, and exports collectible answers', {skip: !process.env.GRILL_FORM_BROWSER, timeout: 60000}, async t => {
   const input = {title: 'Rich form browser check', questions: [{
     id: 'rich', prompt: 'Which **workflow** should we use?', recommendation: 'Review first.', options: ['Review first', 'Publish directly'],
@@ -298,6 +409,12 @@ test('offline browser renders rich content, handles diagram errors, expands, and
   await browser.command('Emulation.setDeviceMetricsOverride', {width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false});
   await browser.command('Page.navigate', {url: f.url});
   await browser.evaluate(`new Promise((resolve,reject)=>{const start=Date.now();const poll=()=>{const diagrams=[...document.querySelectorAll('.diagram')];if(diagrams.length===6&&diagrams.every(d=>d.dataset.renderState!=='pending'))resolve(true);else if(Date.now()-start>12000)reject(new Error('Diagram rendering timed out'));else setTimeout(poll,50)};poll()})`);
+  const header = await browser.evaluate(`({project:document.querySelector('header h1').textContent,round:document.querySelector('header h2').textContent,title:document.title,above:document.querySelector('header h1').getBoundingClientRect().bottom<=document.querySelector('header h2').getBoundingClientRect().top,closeDisabled:document.querySelector('#submit-close').disabled})`);
+  assert.equal(header.project, path.basename(f.project));
+  assert.equal(header.round, input.title);
+  assert.equal(header.title, path.basename(f.project) + ' — ' + input.title);
+  assert.equal(header.above, true);
+  assert.equal(header.closeDisabled, true);
   const rendered = await browser.evaluate(`({ready:document.querySelectorAll('.diagram[data-render-state=ready] svg').length,errors:document.querySelectorAll('.diagram-error').length,table:document.querySelectorAll('table tbody tr').length,bold:document.querySelector('strong')?.textContent,question:document.querySelector('legend').textContent,code:document.querySelector('code.language-js')?.textContent,injected:!!globalThis.__grillTestInjected,images:document.querySelectorAll('img').length,unsafeLinks:[...document.querySelectorAll('a[href]')].some(a=>!a.href.startsWith('https://')),fallbacks:[...document.querySelectorAll('.diagram[data-render-state=error] pre')].map(p=>p.textContent)})`);
   assert.equal(rendered.ready, 3, JSON.stringify(rendered)); assert.equal(rendered.errors, 3);
   assert.equal(rendered.table, 2); assert.equal(rendered.bold, 'review');
@@ -326,8 +443,17 @@ test('offline browser renders rich content, handles diagram errors, expands, and
     const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
     await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.mobile.png', Buffer.from(data, 'base64'));
   }
-  await browser.evaluate(`document.querySelector('input[type=radio]').click();document.querySelector('textarea').value='Synthetic browser test';document.querySelector('textarea').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#submit').click()`);
+  // Simulate a browser refusing tab closure while verifying both buttons export answers.
+  await browser.evaluate(`globalThis.closeRequests=0;window.close=()=>{globalThis.closeRequests++};document.querySelector('input[type=radio]').click();document.querySelector('textarea').value='Synthetic browser test';document.querySelector('textarea').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#submit').click()`);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`), false);
+  assert.equal(await browser.evaluate(`document.querySelector('#submit-close').disabled`), false);
+  assert.equal(await browser.evaluate(`globalThis.closeRequests`), 0);
+  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
+  await fs.stat(f.answer);
+  await fs.unlink(f.answer);
+  await browser.evaluate(`document.querySelector('#submit-close').click()`);
+  assert.equal(await browser.evaluate(`globalThis.closeRequests`), 1);
+  assert.match(await browser.evaluate(`document.querySelector('#message').textContent`), /If this tab stays open/);
   await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
   const received = ok(f.collect());
   assert.equal(received.status, 'received');
