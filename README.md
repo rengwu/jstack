@@ -1,6 +1,6 @@
 # jstack
 
-A collection of eleven skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of twelve skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 ## Skills
 
@@ -9,13 +9,14 @@ A collection of eleven skills for clarifying designs, implementing lean solution
 | [work-until-grill](skills/work-until-grill/SKILL.md) | Continue work autonomously and use grill-form when a consequential decision needs user input |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
 | [grill-form](skills/grill-form/SKILL.md) | Present offline interview forms with Markdown descriptions, tables, and Mermaid diagrams; collect answers and clean up temporary files |
+| [grill-form-concise](skills/grill-form-concise/SKILL.md) | Use grill-form with concise-writing guidance for questions and answers |
 | [plan](skills/plan/SKILL.md) | Discuss choices and keep decisions and important open questions in existing project notes |
 | [wiki](skills/wiki/SKILL.md) | Create, edit, link, validate, and render pages and attachments without prescribing their purpose |
 | [feature-map](skills/feature-map/SKILL.md) | Describe user-facing behavior, entry points, expected outcomes, and verification recipes |
 | [verify-change](skills/verify-change/SKILL.md) | Exercise the real product and record build-specific results and evidence |
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
 | [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
-| [put-it-simply](skills/put-it-simply/SKILL.md) | Simplify wordy or confusing responses while preserving important details |
+| [concise-writing](skills/concise-writing/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
 | [commit](skills/commit/SKILL.md) | Commit all changes, splitting as needed |
 
 ## Using the collection
