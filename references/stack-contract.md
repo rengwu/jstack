@@ -2,6 +2,12 @@
 
 Read this when using any jstack skill. Reuse the project's existing paths and identifiers when present; the paths below are defaults. Skills are reusable process. Product knowledge, drivers, results, and evidence live in the target repository, never in the installed plugin.
 
+## Agent and harness independence
+
+All jstack skills and workflows must be agent- and harness-agnostic. Do not overfit instructions, behavior, or implementation to a particular harness, provider, or model. Describe required capabilities and outcomes, and adapt to the actual environment's tools, permissions, and repository instructions.
+
+Mechanical helpers must use portable methods such as ordinary shell-invoked scripts and standard runtime APIs, including for waits, scheduling, state, and cancellation. Shared workflows must not require proprietary tool names, agent SDKs, model-specific prompting conventions, or one host's interaction semantics. Keep optional host discovery and packaging metadata separate from the shared workflow; the workflow must remain usable without that integration.
+
 ## Target project boundary
 
 Resolve the target project from the user's request and workspace before creating or updating records. Paths below are relative to that project, never to jstack's source or installation directory. If the target cannot be determined, ask for it before writing project content; do not substitute the plugin directory. The bundled `examples/wiki/` is a preserved demonstration, not an active project wiki or a template of project facts. Copy only the reusable reader asset when bootstrapping a real project. Plugin-authoring work may update skills, assets, and tests, but does not create an active wiki for jstack.
