@@ -1,6 +1,6 @@
 # jstack
 
-A collection of eleven skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Each project's Markdown wiki holds its decisions, expected behavior, and verification evidence. A bundled offline HTML reader makes those records browsable.
+A collection of eleven skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 ## Skills
 
@@ -9,7 +9,7 @@ A collection of eleven skills for clarifying designs, implementing lean solution
 | [work-until-grill](skills/work-until-grill/SKILL.md) | Continue work autonomously and use grill-form when a consequential decision needs user input |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
 | [grill-form](skills/grill-form/SKILL.md) | Present offline interview forms with Markdown descriptions, tables, and Mermaid diagrams; collect answers and clean up temporary files |
-| [plan](skills/plan/SKILL.md) | Discuss ideas, scope, alternatives, decisions, and open questions using wiki |
+| [plan](skills/plan/SKILL.md) | Discuss choices and keep decisions and important open questions in existing project notes |
 | [wiki](skills/wiki/SKILL.md) | Create, edit, link, validate, and render pages and attachments without prescribing their purpose |
 | [feature-map](skills/feature-map/SKILL.md) | Describe user-facing behavior, entry points, expected outcomes, and verification recipes |
 | [verify-change](skills/verify-change/SKILL.md) | Exercise the real product and record build-specific results and evidence |
@@ -38,7 +38,7 @@ Example requests:
 
 ## Separation of responsibilities
 
-`grill-me` feeds planning outcomes into `plan`; `grill-form` optionally presents its rounds without changing grill-me. Its prepared native HTML template works offline; Node scripts collect answers, save a transcript in the target wiki, and remove temporary files. The agent then interprets the transcript through grill-me/plan. It needs no server, frameworks, packages, build, or per-interview UI development. `plan`, `feature-map`, and verification workflows use `wiki` for document operations. Wiki renders generic metadata. The report checker in `verify-change` validates its own outcome vocabulary and report location; the reader does not interpret those states.
+`grill-me` feeds planning outcomes into `plan`; `grill-form` optionally presents its rounds without changing grill-me. Its prepared native HTML template works offline; Node scripts collect answers, save a transcript in an existing target wiki or temporary directory, and remove session files. The agent then interprets the transcript through grill-me/plan. It needs no server, frameworks, packages, build, or per-interview UI development. `plan` reuses existing project documentation and asks before adopting jstack wiki when none exists. `feature-map` and verification workflows use `wiki` for document operations. Wiki renders generic metadata. The report checker in `verify-change` validates its own outcome vocabulary and report location; the reader does not interpret those states.
 
 The former `planning-wiki` skill is replaced by `plan` and `wiki`. Existing project Markdown and paths can be reused. Inspect local reader customizations before upgrading the builder.
 

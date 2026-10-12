@@ -1,4 +1,4 @@
 interface:
   display_name: "Plan"
-  short_description: "Discuss ideas and preserve decisions in the wiki."
-  default_prompt: "Use $plan to develop this idea and record the outcomes in this project’s wiki."
+  short_description: "Discuss choices and keep project notes current."
+  default_prompt: "Use $plan to discuss this idea and record decisions in the project's existing notes."

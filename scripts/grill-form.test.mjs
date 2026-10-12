@@ -19,11 +19,11 @@ const spec = {title: 'Test decisions', questions: [
 const run = (args, input) => spawnSync(process.execPath, [cli, ...args], {input: input && JSON.stringify(input), encoding: 'utf8', timeout: 5000});
 const ok = r => { assert.equal(r.status, 0, r.stderr); return JSON.parse(r.stdout); };
 const bad = (r, re) => { assert.equal(r.status, 1); assert.match(r.stderr, re); };
-async function fixture(t, input = spec) {
+async function fixture(t, input = spec, createArgs = []) {
   const downloadDir = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-grill-downloads-'));
   const projectPath = path.join(downloadDir, 'project'); await fs.mkdir(projectPath);
   const project = await fs.realpath(projectPath);
-  const created = ok(run(['create', '--project', project], input));
+  const created = ok(run(['create', '--project', project, ...createArgs], input));
   t.after(async () => { await fs.rm(downloadDir, {recursive: true, force: true}); await fs.rm(created.session, {recursive: true, force: true}); });
   const state = JSON.parse(await fs.readFile(path.join(created.session, 'session.json'), 'utf8'));
   const payload = {schemaVersion: 1, sessionId: state.sessionId, specDigest: state.specDigest, answers: [
@@ -85,6 +85,31 @@ test('answers survive interrupted receipt; cleanup preserves unrelated files', a
   await assert.rejects(fs.stat(f.session), {code: 'ENOENT'});
   await assert.rejects(fs.stat(f.answer), {code: 'ENOENT'});
   assert.equal(await fs.readFile(unrelated, 'utf8'), 'keep');
+});
+
+test('temporary interviews preserve answers outside the project and clean up the session', async t => {
+  const f = await fixture(t, spec, ['--temporary']);
+  const record = path.join(await fs.realpath(os.tmpdir()), `${f.state.createdAt.slice(0, 10)}-grill-${f.state.sessionId}.md`);
+  t.after(() => fs.rm(record, {force: true}));
+  await f.write();
+  assert.equal(ok(f.collect()).status, 'received');
+  const finished = ok(f.finish());
+  assert.equal(finished.record, record);
+  assert.match(await fs.readFile(record, 'utf8'), /Preview first, then publish manually/);
+  assert.deepEqual(await fs.readdir(f.project), []);
+  await assert.rejects(fs.stat(f.session), {code: 'ENOENT'});
+  await assert.rejects(fs.stat(f.answer), {code: 'ENOENT'});
+});
+
+test('the plugin can be interviewed only in temporary mode', async t => {
+  const project = fileURLToPath(new URL('../', import.meta.url));
+  bad(run(['create', '--project', project], spec), /not the jstack plugin directory/);
+  const created = ok(run(['create', '--project', project, '--temporary'], spec));
+  t.after(() => fs.rm(created.session, {recursive: true, force: true}));
+  const state = JSON.parse(await fs.readFile(path.join(created.session, 'session.json'), 'utf8'));
+  assert.equal(state.projectName, 'jstack');
+  assert.equal(ok(run(['collect', '--session', created.session])).status, 'waiting');
+  assert.equal(ok(run(['cleanup', '--session', created.session, '--discard'])).status, 'cleaned');
 });
 
 test('wrong round, duplicate/missing questions, invalid options, and empty custom answers are rejected without deletion', async t => {

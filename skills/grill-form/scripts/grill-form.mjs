@@ -64,7 +64,7 @@ async function loadSession(input) {
   state.spec = normalizeSpec(state.spec, {richText: state.richText === true});
   if (hash(JSON.stringify(state.spec)) !== state.specDigest) fail('Session question data was modified');
   if (typeof state.project !== 'string' || !path.isAbsolute(state.project)) fail('Session has no target project; preserve it and consult references/usage.md');
-  outsidePlugin(state.project);
+  if (state.temporary !== true) outsidePlugin(state.project);
   return {root: actual, state};
 }
 async function saveJSON(file, data, exclusive = true) {
@@ -111,7 +111,7 @@ async function create(options) {
   if (!options.project) fail('Missing --project: supply the target project directory');
   const project = await fs.realpath(path.resolve(options.project));
   if (!(await fs.stat(project)).isDirectory()) fail('--project must be a directory');
-  outsidePlugin(project);
+  if (!options.temporary) outsidePlugin(project);
   let input = '';
   process.stdin.setEncoding('utf8');
   for await (const chunk of process.stdin) { input += chunk; if (input.length > 200_000) fail('Question data is too large'); }
@@ -130,7 +130,7 @@ async function create(options) {
   raw = raw.replace(rendererMarker, () => scripts.join('\n'));
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'grill-form-')));
   try {
-    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, richText: true, sessionId: randomUUID(), directory: root, project, projectName: path.basename(project), createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
+    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, richText: true, temporary: !!options.temporary, sessionId: randomUUID(), directory: root, project, projectName: path.basename(project), createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
@@ -210,8 +210,8 @@ async function finish(options) {
   if (!(await exists(path.join(root, 'receipt.json')))) fail('Collect the answers before finish');
   const {data} = await readReceipt(root, state);
   if (await fs.realpath(state.project) !== state.project) fail('Project path changed; nothing was deleted');
-  let directory = state.project;
-  for (const segment of ['docs', 'wiki', 'journal']) {
+  let directory = state.temporary === true ? await fs.realpath(os.tmpdir()) : state.project;
+  for (const segment of state.temporary === true ? [] : ['docs', 'wiki', 'journal']) {
     directory = path.join(directory, segment);
     if (!(await exists(directory))) await fs.mkdir(directory);
     const st = await fs.lstat(directory);
@@ -256,12 +256,12 @@ async function cleanup(options) {
   for (const file of files) if (await exists(file.path)) await fs.unlink(file.path);
   for (const n of names) await fs.unlink(path.join(root, n));
   await fs.rmdir(root);
-  output(options.record ? {status: 'finished', record: options.record, next: {action: 'interpret', instruction: 'Use the saved transcript with grill-me. Update accepted decisions and open questions in the target wiki, link this journal, then build/check the wiki.'}} : {status: 'cleaned', session: root});
+  output(options.record ? {status: 'finished', record: options.record, next: {action: 'interpret', instruction: state.temporary === true ? 'Use the temporary transcript with grill-me/plan. Follow the project record rules; do not initialize a wiki automatically.' : 'Use the saved transcript with grill-me. Update accepted decisions and open questions in the target wiki, link this journal, then build/check the wiki.'}} : {status: 'cleaned', session: root});
 }
 
 const [command, ...args] = process.argv.slice(2);
 const allowedOptions = {
-  create: new Set(['input', 'project']),
+  create: new Set(['input', 'project', 'temporary']),
   collect: new Set(['session', 'answer', 'downloads']),
   poll: new Set(['session', 'answer', 'downloads', 'max-wait-seconds']),
   finish: new Set(['session', 'downloads']),
@@ -274,7 +274,7 @@ try {
     const flag = args.shift();
     if (!flag.startsWith('--') || !allowedOptions[command].has(flag.slice(2)) || Object.hasOwn(options, flag.slice(2))) fail(`Unknown or repeated option: ${flag}`);
     const key = flag.slice(2);
-    if (key === 'discard') options[key] = true;
+    if (key === 'discard' || key === 'temporary') options[key] = true;
     else { const value = args.shift(); if (!value || value.startsWith('--')) fail(`Missing value for ${flag}`); options[key] = value; }
   }
   await ({create, collect, poll, finish, cleanup}[command])(options);

@@ -6,7 +6,7 @@ description: Supplement grill-me with an HTML questionnaire for presenting quest
 
 Follow [grill-me](../grill-me/SKILL.md) for the interview. Descriptions (`context`) may use Markdown, tables, code blocks, and Mermaid when useful; for rich content, read [authoring](references/authoring.md). Present each round through this form:
 
-1. **Create.** Replace `SKILL_DIR` with this skill's absolute directory, `PROJECT_DIR` with the existing target project, and the example below with the round's questions. The form shows the project folder's name above the round title.
+1. **Create.** Replace `SKILL_DIR` with this skill's absolute directory, `PROJECT_DIR` with the existing target project, and the example below with the round's questions. The form shows the project folder's name above the round title. Add `--temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when project records are prohibited, as in jstack development.
 
    ```sh
    node "SKILL_DIR/scripts/grill-form.mjs" create --project "PROJECT_DIR" <<'JSON'
@@ -23,4 +23,4 @@ Follow [grill-me](../grill-me/SKILL.md) for the interview. Descriptions (`contex
 3. **Collect and stop polling.** When the user says “done,” run `next.immediate.command` once (or `next.command` if already waiting for `user_done`). This stops polling and checks immediately. On `received`, run its `next.command` to save answers and clean up. On `waiting`, follow the returned next action. When `next.when` is `user_done`, report that no download was found and end the turn; check again only on user request. On `stopped`, the session was already finished or discarded; stop running commands. On `error`, read the returned `help` file. Do not restart polling.
 4. **Continue.** Read the returned `record` and use those answers to continue grill-me.
 
-For interrupted or cancelled rounds, see [recovery](references/usage.md).
+Temporary transcripts stay outside the project; plan applies the project's rules when recording decisions. For interrupted or cancelled rounds, see [recovery](references/usage.md).

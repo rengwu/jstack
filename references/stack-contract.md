@@ -14,6 +14,8 @@ Resolve the target project from the user's request and workspace before creating
 
 ## Shared record
 
+Planning reuses the project's existing notes, docs, or wiki. The layout below applies when using jstack wiki; plan asks before adopting it when no documentation system exists.
+
 ```text
 docs/wiki/
   index.md
@@ -35,8 +37,8 @@ Create folders only when used. Markdown is authoritative; HTML is a generated sn
 
 - `work-until-grill` carries work through completion and routes consequential unresolved user decisions to `grill-form`; it does not expand scope, replace action approvals, or own a separate record format.
 - `grill-me` owns requested design interviews: batched questions that resolve decision prerequisites. It uses `plan` to interpret and persist accepted decisions and open questions in the target project; it does not create a parallel record system or authorize implementation.
-- `grill-form` is an optional form presentation and answer-collection layer over `grill-me`. It uses prepared offline assets and lifecycle scripts; grill-me stays unaware of it. Scripts save submitted answers as a target-wiki journal before removing temporary files; grill-me/plan interprets that journal into decisions and open questions. Explicit cancellation permits discarding an unfinished round.
-- `plan` owns planning discussions and records. It distinguishes requirements, proposals, observations, and accepted decisions and uses `wiki` for document operations.
+- `grill-form` is an optional form presentation and answer-collection layer over `grill-me`. It uses prepared offline assets and lifecycle scripts; grill-me stays unaware of it. Scripts save submitted answers as a journal in an existing target wiki or a temporary transcript before removing session files; grill-me/plan interprets that transcript into decisions and open questions. Explicit cancellation permits discarding an unfinished round.
+- `plan` owns planning discussions and records in the project's existing documentation. It distinguishes requirements, proposals, observations, and accepted decisions and uses `wiki` for document operations when the project uses jstack wiki.
 - `wiki` owns generic page operations, navigation, attachment handling, structural validation, and rendering. It does not define content workflows or interpret domain metadata. Other skills use it directly without starting a planning workflow.
 - `feature-map` owns feature descriptions and verification recipes. It records intended behavior and separately labels observed or unresolved behavior.
 - `verify-change` owns verification setup, any needed project-local drivers, run reports, and evidence. Verification alone does not authorize product fixes, commits, merges, deployments, or external messages. Continue fixes when the enclosing task already authorizes them.

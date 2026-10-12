@@ -30,11 +30,13 @@ The static form cannot notify an ended agent turn or confirm receipt. Browser do
 
 ## Finish
 
+Use `create --project PROJECT_DIR --temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when repository instructions prohibit project records. The project still supplies the form header, but `finish` saves the verified transcript in the OS temporary directory and creates no project files. This mode also supports interviews about jstack itself. Interpret the transcript through plan: reuse existing project documentation and ask before adopting jstack wiki when none exists. For jstack development, keep the discussion in the conversation. The transcript remains after session cleanup, but OS cleanup may eventually remove it.
+
 ```sh
 node SKILL_DIR/scripts/grill-form.mjs finish --session SESSION_DIR
 ```
 
-Finish requires a collected receipt. It writes and rereads a transcript at `PROJECT/docs/wiki/journal/DATE-grill-SESSION_ID.md` before cleanup. The transcript records submitted answers, not accepted decisions; grill-me/plan must interpret it, link it into the wiki, and build/check the reader. Use this journal as the round's source rather than creating another raw-answer record.
+Finish requires a collected receipt. Without `--temporary` at creation, it writes and rereads a transcript at `PROJECT/docs/wiki/journal/DATE-grill-SESSION_ID.md` before cleanup. The transcript records submitted answers, not accepted decisions; grill-me/plan must interpret it, link it into the wiki, and build/check the reader. Use this journal as the round's source rather than creating another raw-answer record.
 
 Matching answer downloads, the temporary HTML, session state, and receipt are then removed. Unrelated downloads remain untouched. A retry reuses an identical transcript; an edited transcript stops cleanup so no newer work is overwritten. Validation failures can leave a saved transcript and the original temporary files intact.
 
