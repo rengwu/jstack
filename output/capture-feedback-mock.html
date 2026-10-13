@@ -1,0 +1,205 @@
+<div id="jstack-feedback-preview">
+  <div class="viz-dotted-background">
+    <section class="fb-stage" aria-label="Compact feedback window prototype">
+      <canvas class="fb-desktop" role="img" aria-label="Sample desktop. Click Capture and drag a rectangle over this app."></canvas>
+      <section class="fb-window" aria-label="Feedback" role="region">
+        <header class="fb-titlebar">
+          <button type="button" class="fb-close cursor-interaction" aria-label="Close and keep draft" data-action="close"><i data-lucide="x" aria-hidden="true"></i></button>
+          <span>Feedback</span>
+        </header>
+        <div class="fb-list" aria-label="Screenshots and feedback"></div>
+        <footer class="fb-toolbar">
+          <button type="button" class="fb-button cursor-interaction" data-action="capture">Capture</button>
+          <button type="button" class="fb-button fb-default cursor-interaction" data-action="submit">Submit</button>
+        </footer>
+      </section>
+      <div class="fb-capture-layer" hidden>
+        <div class="fb-capture-hint"><span>Drag to capture</span><button type="button" class="fb-cancel cursor-interaction" data-action="cancel">Cancel <kbd>esc</kbd></button></div>
+        <div class="fb-selection" hidden></div>
+      </div>
+      <div class="fb-toast" role="status" aria-label="Submission notification" hidden>
+        <i data-lucide="check" aria-hidden="true"></i>
+        <div><strong data-toast-title>Feedback saved</strong><p data-toast-message>Type done in your agent conversation.</p></div>
+      </div>
+      <span class="fb-live" aria-live="polite"></span>
+      <span class="fb-color-probe" aria-hidden="true"></span>
+    </section>
+  </div>
+  <div id="fb-preview-controls">
+    <span class="text-small text-muted">Mock desktop</span>
+    <div class="viz-row">
+      <button type="button" class="btn btn-ghost" id="fb-sample" hidden>Use sample region</button>
+      <button type="button" class="btn btn-ghost" id="fb-reopen" hidden>Reopen draft</button>
+      <button type="button" class="btn btn-ghost" id="fb-restart">Restart preview</button>
+    </div>
+  </div>
+</div>
+<style>
+  #jstack-feedback-preview { width:100%; max-width:900px; margin:0 auto; }
+  #fb-preview-controls { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:8px; }
+  #jstack-feedback-preview [hidden] { display:none !important; }
+  #jstack-feedback-preview .fb-stage {
+    --fb-ink:light-dark(#232323,#eee); --fb-muted:light-dark(#737373,#aaa);
+    --fb-surface:light-dark(#f0f0f0,#303030); --fb-content:light-dark(#fff,#242424);
+    --fb-line:light-dark(#d7d7d7,#444); --fb-control:light-dark(#fff,#555);
+    --fb-control-line:light-dark(#c8c8c8,#666); --fb-blue:light-dark(#007aff,#0a84ff);
+    --fb-white:#fff; --fb-shadow:light-dark(#00000024,#00000060);
+    --fb-desktop:light-dark(#e0e3e6,#202326); --fb-paper:light-dark(#fefefd,#292a2b);
+    --fb-sidebar:light-dark(#ededec,#252627); --fb-chrome:light-dark(#f5f5f3,#323334);
+    --fb-dim:light-dark(#00000020,#00000050);
+    position:relative; width:100%; min-height:550px; isolation:isolate;
+    font:13px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+    color:var(--fb-ink); overflow:hidden; border-radius:10px;
+  }
+  #jstack-feedback-preview .fb-stage * { box-sizing:border-box; }
+  #jstack-feedback-preview .fb-stage button { font:inherit; }
+  #jstack-feedback-preview .fb-stage svg { width:14px; height:14px; flex:none; }
+  #jstack-feedback-preview .fb-desktop { position:absolute; inset:0; width:100%; height:100%; }
+  #jstack-feedback-preview .fb-window {
+    position:absolute; right:24px; bottom:28px; width:376px; max-width:calc(100% - 32px);
+    max-height:calc(100% - 56px); display:flex; flex-direction:column; z-index:3;
+    background:var(--fb-surface); border:1px solid var(--fb-control-line); border-radius:9px;
+    box-shadow:0 14px 38px var(--fb-shadow),0 2px 7px var(--fb-shadow); overflow:hidden;
+  }
+  #jstack-feedback-preview .fb-titlebar {
+    height:30px; flex:none; display:flex; justify-content:center; align-items:center;
+    position:relative; border-bottom:1px solid var(--fb-line); font-size:12px; font-weight:600;
+    user-select:none; cursor:move;
+  }
+  #jstack-feedback-preview .fb-close {
+    position:absolute; left:11px; top:9px; width:12px; height:12px; border-radius:50%;
+    border:1px solid light-dark(#b4b4b4,#707070); background:light-dark(#d7d7d7,#656565);
+    color:light-dark(#555,#ccc); padding:1px; display:grid; place-items:center;
+  }
+  #jstack-feedback-preview .fb-close svg { width:8px; height:8px; }
+  #jstack-feedback-preview .fb-close:hover { background:#ff5f57; border-color:#e0443e; color:#63110c; }
+  #jstack-feedback-preview .fb-list { min-height:106px; max-height:330px; overflow:auto; background:var(--fb-content); }
+  #jstack-feedback-preview .fb-row { display:grid; grid-template-columns:76px minmax(0,1fr) 20px; gap:8px; align-items:start; padding:12px 10px; }
+  #jstack-feedback-preview .fb-row + .fb-row { border-top:1px solid var(--fb-line); }
+  #jstack-feedback-preview .fb-thumbnail { display:block; width:76px; height:62px; object-fit:contain; background:var(--fb-surface); border:1px solid var(--fb-line); border-radius:3px; }
+  #jstack-feedback-preview .fb-note {
+    display:block; width:100%; min-height:64px; padding:2px 3px; margin:0; border:0; border-radius:2px;
+    resize:none; color:var(--fb-ink); background:transparent; overflow:hidden;
+    font:13px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  }
+  #jstack-feedback-preview .fb-note::placeholder { color:var(--fb-muted); }
+  #jstack-feedback-preview .fb-remove { width:20px; height:24px; display:grid; place-items:center; padding:2px; border:0; background:transparent; color:var(--fb-muted); }
+  #jstack-feedback-preview .fb-remove:hover { color:var(--fb-ink); }
+  #jstack-feedback-preview .fb-empty { padding:36px 18px; text-align:center; color:var(--fb-muted); }
+  #jstack-feedback-preview .fb-toolbar { flex:none; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; border-top:1px solid var(--fb-line); }
+  #jstack-feedback-preview .fb-button { min-width:74px; min-height:25px; padding:2px 13px; border:1px solid var(--fb-control-line); border-radius:5px; background:var(--fb-control); color:var(--fb-ink); box-shadow:0 1px 1px light-dark(#0000000c,#00000018); }
+  #jstack-feedback-preview .fb-button:active { filter:brightness(.94); }
+  #jstack-feedback-preview .fb-default { background:var(--fb-blue); border-color:var(--fb-blue); color:var(--fb-white); }
+  #jstack-feedback-preview .fb-default:disabled { background:var(--fb-surface); border-color:var(--fb-line); color:var(--fb-muted); box-shadow:none; opacity:.65; }
+  #jstack-feedback-preview .fb-capture-layer { position:absolute; inset:0; z-index:5; background:var(--fb-dim); cursor:crosshair; touch-action:none; }
+  #jstack-feedback-preview .fb-capture-hint { position:absolute; left:50%; top:42px; transform:translateX(-50%); display:flex; align-items:center; gap:20px; padding:8px 12px; background:var(--fb-surface); border:1px solid var(--fb-line); border-radius:7px; box-shadow:0 3px 10px var(--fb-shadow); white-space:nowrap; font-size:12px; }
+  #jstack-feedback-preview .fb-cancel { border:0; padding:0; color:var(--fb-muted); background:transparent; }
+  #jstack-feedback-preview kbd { margin-left:3px; font:11px -apple-system,BlinkMacSystemFont,sans-serif; }
+  #jstack-feedback-preview .fb-selection { position:absolute; border:1px solid var(--fb-blue); box-shadow:0 0 0 1px #ffffffb3; pointer-events:none; }
+  #jstack-feedback-preview .fb-toast { position:absolute; bottom:28px; right:24px; max-width:calc(100% - 32px); display:flex; align-items:center; gap:10px; padding:12px 16px; border:1px solid var(--fb-control-line); border-radius:9px; background:var(--fb-surface); box-shadow:0 6px 22px var(--fb-shadow); z-index:3; pointer-events:none; }
+  #jstack-feedback-preview [data-toast-title] { font-size:13px; font-weight:600; }
+  #jstack-feedback-preview .fb-toast p { margin:2px 0 0; font-size:12px; color:var(--fb-muted); }
+  #jstack-feedback-preview .fb-live,#jstack-feedback-preview .fb-color-probe { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
+  @media(max-width:460px) {
+    #jstack-feedback-preview .fb-window,#jstack-feedback-preview .fb-toast { right:16px; }
+    #jstack-feedback-preview .fb-row { grid-template-columns:62px minmax(0,1fr) 20px; gap:6px; padding:10px 8px; }
+    #jstack-feedback-preview .fb-thumbnail { width:62px; height:58px; }
+    #jstack-feedback-preview .fb-note { font-size:12px; }
+    #fb-preview-controls { align-items:flex-start; flex-wrap:wrap; }
+  }
+  @media(pointer:coarse) {
+    #jstack-feedback-preview .fb-button { min-height:44px; }
+    #jstack-feedback-preview .fb-remove { width:28px; height:44px; }
+    #jstack-feedback-preview .fb-row { grid-template-columns:62px minmax(0,1fr) 28px; }
+    #jstack-feedback-preview .fb-note { font-size:16px; }
+    #jstack-feedback-preview .fb-close::before { content:""; position:absolute; width:44px; height:44px; }
+  }
+</style>
+<script>
+(() => {
+  const root=document.getElementById('jstack-feedback-preview');
+  const $=selector=>root.querySelector(selector);
+  const stage=$('.fb-stage'), panel=$('.fb-window'), list=$('.fb-list');
+  const canvas=$('.fb-desktop'), ctx=canvas.getContext('2d');
+  const layer=$('.fb-capture-layer'), selection=$('.fb-selection');
+  const config={automaticResume:false};
+  let items=[], mode='idle', submittedAt=0, serial=2, revision=0, toastTimer, start=null, drag=null;
+  let lastWidth=0, lastHeight=0;
+  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const icons=()=>{if(globalThis.lucide)globalThis.lucide.createIcons({attrs:{width:14,height:14}});};
+  function color(name){const probe=$('.fb-color-probe');probe.style.color=`var(--fb-${name})`;return getComputedStyle(probe).color;}
+  function round(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+  function text(value,x,y,size=13,weight=400,fill=color('ink')){ctx.fillStyle=fill;ctx.font=`${weight} ${size}px -apple-system,BlinkMacSystemFont,sans-serif`;ctx.fillText(value,x,y);}
+  function drawDesktop(){
+    const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+    const scale=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*scale);canvas.height=Math.round(h*scale);ctx.setTransform(scale,0,0,scale,0,0);
+    ctx.fillStyle=color('desktop');ctx.fillRect(0,0,w,h);ctx.fillStyle=color('chrome');ctx.fillRect(0,0,w,27);
+    text('Paper',20,18,12,600);text('File',77,18,12);text('Edit',112,18,12);text('View',149,18,12);text('9:41',w-48,18,11,400,color('muted'));
+    const x=w>600?28:16,y=60,ww=w-x*2,wh=366,side=w>540?136:0;
+    ctx.save();ctx.shadowColor=color('shadow');ctx.shadowBlur=18;ctx.shadowOffsetY=5;round(x,y,ww,wh,9,color('paper'));ctx.restore();
+    ctx.save();ctx.beginPath();ctx.roundRect(x,y,ww,wh,9);ctx.clip();ctx.fillStyle=color('sidebar');ctx.fillRect(x,y,side||ww,side?wh:42);ctx.fillStyle=color('chrome');ctx.fillRect(x+side,y,ww-side,42);
+    ['#ec6a5e','#f4bf50','#62c654'].forEach((c,i)=>{ctx.beginPath();ctx.fillStyle=c;ctx.arc(x+17+i*17,y+20,5,0,Math.PI*2);ctx.fill();});
+    const left=x+side+24,content=ww-side-48;
+    if(side){text('WORKSPACE',x+17,y+66,10,500,color('muted'));round(x+8,y+77,side-16,28,5,color('line'));text('Quick notes',x+18,y+96,12,500);text('Product ideas',x+18,y+133,12,400,color('muted'));text('Archive',x+18,y+168,12,400,color('muted'));}
+    text('Quick notes',side?left:x+82,y+25,12,500);text('Today, 9:41 AM',left,y+76,11,400,color('muted'));text('A small tool, one job.',left,y+112,w<400?19:22,600);text('Capture an idea while it is in front of you.',left,y+143,w<400?11:13,400,color('muted'));
+    ctx.strokeStyle=color('line');ctx.beginPath();ctx.moveTo(left,y+167);ctx.lineTo(left+content,y+167);ctx.stroke();text('The feedback loop',left,y+198,14,500);
+    ['Select something on screen','Say what should change','Send the whole batch'].forEach((line,i)=>{const yy=y+229+i*32;round(left,yy-11,12,12,3,i===0?color('muted'):color('line'));if(i===0)text('✓',left+1,yy-1,10,600,color('paper'));text(line,left+23,yy,w<400?12:13,400,i===0?color('muted'):color('ink'));});
+    text('Edited just now',left,y+347,10,400,color('muted'));ctx.restore();lastWidth=w;lastHeight=h;
+  }
+  function sampleRect(y,h){const w=stage.clientWidth,inset=w>600?28:16,side=w>540?136:0,left=inset+side+16;return{x:left/w,y:y/stage.clientHeight,w:Math.min(350,w-inset-left-8)/w,h:h/stage.clientHeight};}
+  function crop(rect){const out=document.createElement('canvas');out.width=Math.max(1,Math.round(rect.w*canvas.width));out.height=Math.max(1,Math.round(rect.h*canvas.height));out.getContext('2d').drawImage(canvas,Math.round(rect.x*canvas.width),Math.round(rect.y*canvas.height),out.width,out.height,0,0,out.width,out.height);return out.toDataURL('image/png');}
+  function samples(){return[{id:1,rect:sampleRect(140,75),note:'Give the heading more space.'},{id:2,rect:sampleRect(273,90),note:'Make completed items easier to distinguish.'}].map(item=>({...item,image:crop(item.rect)}));}
+  function persist(){
+    revision=Math.max(Date.now(),revision+1);
+    const state={modelContent:{prototype:'Single compact feedback window',stage:mode,automaticResume:config.automaticResume,captureCount:items.length,feedback:items.slice(-3).map(i=>i.note.slice(0,300))},privateContent:{version:3,revision,mode,submittedAt,auto:config.automaticResume,items:items.map(({image,...item})=>item)}};
+    if(new TextEncoder().encode(JSON.stringify(state)).length>15000)state.privateContent=null;
+    if(window.openai?.setWidgetState)window.openai.setWidgetState(state).catch(()=>{});
+  }
+  function restore(snapshot){
+    if(snapshot?.version!==3||!Array.isArray(snapshot.items))return false;
+    items=snapshot.items.filter(i=>typeof i.note==='string'&&i.rect&&['x','y','w','h'].every(k=>Number.isFinite(i.rect[k]))).slice(0,30);
+    serial=Math.max(2,...items.map(i=>i.id||0));mode=['idle','capture','submitted','finished','closed'].includes(snapshot.mode)?snapshot.mode:'idle';submittedAt=snapshot.submittedAt||0;revision=snapshot.revision||0;config.automaticResume=!!snapshot.auto;return true;
+  }
+  function fit(field){field.style.height='0px';field.style.height=`${Math.max(64,field.scrollHeight)}px`;}
+  function updateSubmit(){$('[data-action="submit"]').disabled=!items.length||items.some(i=>!i.note.trim());}
+  function render(){
+    clearTimeout(toastTimer);
+    if(mode==='submitted'){const remaining=5000-(Date.now()-submittedAt);if(remaining<=0)mode='finished';else toastTimer=setTimeout(()=>change('finished'),remaining);}
+    panel.hidden=mode!=='idle';layer.hidden=mode!=='capture';$('.fb-toast').hidden=mode!=='submitted';$('#fb-sample').hidden=mode!=='capture';$('#fb-reopen').hidden=mode!=='closed';
+    list.innerHTML=items.length?items.map((item,index)=>`<div class="fb-row"><img class="fb-thumbnail" src="${item.image||crop(item.rect)}" alt="Selected screenshot region"><textarea class="fb-note" data-id="${item.id}" aria-label="Feedback for screenshot ${index+1}" rows="3" maxlength="2000" placeholder="What should change?">${escape(item.note)}</textarea><button type="button" class="fb-remove cursor-interaction" data-action="remove" data-id="${item.id}" aria-label="Remove screenshot ${index+1}"><i data-lucide="trash-2" aria-hidden="true"></i></button></div>`).join(''):'<div class="fb-empty">Capture a region to leave feedback.</div>';
+    if(!panel.hidden)list.querySelectorAll('textarea').forEach(fit);updateSubmit();
+    $('[data-toast-title]').textContent=config.automaticResume?'Feedback submitted':'Feedback saved';
+    $('[data-toast-message]').innerHTML=config.automaticResume?'Ready for your agent.':'Type <strong>done</strong> in your agent conversation.';icons();
+  }
+  function change(next){if(next==='submitted')submittedAt=Date.now();mode=next;render();persist();}
+  function capture(rect){const item={id:++serial,rect,note:'',image:crop(rect)};items.push(item);selection.hidden=true;change('idle');const field=list.querySelector(`[data-id="${item.id}"]`);field.focus();field.scrollIntoView({block:'nearest'});$('.fb-live').textContent='Screenshot added. Enter feedback.';}
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
+    const action=button.dataset.action;
+    if(action==='capture'){selection.hidden=true;change('capture');}
+    if(action==='cancel'){start=null;selection.hidden=true;change('idle');}
+    if(action==='close')change('closed');
+    if(action==='remove'){items=items.filter(i=>i.id!==Number(button.dataset.id));render();persist();$('.fb-live').textContent='Screenshot removed.';}
+    if(action==='submit'&&items.length&&items.every(i=>i.note.trim()))change('submitted');
+  });
+  list.addEventListener('input',event=>{if(!event.target.matches('textarea'))return;const item=items.find(i=>i.id===Number(event.target.dataset.id));if(item)item.note=event.target.value;fit(event.target);updateSubmit();persist();});
+  $('#fb-sample').addEventListener('click',()=>capture(sampleRect(140,75)));
+  $('#fb-reopen').addEventListener('click',()=>change('idle'));
+  $('#fb-restart').addEventListener('click',()=>{items=samples();serial=2;start=null;submittedAt=0;selection.hidden=true;panel.style.left='';panel.style.top='';panel.style.right='';panel.style.bottom='';change('idle');});
+  function point(event){const box=stage.getBoundingClientRect();return{x:Math.max(0,Math.min(box.width,event.clientX-box.left)),y:Math.max(0,Math.min(box.height,event.clientY-box.top))};}
+  layer.addEventListener('pointerdown',event=>{if(event.target.closest('button')||event.button!==0)return;event.preventDefault();start=point(event);layer.setPointerCapture(event.pointerId);selection.hidden=false;Object.assign(selection.style,{left:`${start.x}px`,top:`${start.y}px`,width:'0px',height:'0px'});});
+  layer.addEventListener('pointermove',event=>{if(!start)return;const end=point(event);Object.assign(selection.style,{left:`${Math.min(start.x,end.x)}px`,top:`${Math.min(start.y,end.y)}px`,width:`${Math.abs(end.x-start.x)}px`,height:`${Math.abs(end.y-start.y)}px`});});
+  layer.addEventListener('pointerup',event=>{if(!start)return;const end=point(event),begin=start;start=null;if(layer.hasPointerCapture(event.pointerId))layer.releasePointerCapture(event.pointerId);if(Math.abs(end.x-begin.x)<12||Math.abs(end.y-begin.y)<12){selection.hidden=true;return;}capture({x:Math.min(begin.x,end.x)/stage.clientWidth,y:Math.min(begin.y,end.y)/stage.clientHeight,w:Math.abs(end.x-begin.x)/stage.clientWidth,h:Math.abs(end.y-begin.y)/stage.clientHeight});});
+  layer.addEventListener('pointercancel',()=>{start=null;selection.hidden=true;});
+  const titlebar=$('.fb-titlebar');
+  titlebar.addEventListener('pointerdown',event=>{if(event.target.closest('button')||event.button!==0)return;event.preventDefault();const box=panel.getBoundingClientRect(),base=stage.getBoundingClientRect();drag={x:event.clientX,y:event.clientY,left:box.left-base.left,top:box.top-base.top};titlebar.setPointerCapture(event.pointerId);});
+  titlebar.addEventListener('pointermove',event=>{if(!drag)return;const left=Math.max(0,Math.min(stage.clientWidth-panel.offsetWidth,drag.left+event.clientX-drag.x)),top=Math.max(0,Math.min(stage.clientHeight-panel.offsetHeight,drag.top+event.clientY-drag.y));Object.assign(panel.style,{left:`${left}px`,top:`${top}px`,right:'auto',bottom:'auto'});});
+  titlebar.addEventListener('pointerup',()=>{drag=null;});titlebar.addEventListener('pointercancel',()=>{drag=null;});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&mode==='capture'){start=null;selection.hidden=true;change('idle');}if((event.metaKey||event.ctrlKey)&&event.key==='Enter'&&mode==='idle'){event.preventDefault();$('[data-action="submit"]').click();}});
+  drawDesktop();if(!restore(window.openai?.widgetState?.privateContent))items=samples();render();
+  new ResizeObserver(()=>{if(stage.clientWidth!==lastWidth||stage.clientHeight!==lastHeight){drawDesktop();list.querySelectorAll('textarea').forEach(fit);}}).observe(stage);
+  const appearance=new MutationObserver(drawDesktop);appearance.observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawDesktop);
+  window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState?.privateContent;if(snapshot?.version===3&&snapshot.revision>revision&&restore(snapshot))render();});
+  if(globalThis.Tweak){const tweak=new Tweak({container:stage,onChange:()=>{render();persist();}});tweak.addToggle(config,'automaticResume',{label:'Agent resumes automatically'});}
+})();
+</script>
