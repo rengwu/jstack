@@ -51,7 +51,7 @@ else require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.a
         answers: [{questionId: 'q1', choiceId: 'option1', notes: 'Synthetic answer'}]}));
     } else {
       const batch = JSON.parse(await fs.readFile(path.join(session, 'batch.json'), 'utf8')), id = randomUUID();
-      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=', 'base64');
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsPInvYLYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BbQHKU9LC7/CP1AAAAABJRU5ErkJggg==', 'base64');
       await fs.writeFile(path.join(session, id + '.png'), png);
       batch.items = [{id, image: id + '.png', feedback: 'Synthetic capture feedback'}]; batch.status = 'submitted';
       await fs.writeFile(path.join(session, '.batch.next'), JSON.stringify(batch));

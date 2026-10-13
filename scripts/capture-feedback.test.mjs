@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
 const binary = fileURLToPath(new URL('../skills/capture-feedback/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=', 'base64');
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsPInvYLYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BbQHKU9LC7/CP1AAAAABJRU5ErkJggg==', 'base64');
 const macTest = (name, fn) => test(name, {skip: process.platform !== 'darwin'}, fn);
 const run = (...args) => spawnSync(binary, args, {encoding:'utf8', timeout:5000});
 const ok = result => { assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
