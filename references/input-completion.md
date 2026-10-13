@@ -4,19 +4,28 @@ Both skills expose `wait.command`: one local process stays silent until submissi
 
 The default local deadline is one hour; `--timeout-seconds N` accepts 1–86400. Shorten it to fit the host's tool limit. Timeout, manual collection, or interruption never deletes the submission and never starts another wait. Closing the capture panel keeps its draft; a local waiter can still receive it if reopened and submitted before its deadline.
 
-## Optional delivery helper
+## Optional delivery
 
-`completion.command` runs the shared Node helper:
+`completion.command` runs the collector's `complete --session SESSION_DIR` command. A shared Node launcher checks for a notification adapter, starts that collector's `wait`, and exits after its startup acknowledgement. Only the collector remains running. The launcher knows nothing about either skill's files or submission format. It uses Node built-ins: no server, packages, account setup, or resident service.
 
-```sh
-node PLUGIN_DIR/scripts/input-completion.mjs start --session SESSION_DIR
-```
+Each collector exclusively creates one `.wait` file to prevent duplicate attempts. It holds only the latest status: waiting, stopped, timed_out, received, notified, or failed. Manual collection stops the waiter. Original submissions and receipts remain authoritative; delivery does not save another copy of the answers. Old session markers are recognized to prevent accidental restarts after an upgrade.
 
-It detects the session kind, starts its existing collector once, and sends one notice when it receives a valid submission. Node built-ins only: no server, packages, account setup, or persistent service. An exclusive `completion.json` in the session prevents duplicate attempts and records completion or delivery failure. Read it only for recovery, not as an agent polling loop. `armed` confirms the waiter was launched, not that future delivery is guaranteed. `fallback` means no new waiter was launched; its reason distinguishes missing adapter support from an existing attempt.
+`armed` confirms the collector started, not that future delivery is guaranteed. `fallback` means no waiter started; its reason distinguishes an unavailable adapter from an existing attempt. An error or failed notification preserves the session for manual collection. The status file is for recovery, not agent polling.
 
-The bundled optional adapter uses `CODEX_THREAD_ID` and an installed `codex queue --thread ... --message ...` command. It probes CLI support before launching; older versions remain usable through the other routes. It targets the exact originating conversation and never searches for a latest thread. A notice contains the session path, not the answers; the resumed agent collects and validates them normally.
+The bundled optional adapter uses `CODEX_THREAD_ID` and an installed `codex queue --thread ... --message ...` command. It probes CLI support before launching; older versions remain usable through the other routes. It targets the exact originating conversation and never searches for a latest thread. The short notice, `capture-feedback ready: SESSION_PATH` or `grill-form ready: SESSION_PATH`, identifies the saved submission. The resumed agent collects and validates it normally.
 
-Other integrations can pass `--notify JSON_ARGV`; an argument exactly equal to `{message}` is replaced with the notice. Arguments are executed directly, never interpreted as shell code. This extension is optional; do not make the user install an integration. `--downloads` and `--answer` preserve grill-form's custom download location, and `--timeout-seconds` overrides the local deadline. A failed notifier is not retried: the original session remains collectible with “done.”
+Internally, the launcher passes the adapter's argument array through `wait --notify JSON_ARGV`; the collector replaces an argument exactly equal to `{message}` and executes it without a shell. `complete` and `wait` both accept `--timeout-seconds`; grill-form also accepts `--downloads` or `--answer` for a custom answer location.
+
+## Waiting cost
+
+Measured on Apple Silicon on 2026-10-13 with Node 22.19.0, disposable drafts, a stub notification adapter, and the UI closed. Each value is one idle `ps` RSS sample, not a benchmark across machines.
+
+| Collector | Before | After |
+| --- | --- | --- |
+| capture-feedback | 2 processes, 48.7 MiB | 1 process, 9.6 MiB |
+| grill-form | 2 processes, 84.1 MiB | 1 process, 43.8 MiB |
+
+The universal native executable remains about 250 KiB. Removing the resident launcher accounts for the memory reduction; startup timings are not compared because the measurements used different adapter probes.
 
 ## Compatibility evidence
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import {constants} from 'node:fs';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash, randomUUID} from 'node:crypto';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {normalizeSpec, validateSubmission, VERSION} from './model.mjs';
-import {completionCommand} from '../../../scripts/input-completion.mjs';
+import {start} from '../../../scripts/input-completion.mjs';
 
 const template = fileURLToPath(new URL('../assets/form.template.html', import.meta.url));
 const marker = '__GRILL_FORM_DATA__';
@@ -26,11 +29,8 @@ function collectionCommand(action, root, options = {}) {
   const args = [action, '--session', root];
   if (options.downloads) args.push('--downloads', path.resolve(options.downloads));
   if (options.answer) args.push('--answer', path.resolve(options.answer));
-  if (action === 'wait' && options['timeout-seconds']) args.push('--timeout-seconds', options['timeout-seconds']);
+  if (['wait', 'complete'].includes(action) && options['timeout-seconds']) args.push('--timeout-seconds', options['timeout-seconds']);
   return nextCommand(action, ...args);
-}
-function collectNext(root, options = {}) {
-  return {...collectionCommand('collect', root, options), when: 'user_done', instruction: 'End the turn. Check once when the user says done; do not restart polling.'};
 }
 function finishNext(root, options = {}) {
   const args = ['finish', '--session', root];
@@ -66,10 +66,12 @@ async function loadSession(input) {
 async function saveJSON(file, data, exclusive = true) {
   await fs.writeFile(file, JSON.stringify(data, null, 2) + '\n', {mode: 0o600, flag: exclusive ? 'wx' : 'w'});
 }
-async function stopPolling(root) {
-  const file = path.join(root, 'poll.stop');
-  try { await fs.writeFile(file, '', {mode: 0o600, flag: 'wx'}); }
-  catch (e) { if (e.code !== 'EEXIST') throw e; await regularFile(file); }
+async function waitState(root, state) {
+  const file = await fs.open(path.join(root, '.wait'), constants.O_WRONLY | constants.O_CREAT | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0), 0o600);
+  try {
+    if (!(await file.stat()).isFile()) fail('Invalid wait state');
+    await file.truncate(); await file.writeFile(state + '\n');
+  } finally { await file.close(); }
 }
 function downloadPattern(state) {
   return new RegExp(`^grill-form-${state.sessionId}(?: \\(\\d+\\)|-\\d+)?\\.json$`);
@@ -123,14 +125,14 @@ async function create(options) {
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
-    output({status: 'created', session: root, html: file, url: pathToFileURL(file).href, answerFilename: `grill-form-${state.sessionId}.json`, message: 'Open the form and arm completion once, then end the turn. Use done only if automatic delivery is unavailable.', completion: completionCommand(root), wait: collectionCommand('wait', root), next: collectNext(root)});
+    output({status: 'created', session: root, html: file, url: pathToFileURL(file).href, answerFilename: `grill-form-${state.sessionId}.json`, completion: collectionCommand('complete', root), wait: collectionCommand('wait', root), next: collectionCommand('collect', root)});
   } catch (e) { await fs.rm(root, {recursive: true, force: true}); throw e; }
 }
 async function collect(options) {
   const {root, state} = await loadSession(options.session);
-  await stopPolling(root);
+  await waitState(root, 'stopped');
   const received = await collectAnswers(root, state, options);
-  output(received ?? {status: 'waiting', session: root, message: 'Answer download not found. Polling is stopped; check again only when the user asks.', next: collectNext(root, options)});
+  output(received ?? {status: 'waiting', session: root, next: collectionCommand('collect', root, options)});
 }
 async function collectAnswers(root, state, options) {
   if (await exists(path.join(root, 'receipt.json'))) {
@@ -151,27 +153,49 @@ async function collectAnswers(root, state, options) {
   }
   return null;
 }
-// Optional single local wait. Never returns a command to wait again.
+async function complete(options) {
+  const {root} = await loadSession(options.session);
+  const result = await start(collectionCommand('wait', root, options).argv);
+  if (result.status === 'error') fail(result.message);
+  output(result);
+}
+// The collector owns its attempt, cancellation, and delivery state in one file.
 async function wait(options) {
   const seconds = options['timeout-seconds'] ?? '3600';
   if (!/^[1-9]\d*$/.test(seconds) || Number(seconds) > 86400) fail('--timeout-seconds must be an integer from 1 to 86400');
+  const notify = options.notify && JSON.parse(options.notify);
+  if (options.notify && (!Array.isArray(notify) || !notify.length || notify.some(x => typeof x !== 'string' || x.includes('\0')) || !notify[0])) fail('Invalid notification command');
   const {root, state} = await loadSession(options.session);
-  const manual = () => output({status: 'waiting', session: root, message: 'Automatic waiting ended. Preserve the form; collect once when the user says done.', next: collectNext(root, options)});
-  if (await exists(path.join(root, 'poll.stop')) || await exists(path.join(root, 'wait.started.json'))) { manual(); return; }
+  const manual = reason => output({status: notify ? 'fallback' : 'waiting', reason, session: root, next: collectionCommand('collect', root, options)});
+  // Old sessions keep their previous no-restart guarantee.
+  for (const name of ['poll.stop', 'wait.started.json', 'completion.json']) {
+    if (await exists(path.join(root, name))) { manual('already_started'); return; }
+  }
+  try { await fs.writeFile(path.join(root, '.wait'), 'waiting\n', {flag: 'wx', mode: 0o600}); }
+  catch (e) { if (e.code === 'EEXIST') { manual('already_started'); return; } throw e; }
+  if (notify) output({status: 'armed', session: root});
   const deadline = Date.now() + Number(seconds) * 1000;
-  await saveJSON(path.join(root, 'wait.started.json'), {deadline});
   try {
     while (true) {
-      if (!(await exists(root))) { output({status: 'stopped', message: 'The session was finished or discarded.'}); return; }
-      if (await exists(path.join(root, 'poll.stop'))) { manual(); return; }
-      if (Date.now() >= deadline) { await stopPolling(root); manual(); return; }
+      if (!(await exists(root))) { if (!notify) output({status: 'stopped'}); return; }
+      if ((await regularFile(path.join(root, '.wait'))).startsWith('stopped')) { if (!notify) manual('stopped'); return; }
+      if (Date.now() >= deadline) {
+        await waitState(root, 'timed_out'); if (!notify) manual('timeout'); return;
+      }
       const received = await collectAnswers(root, state, options);
-      if (received) { await stopPolling(root); output(received); return; }
+      if (received) {
+        await waitState(root, 'received');
+        if (!notify) { output(received); return; }
+        const message = `grill-form ready: ${JSON.stringify(root)}`;
+        const argv = notify.map(arg => arg === '{message}' ? message : arg);
+        await promisify(execFile)(argv[0], argv.slice(1), {timeout: 15000});
+        await waitState(root, 'notified'); return;
+      }
       await sleep(Math.min(1000, deadline - Date.now()));
     }
   } catch (e) {
-    if (await exists(root)) await stopPolling(root);
-    throw e;
+    if (await exists(root)) await waitState(root, 'failed: ' + e.message);
+    if (!notify) throw e;
   }
 }
 // Old saved commands degrade to one manual check instead of reviving a loop.
@@ -210,8 +234,8 @@ async function finish(options) {
 async function cleanup(options) {
   if (!!options.recorded === !!options.discard) fail('Use finish to preserve answers, or cleanup --discard only after explicit cancellation');
   const {root, state} = await loadSession(options.session);
-  await stopPolling(root);
-  const allowed = new Set(['form.html', 'session.json', 'receipt.json', 'poll.stop', 'polling.json', 'polling.next.json', 'wait.started.json', 'completion.json', '.DS_Store']);
+  await waitState(root, 'stopped');
+  const allowed = new Set(['form.html', 'session.json', 'receipt.json', 'poll.stop', 'polling.json', 'polling.next.json', 'wait.started.json', 'completion.json', '.wait', '.DS_Store']);
   const names = await fs.readdir(root);
   if (names.some(n => !allowed.has(n))) fail('Unexpected files in the session; nothing was deleted');
   for (const n of names) await regularFile(path.join(root, n), n === 'form.html' ? 10_000_000 : 2_000_000);
@@ -245,12 +269,13 @@ const allowedOptions = {
   create: new Set(['input', 'project', 'temporary']),
   collect: new Set(['session', 'answer', 'downloads']),
   poll: new Set(['session', 'answer', 'downloads', 'max-wait-seconds']),
-  wait: new Set(['session', 'answer', 'downloads', 'timeout-seconds']),
+  wait: new Set(['session', 'answer', 'downloads', 'timeout-seconds', 'notify']),
+  complete: new Set(['session', 'answer', 'downloads', 'timeout-seconds']),
   finish: new Set(['session', 'downloads']),
   cleanup: new Set(['session', 'downloads', 'discard']),
 };
 try {
-  if (!allowedOptions[command]) fail('Usage: grill-form.mjs create --project PATH < questions.json | wait --session PATH | collect --session PATH | finish --session PATH | cleanup --session PATH --discard');
+  if (!allowedOptions[command]) fail('Usage: grill-form.mjs create --project PATH < questions.json | wait|complete --session PATH | collect --session PATH | finish --session PATH | cleanup --session PATH --discard');
   const options = {};
   while (args.length) {
     const flag = args.shift();
@@ -259,5 +284,5 @@ try {
     if (key === 'discard' || key === 'temporary') options[key] = true;
     else { const value = args.shift(); if (!value || value.startsWith('--')) fail(`Missing value for ${flag}`); options[key] = value; }
   }
-  await ({create, collect, wait, poll, finish, cleanup}[command])(options);
+  await ({create, collect, wait, complete, poll, finish, cleanup}[command])(options);
 } catch (e) { process.stderr.write(JSON.stringify({status: 'error', message: e.message, help: fileURLToPath(new URL('../references/usage.md', import.meta.url)), instruction: 'Preserve existing files. Correct the reported input or consult help; do not bypass validation.'}) + '\n'); process.exitCode = 1; }

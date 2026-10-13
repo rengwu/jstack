@@ -61,10 +61,9 @@ test('collect checks once and persists a stop marker without scheduling an autom
   await fs.writeFile(path.join(f.downloadDir, 'unrelated.json'), 'private');
   const result = ok(f.collect());
   assert.equal(result.status, 'waiting');
-  assert.equal(result.next.when, 'user_done');
-  assert.match(result.next.instruction, /End the turn/);
+  assert.equal(result.next.action, 'collect');
   assert.ok(!result.next.argv.includes('--wait-seconds'));
-  assert.deepEqual((await fs.readdir(f.session)).sort(), ['form.html', 'poll.stop', 'session.json']);
+  assert.deepEqual((await fs.readdir(f.session)).sort(), ['.wait', 'form.html', 'session.json']);
   bad(f.collect('--wait-seconds', '45'), /Unknown or repeated option/);
 });
 
@@ -179,12 +178,10 @@ test('explicit cancellation removes only owned temporary data and requires a fla
 
 test('creation offers completion and a portable wait; legacy polling stays manual', async t => {
   const f = await fixture(t);
-  assert.equal(f.next.when, 'user_done');
   assert.equal(f.next.action, 'collect');
   assert.equal(f.wait.action, 'wait');
-  assert.equal(f.completion.action, 'start');
+  assert.equal(f.completion.action, 'complete');
   const legacy = ok(f.poll());
-  assert.equal(legacy.next.when, 'user_done');
   assert.equal(legacy.next.action, 'collect');
   await f.write();
   assert.equal(ok(f.collect()).status, 'received');
@@ -202,7 +199,7 @@ function backgroundWait(t, f, extra = []) {
 }
 async function waitStarted(f) {
   const deadline = Date.now() + 3000;
-  while (!(await fs.readdir(f.session)).includes('wait.started.json')) {
+  while (!(await fs.readdir(f.session)).includes('.wait')) {
     assert.ok(Date.now() < deadline, 'local wait must start');
     await new Promise(resolve => setTimeout(resolve, 20));
   }
@@ -222,9 +219,9 @@ test('one background process stays silent until a download arrives', async t => 
 test('done stops the local wait; stale waits cannot restart it', async t => {
   const f = await fixture(t), wait = backgroundWait(t, f);
   await waitStarted(f);
-  assert.equal(ok(f.collect()).next.when, 'user_done');
-  assert.equal(ok(await wait.finished).next.when, 'user_done');
-  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
+  assert.equal(ok(f.collect()).next.action, 'collect');
+  assert.equal(ok(await wait.finished).next.action, 'collect');
+  assert.equal(ok(run(['wait', '--session', f.session])).next.action, 'collect');
   await f.write();
   assert.equal(ok(f.collect()).status, 'received');
   ok(f.finish());
@@ -233,10 +230,10 @@ test('done stops the local wait; stale waits cannot restart it', async t => {
 test('timeout preserves the draft and returns only manual collection, including on retry', async t => {
   const f = await fixture(t);
   const result = ok(run(['wait', '--session', f.session, '--downloads', f.downloadDir, '--timeout-seconds', '1']));
-  assert.equal(result.next.when, 'user_done');
+  assert.equal(result.next.action, 'collect');
   await fs.stat(f.html);
   await f.write();
-  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
+  assert.equal(ok(run(['wait', '--session', f.session])).next.action, 'collect');
   assert.equal(ok(f.collect()).status, 'received');
   ok(f.finish());
 });
@@ -247,7 +244,7 @@ test('local wait errors stop without deleting invalid answers', async t => {
   bad(run(['wait', '--session', f.session, '--downloads', f.downloadDir]), /different session/);
   await fs.stat(f.answer);
   await f.write();
-  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
+  assert.equal(ok(run(['wait', '--session', f.session])).next.action, 'collect');
   assert.equal(ok(f.collect()).status, 'received');
   ok(f.finish());
   for (const seconds of ['0', '-1', '86401', '1.5']) bad(run(['wait', '--session', f.session, '--timeout-seconds', seconds]), /must be an integer/);

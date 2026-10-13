@@ -19,8 +19,8 @@ Follow [grill-me](../grill-me/SKILL.md) for the interview. Descriptions (`contex
    JSON
    ```
 
-2. **Present and wait.** Open the returned `url` with the OS's default browser, or the browser the user requested. If unavailable, link the `html` path. Choose one automatic route from [completion and waiting](../../references/stack-contract.md#completion-and-waiting), using the returned `wait` or `completion` command. Tell the user to submit; mention “done” only when falling back. Never poll or repeat wait commands.
-3. **Collect.** On a submission notice or “done,” run `next.command` once. This cancels any local wait and checks the download. If a completed wait already returned answers, use its result directly. On `received`, run the returned `next.command` to save answers and clean up. On `waiting`, end the turn and check again only on user request. On `stopped`, stop; the session was already finished or discarded. On `error`, consult the returned `help`. Preserve files after timeouts or interruptions; fall back to “done.”
+2. **Present and wait.** Open the returned `url` with the OS's default browser, or the browser the user requested. If unavailable, link the `html` path. Use the returned `wait` or `completion` command following [completion and waiting](../../references/stack-contract.md#completion-and-waiting). Tell the user to submit.
+3. **Collect.** On a submission notice or “done,” run `next.command` once. If a completed wait already returned answers, use its result directly. On `received`, run the returned `next.command` to save answers and clean up. On `waiting`, end the turn. On `stopped`, the session was already finished or discarded. On `error`, consult the returned `help`.
 4. **Continue.** Read the returned `record` and use those answers to continue grill-me.
 
 Temporary transcripts stay outside the project; plan applies the project's rules when recording decisions. For interrupted or cancelled rounds, see [recovery](references/usage.md).

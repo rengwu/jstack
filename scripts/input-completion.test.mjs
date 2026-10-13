@@ -10,7 +10,6 @@ import {randomUUID} from 'node:crypto';
 import {notification} from './completion/codex.mjs';
 
 const execute = promisify(execFile);
-const helper = fileURLToPath(new URL('./input-completion.mjs', import.meta.url));
 const grill = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
 const capture = fileURLToPath(new URL('../skills/capture-feedback/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
 const env = {...process.env, CODEX_THREAD_ID: ''}; // Tests must never message a real conversation.
@@ -33,12 +32,18 @@ async function fixture(t, kind = 'grill-form') {
     {title: 'Synthetic input', questions: [{prompt: 'Pick one', recommendation: 'A', options: ['A', 'B']}]});
   const session = created.session, log = path.join(temp, 'notice.txt');
   t.after(async () => { await fs.rm(session, {recursive: true, force: true}); await fs.rm(temp, {recursive: true, force: true}); });
-  const notify = JSON.stringify([process.execPath, '-e', 'require("node:fs").appendFileSync(process.argv[1], process.argv[2]+"\\n")', log, '{message}']);
-  const args = ['start', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])];
-  const complete = (...extra) => call([process.execPath, helper, ...args, ...extra]);
-  const state = () => fs.readFile(path.join(session, 'completion.json'), 'utf8').then(JSON.parse);
-  const settled = () => until(state, value => ['notified', 'failed', 'completed'].includes(value.status));
-  const started = () => until(() => fs.stat(path.join(session, kind === 'grill-form' ? 'wait.started.json' : '.wait.started')));
+  const tools = path.join(temp, 'tools'); await fs.mkdir(tools);
+  await fs.writeFile(path.join(tools, 'codex'), `#!${process.execPath}
+if (process.argv.includes('--help')) console.log('--thread --message');
+else if (process.env.JSTACK_TEST_NOTIFY_FAIL) process.exit(1);
+else require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.argv.at(-1)+'\\n');
+`, {mode: 0o700});
+  const testEnv = {...env, PATH: tools + path.delimiter + env.PATH, CODEX_THREAD_ID: randomUUID(), JSTACK_TEST_NOTICE: log};
+  const args = ['complete', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])];
+  const complete = (...extra) => parse(spawnSync(program[0], [...program.slice(1), ...args, ...extra], {env: testEnv, encoding: 'utf8', timeout: 5000}));
+  const state = () => fs.readFile(path.join(session, '.wait'), 'utf8').then(value => value.trim());
+  const settled = () => until(state, value => /^(notified|failed|received|timed_out|stopped)/.test(value));
+  const started = () => until(state);
   async function submit() {
     if (kind === 'grill-form') {
       const source = JSON.parse(await fs.readFile(path.join(session, 'session.json'), 'utf8'));
@@ -55,25 +60,27 @@ async function fixture(t, kind = 'grill-form') {
   }
   const collect = () => call([...program, 'collect', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])]);
   const finish = receipt => call([...program, 'finish', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : ['--receipt', receipt])]);
-  return {temp, session, log, notify, args, complete, state, settled, started, submit, collect, finish};
+  return {temp, session, log, program, testEnv, args, complete, state, settled, started, submit, collect, finish};
 }
 
 for (const kind of ['grill-form', 'capture-feedback']) {
   test(`${kind}: silent detached wait sends one notice and preserves the collectible submission`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
     const f = await fixture(t, kind), other = await fixture(t, kind);
-    assert.equal(f.complete('--notify', f.notify).status, 'armed');
+    assert.equal(f.complete().status, 'armed');
     await f.started();
     await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
-    assert.equal(f.complete('--notify', f.notify).status, 'fallback');
+    assert.equal(f.complete().status, 'fallback');
     await other.submit(); // A different conversation must not complete this wait.
-    assert.equal((await f.state()).status, 'starting');
+    assert.equal(await f.state(), 'waiting');
     await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
     await f.submit();
-    const done = await until(f.state, value => value.status === 'notified');
-    assert.equal(done.result.status, 'received');
+    const done = await until(f.state, value => value === 'notified');
+    assert.equal(done, 'notified');
+    assert.ok(!(await fs.readdir(f.session)).includes('completion.json'));
     const notices = (await fs.readFile(f.log, 'utf8')).trim().split('\n');
     assert.equal(notices.length, 1);
-    assert.ok(notices[0].includes(JSON.stringify(f.session)));
+    assert.ok(notices[0].includes(f.session));
+    assert.match(notices[0], new RegExp(`^${kind} ready: `));
     assert.ok(!notices[0].includes(other.session));
     const result = f.collect(); assert.equal(result.status, 'received');
     if (kind === 'capture-feedback') {
@@ -88,19 +95,42 @@ for (const kind of ['grill-form', 'capture-feedback']) {
   test(`${kind}: timeout and manual collection stop waiting without losing later submissions`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
     for (const mode of ['timeout', 'manual']) {
       const f = await fixture(t, kind);
-      assert.equal(f.complete('--notify', f.notify, '--timeout-seconds', mode === 'timeout' ? '1' : '30').status, 'armed');
+      assert.equal(f.complete('--timeout-seconds', mode === 'timeout' ? '1' : '30').status, 'armed');
       await f.started();
       if (mode === 'manual') assert.equal(f.collect().status, 'waiting');
-      const done = await f.settled(); assert.equal(done.result.status, 'waiting');
-      assert.equal(f.complete('--notify', f.notify).status, 'fallback');
+      const done = await f.settled(); assert.equal(done, mode === 'timeout' ? 'timed_out' : 'stopped');
+      assert.equal(f.complete().status, 'fallback');
       await f.submit(); assert.equal(f.collect().status, 'received');
       await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
     }
+  });
+
+  test(`${kind}: startup errors and delivery failures preserve the submission`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+    const f = await fixture(t, kind);
+    const invalid = spawnSync(f.program[0], [...f.program.slice(1), ...f.args, '--timeout-seconds', '0'], {env: f.testEnv, encoding: 'utf8'});
+    assert.equal(invalid.status, 1);
+    assert.equal(JSON.parse(invalid.stderr).status, 'error');
+    await assert.rejects(fs.stat(path.join(f.session, '.wait')), {code: 'ENOENT'});
+    f.testEnv.JSTACK_TEST_NOTIFY_FAIL = '1';
+    assert.equal(f.complete().status, 'armed');
+    await f.submit(); await until(f.state, value => value.startsWith('failed'));
+    assert.equal(f.complete().status, 'fallback');
+    assert.equal(f.collect().status, 'received');
+    await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
+  });
+
+  test(`${kind}: old wait markers prevent an automatic restart`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+    const f = await fixture(t, kind);
+    await fs.writeFile(path.join(f.session, 'completion.json'), '{}');
+    assert.equal(f.complete().status, 'fallback');
+    await assert.rejects(fs.stat(path.join(f.session, '.wait')), {code: 'ENOENT'});
+    await f.submit(); assert.equal(f.collect().status, 'received');
   });
 }
 
 test('unsupported host leaves the session untouched and returns a manual fallback', async t => {
   const f = await fixture(t), before = await fs.readdir(f.session);
+  f.testEnv.CODEX_THREAD_ID = '';
   assert.equal(f.complete().status, 'fallback');
   assert.deepEqual(await fs.readdir(f.session), before);
   await f.submit(); assert.equal(f.collect().status, 'received');
@@ -108,25 +138,18 @@ test('unsupported host leaves the session untouched and returns a manual fallbac
 
 test('concurrent starts claim only one completion attempt', async t => {
   const f = await fixture(t);
-  const invoke = () => execute(process.execPath, [helper, ...f.args, '--notify', f.notify], {env}).then(result => JSON.parse(result.stdout));
+  const invoke = () => execute(f.program[0], [...f.program.slice(1), ...f.args], {env: f.testEnv}).then(result => JSON.parse(result.stdout));
   const results = await Promise.all([invoke(), invoke()]);
   assert.deepEqual(results.map(r => r.status).sort(), ['armed', 'fallback']);
-  await f.submit(); await until(f.state, value => value.status === 'notified');
+  await f.submit(); await until(f.state, value => value === 'notified');
   assert.equal((await fs.readFile(f.log, 'utf8')).trim().split('\n').length, 1);
 });
 
-test('notification failure and malformed input never delete or retry a submission', async t => {
-  const f = await fixture(t);
-  const broken = JSON.stringify([path.join(f.temp, 'missing-command'), '{message}']);
-  assert.equal(f.complete('--notify', broken).status, 'armed');
-  await f.submit(); await until(f.state, value => value.status === 'failed');
-  assert.equal(f.complete('--notify', f.notify).status, 'fallback');
-  assert.equal(f.collect().status, 'received');
-  await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
+test('malformed notification input leaves the session untouched', async t => {
   const other = await fixture(t);
-  const result = spawnSync(process.execPath, [helper, ...other.args, '--notify', '{}'], {env, encoding: 'utf8'});
+  const result = spawnSync(other.program[0], [...other.program.slice(1), 'wait', '--session', other.session, '--notify', '{}'], {env, encoding: 'utf8'});
   assert.equal(result.status, 1);
-  await assert.rejects(fs.stat(path.join(other.session, 'completion.json')), {code: 'ENOENT'});
+  await assert.rejects(fs.stat(path.join(other.session, '.wait')), {code: 'ENOENT'});
 });
 
 test('Codex adapter checks capability and requires an exact thread identity', async t => {

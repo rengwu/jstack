@@ -6,16 +6,16 @@ The host needs file access, ordinary command execution, Node, and access to the 
 
 ## Completion without agent polling
 
-Follow [the shared waiting policy](../../../references/stack-contract.md#completion-and-waiting). Creation returns `wait` for host-managed completion, `completion` for the optional shared delivery helper, and `next` for manual collection. Prefer automatic delivery; choose one route. A process ID requiring status checks is insufficient.
+Follow [the shared waiting policy](../../../references/stack-contract.md#completion-and-waiting). Creation returns `wait` for host-managed completion, `completion` for optional adapter delivery, and `next` for manual collection. [Input completion](../../../references/input-completion.md) describes the launcher and compatibility evidence.
 
-On a submission notice, run `next.command` once; a completed wait may already contain the answers. Use “done” only when automatic delivery is unavailable or has ended. The shared helper and compatibility evidence are described in [input completion](../../../references/input-completion.md).
-
-`wait` checks locally once per second, exits on receipt, and times out after one hour (`--timeout-seconds N`, 1–86400). It returns no retry command. `collect` writes a stop marker and checks once; an in-flight wait notices the marker within a second. A timeout, error, duplicate wait, or interrupted process falls back to manual collection. A stale wait cannot restart the session's automatic wait. No files are deleted because waiting ended.
+`wait` checks locally once per second, exits on receipt, and times out after one hour (`--timeout-seconds N`, 1–86400). The collector owns one `.wait` status file. `collect` marks it stopped and checks once; an in-flight wait notices within a second. Waiting never deletes session files.
 
 ```sh
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --answer EXACT_FILE
+# Optional adapter delivery:
+node SKILL_DIR/scripts/grill-form.mjs complete --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 # Run once through host completion or a pending tool call:
 node SKILL_DIR/scripts/grill-form.mjs wait --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 ```

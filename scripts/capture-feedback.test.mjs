@@ -62,11 +62,10 @@ macTest('create isolates sessions, restricts permissions, and draft collection c
   assert.equal((await fs.stat(f.session)).mode & 0o777, 0o700);
   assert.equal((await fs.stat(f.file)).mode & 0o777, 0o600);
   assert.equal(ok(f.collect()).status, 'waiting');
-  assert.match(ok(f.collect()).instruction, /Do not poll/);
   assert.match(f.next.command, /launch/);
   assert.match(f.wait.command, /wait/);
-  assert.match(f.completion.command, /input-completion\.mjs/);
-  assert.ok((await fs.stat(f.completion.argv[1])).isFile());
+  assert.match(f.completion.command, /complete/);
+  assert.ok((await fs.stat(f.completion.argv[0])).isFile());
   const other = ok(run('create', '--project', f.temporary, '--sessions', path.dirname(f.session)));
   assert.notEqual(other.session, f.session);
   bad(f.finish('a'.repeat(64)), /not been submitted/);

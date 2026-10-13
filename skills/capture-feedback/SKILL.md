@@ -13,7 +13,7 @@ Use the committed Objective-C/AppKit helper on the user's Mac. It needs a local 
    ```
 
    Retain this invocation's exact `session` path in the conversation. Each invocation gets its own batch.
-2. **Open and wait.** Run the returned `next.command` to open the panel. Choose one automatic route from [completion and waiting](../../references/stack-contract.md#completion-and-waiting), using the returned `wait` or `completion` command. Tell the user to capture regions, add notes, and Submit; mention “done” only when falling back. Never poll or repeat wait commands. Closing the panel preserves its draft.
+2. **Open and wait.** Run `next.command` from creation to open the panel. Use that same result's `wait` or `completion` command following [completion and waiting](../../references/stack-contract.md#completion-and-waiting). Tell the user to capture regions, add notes, and Submit.
 3. **Collect once.** On a submission notice or “done,” run the command below. If a completed wait already returned `received`, use that result directly.
 
    ```sh
