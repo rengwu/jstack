@@ -1,13 +1,13 @@
 // Maintainer regression test: real AppKit/TextKit layout, without showing a window.
-#define main FeedbackApplicationMain
-#import "../skills/screencap/native/Feedback.m"
+#define main ScreencapApplicationMain
+#import "../skills/screencap/native/Screencap.m"
 #undef main
 
 static void Require(BOOL condition, NSString *message) {
     if (!condition) { fprintf(stderr, "%s\n", message.UTF8String); exit(1); }
 }
 
-static void NoteFits(FeedbackRow *row) {
+static void NoteFits(ScreencapRow *row) {
     NSTextView *editor = row.editor;
     NSLayoutManager *layout = editor.layoutManager;
     NSRange glyphs = [layout glyphRangeForTextContainer:editor.textContainer];
@@ -22,10 +22,10 @@ static void NoteFits(FeedbackRow *row) {
 int main(void) {
     @autoreleasepool {
         [NSApplication sharedApplication];
-        FeedbackApp *app = [[FeedbackApp alloc] init];
+        ScreencapApp *app = [[ScreencapApp alloc] init];
         app.batch = [@{@"items":[NSMutableArray array]} mutableCopy];
         [app buildPanel];
-        FeedbackRow *row = [[FeedbackRow alloc] initWithFrame:NSMakeRect(0, 0, 400, 88)];
+        ScreencapRow *row = [[ScreencapRow alloc] initWithFrame:NSMakeRect(0, 0, 400, 88)];
         [app.rows addObject:row]; [app.list addSubview:row]; app.scroll.hidden = NO;
 
         row.editor.string = @"Short note.";

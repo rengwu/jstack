@@ -11,7 +11,7 @@ import {notification} from './completion/codex.mjs';
 
 const execute = promisify(execFile);
 const grill = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
-const capture = fileURLToPath(new URL('../skills/screencap/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
+const capture = fileURLToPath(new URL('../skills/screencap/bin/Screencap.app/Contents/MacOS/Screencap', import.meta.url));
 const env = {...process.env, CODEX_THREAD_ID: ''}; // Tests must never message a real conversation.
 const parse = result => { assert.equal(result.status, 0, result.stderr || result.stdout); return JSON.parse(result.stdout); };
 const call = (argv, input) => parse(spawnSync(argv[0], argv.slice(1), {env, input: input && JSON.stringify(input), encoding: 'utf8', timeout: 5000}));

@@ -10,7 +10,7 @@
 static NSFileManager *FM;
 static NSString *Executable;
 static void Fail(NSString *message) {
-    @throw [NSException exceptionWithName:@"FeedbackError" reason:message userInfo:nil];
+    @throw [NSException exceptionWithName:@"ScreencapError" reason:message userInfo:nil];
 }
 static void Check(BOOL ok, NSString *message) { if (!ok) Fail(message); }
 static NSString *Join(NSString *root, NSString *name) { return [root stringByAppendingPathComponent:name]; }
@@ -74,7 +74,8 @@ static NSMutableDictionary *Load(NSString *input, NSString **actual) {
     NSError *error;
     id batch = [NSJSONSerialization JSONObjectWithData:Read(Join(root, @"batch.json")) options:NSJSONReadingMutableContainers error:&error];
     Check([batch isKindOfClass:NSDictionary.class], @"Invalid batch.json; preserve the session.");
-    Check([batch[@"kind"] isEqual:@"jstack-capture-feedback"] && [batch[@"schemaVersion"] isEqual:@1]
+    // Accept saved batches from before the app rename.
+    Check([@[@"jstack-screencap", @"jstack-capture-feedback"] containsObject:batch[@"kind"]] && [batch[@"schemaVersion"] isEqual:@1]
           && UUIDString(batch[@"id"]) && [root.lastPathComponent isEqual:batch[@"id"]]
           && [batch[@"directory"] isEqual:root], @"Invalid session identity; preserve the session.");
     Check([batch[@"project"] isKindOfClass:NSString.class] && [batch[@"project"] isAbsolutePath], @"Invalid project path.");
@@ -245,10 +246,10 @@ static void Finish(NSString *root, NSString *receipt) {
     } @finally { close(lock); }
 }
 
-@interface FeedbackText : NSTextView
+@interface ScreencapText : NSTextView
 @property NSString *itemID;
 @end
-@implementation FeedbackText
+@implementation ScreencapText
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
     if (!self.string.length) {
@@ -259,20 +260,20 @@ static void Finish(NSString *root, NSString *receipt) {
 }
 @end
 
-@interface FeedbackList : NSView
+@interface ScreencapList : NSView
 @end
-@implementation FeedbackList
+@implementation ScreencapList
 - (BOOL)isFlipped { return YES; }
 @end
 
-@interface FeedbackRow : FeedbackList
+@interface ScreencapRow : ScreencapList
 @property NSImageView *thumbnail;
-@property FeedbackText *editor;
+@property ScreencapText *editor;
 @property NSButton *removeButton;
 @property NSBox *separator;
 - (CGFloat)layoutForWidth:(CGFloat)width;
 @end
-@implementation FeedbackRow
+@implementation ScreencapRow
 - (instancetype)initWithFrame:(NSRect)frame {
     if ((self = [super initWithFrame:frame])) {
         self.clipsToBounds = YES;
@@ -280,7 +281,7 @@ static void Finish(NSString *root, NSString *receipt) {
         _thumbnail.imageScaling = NSImageScaleProportionallyUpOrDown;
         [_thumbnail setAccessibilityLabel:@"Captured region"];
         [self addSubview:_thumbnail];
-        _editor = [[FeedbackText alloc] initWithFrame:NSMakeRect(94, 8, MAX(100, frame.size.width - 132), 64)];
+        _editor = [[ScreencapText alloc] initWithFrame:NSMakeRect(94, 8, MAX(100, frame.size.width - 132), 64)];
         _editor.minSize = NSZeroSize; _editor.maxSize = NSMakeSize(CGFLOAT_MAX, CGFLOAT_MAX);
         _editor.verticallyResizable = NO; _editor.horizontallyResizable = NO;
         _editor.textContainer.widthTracksTextView = YES;
@@ -289,7 +290,7 @@ static void Finish(NSString *root, NSString *receipt) {
         _editor.textColor = NSColor.labelColor; _editor.drawsBackground = NO;
         _editor.richText = NO; _editor.importsGraphics = NO; _editor.allowsUndo = YES;
         _editor.textContainerInset = NSMakeSize(0, 4);
-        [_editor setAccessibilityLabel:@"Feedback"];
+        [_editor setAccessibilityLabel:@"Notes"];
         [self addSubview:_editor];
         _removeButton = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"trash" accessibilityDescription:@"Remove capture"] target:nil action:nil];
         _removeButton.bordered = NO; _removeButton.contentTintColor = NSColor.secondaryLabelColor;
@@ -320,14 +321,14 @@ static void Finish(NSString *root, NSString *receipt) {
 }
 @end
 
-@interface FeedbackApp : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextViewDelegate>
+@interface ScreencapApp : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextViewDelegate>
 @property NSString *root;
 @property NSMutableDictionary *batch;
 @property int lock;
 @property NSPanel *panel;
 @property NSPanel *toast;
-@property FeedbackList *list;
-@property NSMutableArray<FeedbackRow *> *rows;
+@property ScreencapList *list;
+@property NSMutableArray<ScreencapRow *> *rows;
 @property BOOL layingOut;
 @property BOOL userSized;
 @property NSScrollView *scroll;
@@ -339,11 +340,11 @@ static void Finish(NSString *root, NSString *receipt) {
 @property BOOL submitted;
 @end
 
-@implementation FeedbackApp
+@implementation ScreencapApp
 - (NSMutableArray *)items { return self.batch[@"items"]; }
 - (void)showError:(NSString *)message {
     NSAlert *alert = [[NSAlert alloc] init];
-    alert.messageText = @"Feedback couldn’t be saved";
+    alert.messageText = @"Couldn’t save feedback";
     alert.informativeText = message;
     [alert beginSheetModalForWindow:self.panel completionHandler:nil];
 }
@@ -359,7 +360,7 @@ static void Finish(NSString *root, NSString *receipt) {
     NSMenu *menu = [[NSMenu alloc] init];
     NSMenuItem *appMenu = [[NSMenuItem alloc] init]; [menu addItem:appMenu];
     NSMenu *application = [[NSMenu alloc] init]; appMenu.submenu = application;
-    [application addItemWithTitle:@"Quit Feedback" action:@selector(terminate:) keyEquivalent:@"q"];
+    [application addItemWithTitle:@"Quit Screencap" action:@selector(terminate:) keyEquivalent:@"q"];
     NSMenuItem *editMenu = [[NSMenuItem alloc] init]; [menu addItem:editMenu];
     NSMenu *edit = [[NSMenu alloc] initWithTitle:@"Edit"]; editMenu.submenu = edit;
     for (NSArray *entry in @[@[@"Undo", @"undo:", @"z"], @[@"Cut", @"cut:", @"x"], @[@"Copy", @"copy:", @"c"], @[@"Paste", @"paste:", @"v"], @[@"Select All", @"selectAll:", @"a"]])
@@ -370,14 +371,14 @@ static void Finish(NSString *root, NSString *receipt) {
     [self.panel setFrameTopLeftPoint:NSMakePoint(NSMaxX(screen) - self.panel.frame.size.width - 24, NSMaxY(screen) - 24)];
     [self.panel makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
     // Opt-in maintainer timing marker; never an agent completion event.
-    if (getenv("JSTACK_FEEDBACK_METRICS")) { fprintf(stderr, "feedback-ready\n"); fflush(stderr); }
+    if (getenv("JSTACK_SCREENCAP_METRICS")) { fprintf(stderr, "screencap-ready\n"); fflush(stderr); }
 }
 - (void)buildPanel {
     // Use one coordinate space for the content and title bar. The layout guide below
     // keeps scrolling content out of the title bar, including during live scrolling.
     self.panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 144)
         styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskUtilityWindow|NSWindowStyleMaskFullSizeContentView backing:NSBackingStoreBuffered defer:NO];
-    self.panel.title = @"Feedback"; self.panel.delegate = self;
+    self.panel.title = @"Screencap"; self.panel.delegate = self;
     self.panel.titlebarAppearsTransparent = NO;
     self.panel.floatingPanel = YES; self.panel.hidesOnDeactivate = NO;
     self.panel.becomesKeyOnlyIfNeeded = NO; self.panel.releasedWhenClosed = NO;
@@ -395,7 +396,7 @@ static void Finish(NSString *root, NSString *receipt) {
     self.scroll.contentView.postsFrameChangedNotifications = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(viewportChanged:)
         name:NSViewFrameDidChangeNotification object:self.scroll.contentView];
-    self.list = [[FeedbackList alloc] initWithFrame:self.scroll.contentView.bounds];
+    self.list = [[ScreencapList alloc] initWithFrame:self.scroll.contentView.bounds];
     self.list.clipsToBounds = YES;
     self.scroll.documentView = self.list; [content addSubview:self.scroll];
     [NSLayoutConstraint activateConstraints:@[
@@ -429,8 +430,8 @@ static void Finish(NSString *root, NSString *receipt) {
     self.scroll.hidden = !self.items.count;
     NSMutableArray *rows = [NSMutableArray array];
     for (NSDictionary *item in self.items) {
-        FeedbackRow *row;
-        for (FeedbackRow *existing in self.rows)
+        ScreencapRow *row;
+        for (ScreencapRow *existing in self.rows)
             if ([existing.editor.itemID isEqual:item[@"id"]]) { row = existing; break; }
         if (!row) {
             row = [self rowForItem:item];
@@ -438,7 +439,7 @@ static void Finish(NSString *root, NSString *receipt) {
         }
         [rows addObject:row];
     }
-    for (FeedbackRow *row in self.rows) if (![rows containsObject:row]) [row removeFromSuperview];
+    for (ScreencapRow *row in self.rows) if (![rows containsObject:row]) [row removeFromSuperview];
     self.rows = rows;
     [self layoutBatch];
     [self updateSubmit];
@@ -452,7 +453,7 @@ static void Finish(NSString *root, NSString *receipt) {
         [self.panel.contentView layoutSubtreeIfNeeded];
         [self.scroll tile];
         CGFloat width = self.scroll.contentSize.width, height = 0;
-        for (FeedbackRow *row in self.rows) {
+        for (ScreencapRow *row in self.rows) {
             [row setFrameOrigin:NSMakePoint(0, height)];
             height += [row layoutForWidth:width];
         }
@@ -486,8 +487,8 @@ static void Finish(NSString *root, NSString *receipt) {
     for (NSDictionary *item in self.items) if (!Trim(item[@"feedback"]).length) ready = NO;
     self.submitButton.enabled = ready;
 }
-- (FeedbackRow *)rowForItem:(NSDictionary *)item {
-    FeedbackRow *row = [[FeedbackRow alloc] initWithFrame:NSMakeRect(0, 0, self.scroll.contentSize.width, 88)];
+- (ScreencapRow *)rowForItem:(NSDictionary *)item {
+    ScreencapRow *row = [[ScreencapRow alloc] initWithFrame:NSMakeRect(0, 0, self.scroll.contentSize.width, 88)];
     row.editor.string = item[@"feedback"]; row.editor.itemID = item[@"id"]; row.editor.delegate = self;
     row.removeButton.identifier = item[@"id"]; row.removeButton.target = self; row.removeButton.action = @selector(remove:);
     CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:Join(self.root, item[@"image"])], NULL);
@@ -501,7 +502,7 @@ static void Finish(NSString *root, NSString *receipt) {
     return row;
 }
 - (void)textDidChange:(NSNotification *)notification {
-    FeedbackText *editor = notification.object;
+    ScreencapText *editor = notification.object;
     for (NSMutableDictionary *item in self.items) if ([item[@"id"] isEqual:editor.itemID]) { item[@"feedback"] = editor.string; break; }
     [self save]; [self layoutBatch]; [self updateSubmit];
     editor.needsDisplay = YES;
@@ -539,7 +540,7 @@ static void Finish(NSString *root, NSString *receipt) {
                     Check(valid, @"The capture could not be read. Try Capture again.");
                     [self.items addObject:[@{@"id":identifier, @"image":file.lastPathComponent, @"feedback":@""} mutableCopy]];
                     [self save]; [self refresh];
-                    FeedbackRow *row = self.rows.lastObject;
+                    ScreencapRow *row = self.rows.lastObject;
                     [self.panel makeFirstResponder:row.editor];
                     [row.editor scrollRangeToVisible:NSMakeRange(0, 0)];
                 } @catch (NSException *error) { [self showError:error.reason]; }
@@ -587,7 +588,7 @@ int main(int argc, const char *argv[]) {
         Executable = NSBundle.mainBundle.executablePath;
         @try {
             NSArray *args = NSProcessInfo.processInfo.arguments;
-            Check(args.count >= 2, @"Usage: Feedback create --project PATH | launch|show|wait|complete|collect --session PATH | finish --session PATH --receipt HASH");
+            Check(args.count >= 2, @"Usage: Screencap create --project PATH | launch|show|wait|complete|collect --session PATH | finish --session PATH --receipt HASH");
             NSString *command = args[1];
             NSDictionary *allowed = @{@"create":@[@"project", @"sessions"], @"launch":@[@"session"], @"show":@[@"session"], @"collect":@[@"session"], @"wait":@[@"session", @"timeout-seconds", @"notify"], @"complete":@[@"session", @"timeout-seconds"], @"finish":@[@"session", @"receipt"]};
             Check(allowed[command] != nil, @"Unknown command.");
@@ -603,7 +604,7 @@ int main(int argc, const char *argv[]) {
                 NSString *project = options[@"project"];
                 Check(project.isAbsolutePath, @"Supply the target project's absolute --project path.");
                 project = project.stringByResolvingSymlinksInPath; RegularInfo(project, YES);
-                NSString *parent = options[@"sessions"] ?: Join(NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject, @"jstack/feedback");
+                NSString *parent = options[@"sessions"] ?: Join(NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject, @"jstack/screencap");
                 Check(parent.isAbsolutePath, @"--sessions must be absolute.");
                 NSError *error;
                 Check([FM createDirectoryAtPath:parent withIntermediateDirectories:YES attributes:@{NSFilePosixPermissions:@0700} error:&error], error.localizedDescription);
@@ -611,7 +612,7 @@ int main(int argc, const char *argv[]) {
                 NSString *identifier = NSUUID.UUID.UUIDString.lowercaseString;
                 NSString *root = Join(parent, identifier);
                 Check([FM createDirectoryAtPath:root withIntermediateDirectories:NO attributes:@{NSFilePosixPermissions:@0700} error:&error], error.localizedDescription);
-                NSDictionary *batch = @{@"kind":@"jstack-capture-feedback", @"schemaVersion":@1, @"id":identifier, @"directory":root, @"project":project,
+                NSDictionary *batch = @{@"kind":@"jstack-screencap", @"schemaVersion":@1, @"id":identifier, @"directory":root, @"project":project,
                     @"status":@"draft", @"items":@[]};
                 Save(root, batch);
                 Output(@{@"status":@"created", @"session":root, @"next":Command(@"launch", root), @"completion":Command(@"complete", root), @"wait":Command(@"wait", root)});
@@ -627,11 +628,11 @@ int main(int argc, const char *argv[]) {
                     task.executableURL = [NSURL fileURLWithPath:@"/usr/bin/open"];
                     task.arguments = @[@"-n", NSBundle.mainBundle.bundlePath, @"--args", @"show", @"--session", root];
                     NSError *error; Check([task launchAndReturnError:&error], error.localizedDescription);
-                    [task waitUntilExit]; Check(task.terminationStatus == 0, @"Could not open Feedback.app.");
+                    [task waitUntilExit]; Check(task.terminationStatus == 0, @"Could not open Screencap.app.");
                     Output(@{@"status":@"opened", @"session":root});
                 } else {
                     int lock = Lock(root); Check(lock >= 0, @"This session is already open.");
-                    FeedbackApp *delegate = [[FeedbackApp alloc] init]; delegate.root = root; delegate.batch = Load(root, NULL); delegate.lock = lock;
+                    ScreencapApp *delegate = [[ScreencapApp alloc] init]; delegate.root = root; delegate.batch = Load(root, NULL); delegate.lock = lock;
                     [NSApplication sharedApplication]; NSApp.delegate = delegate; [NSApp run];
                 }
             }

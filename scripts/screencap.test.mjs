@@ -7,14 +7,14 @@ import {randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const binary = fileURLToPath(new URL('../skills/screencap/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
+const binary = fileURLToPath(new URL('../skills/screencap/bin/Screencap.app/Contents/MacOS/Screencap', import.meta.url));
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsPInvYLYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BbQHKU9LC7/CP1AAAAABJRU5ErkJggg==', 'base64');
 const macTest = (name, fn) => test(name, {skip: process.platform !== 'darwin'}, fn);
 const run = (...args) => spawnSync(binary, args, {encoding:'utf8', timeout:5000});
 const ok = result => { assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
 const bad = (result, pattern) => { assert.equal(result.status, 1, result.stderr); assert.match(JSON.parse(result.stderr).message, pattern); };
 async function fixture(t) {
-  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-feedback-test-'));
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-screencap-test-'));
   t.after(() => fs.rm(temporary, {recursive:true, force:true}));
   const parent = path.join(temporary, "sessions ' $ `quote`");
   const created = ok(run('create', '--project', temporary, '--sessions', parent));
@@ -46,7 +46,7 @@ macTest('committed app is universal, signed, and matches its source plist', asyn
 });
 
 macTest('native note layout grows without clipping or nested scrolling', async t => {
-  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-feedback-layout-'));
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-screencap-layout-'));
   t.after(() => fs.rm(temporary, {recursive:true, force:true}));
   const executable = path.join(temporary, 'layout-test');
   const source = fileURLToPath(new URL('./screencap-layout.m', import.meta.url));
@@ -83,6 +83,16 @@ macTest('collection pairs full paths and feedback, preserves files, and finish r
   bad(f.finish('0'.repeat(64)), /receipt/);
   assert.equal(ok(f.finish(received.receipt)).status, 'finished');
   await assert.rejects(fs.stat(f.session), {code:'ENOENT'});
+});
+
+macTest('renamed app still collects and finishes batches saved before the rename', async t => {
+  const f = await fixture(t), batch = await f.submitted();
+  batch.kind = 'jstack-capture-feedback';
+  await f.save(batch);
+  const received = ok(f.collect());
+  assert.equal(received.status, 'received');
+  assert.equal(received.items[0].feedback, batch.items[0].feedback);
+  assert.equal(ok(f.finish(received.receipt)).status, 'finished');
 });
 
 macTest('changed notes or image data invalidate a collected receipt', async t => {

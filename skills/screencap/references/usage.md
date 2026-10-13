@@ -1,6 +1,6 @@
 # Usage and recovery
 
-The committed `bin/Feedback.app` contains a universal arm64/x86_64 executable targeting macOS 11 or later. Only Apple Silicon is exercised during development; Intel and older macOS versions need runtime verification. AppKit, Foundation, ImageIO, and `/usr/sbin/screencapture` come with macOS. The native app has no browser, server, package installation, resident daemon, or build during skill use. Optional adapter delivery uses an existing Node runtime only during startup; the native waiter and manual collection do not require Node.
+The committed `bin/Screencap.app` contains a universal arm64/x86_64 executable targeting macOS 11 or later. Only Apple Silicon is exercised during development; Intel and older macOS versions need runtime verification. AppKit, Foundation, ImageIO, and `/usr/sbin/screencapture` come with macOS. The native app has no browser, server, package installation, resident daemon, or build during skill use. Optional adapter delivery uses an existing Node runtime only during startup; the native waiter and manual collection do not require Node.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. A downloaded copy may be blocked by Gatekeeper. Report that clearly and let the user approve trusted software through macOS; do not remove quarantine or weaken security automatically. Windows and Linux are not supported. Remote/container harnesses need the helper on the user's Mac and explicit transfer or shared access to its files; a skill alone cannot provide that connection.
 
@@ -14,7 +14,7 @@ Draft notes are saved atomically as they change. Closing preserves the draft. A 
 
 ## Commands and storage
 
-Run the executable at `SKILL_DIR/bin/Feedback.app/Contents/MacOS/Feedback`:
+Run the executable at `SKILL_DIR/bin/Screencap.app/Contents/MacOS/Screencap`:
 
 | Command | Result |
 | --- | --- |
@@ -26,7 +26,7 @@ Run the executable at `SKILL_DIR/bin/Feedback.app/Contents/MacOS/Feedback`:
 | `collect --session ABSOLUTE_PATH` | Returns `waiting`, or paired absolute image paths, feedback, project, and receipt. Keeps files. |
 | `finish --session ABSOLUTE_PATH --receipt HASH` | Deletes a submitted batch only if it still matches the collected receipt and has no unexpected files. Use only after handling the feedback. |
 
-Sessions default to `~/Library/Application Support/jstack/feedback/UUID/`. They contain `batch.json`, capture PNGs, a lock file, and optional `.wait` status; directories use 0700 and files use 0600. They persist across process exits and reboots. `create --sessions ABSOLUTE_PATH` overrides the parent for disposable tests. Successful CLI results are JSON on stdout; errors are JSON on stderr with exit 1. Returned `command` strings quote POSIX shell arguments; `argv` is available for other runners.
+Sessions default to `~/Library/Application Support/jstack/screencap/UUID/`. They contain `batch.json`, capture PNGs, a lock file, and optional `.wait` status; directories use 0700 and files use 0600. They persist across process exits and reboots. `create --sessions ABSOLUTE_PATH` overrides the parent for disposable tests. Successful CLI results are JSON on stdout; errors are JSON on stderr with exit 1. Returned `command` strings quote POSIX shell arguments; `argv` is available for other runners.
 
 Use [shared completion](../../../references/stack-contract.md#completion-and-waiting) to deliver a wait result automatically. `collect` also stops an in-flight waiter.
 
@@ -34,7 +34,7 @@ For recovery, use the session path from the conversation. If it is lost, inspect
 
 ## Maintenance
 
-Source is [Feedback.m](../native/Feedback.m); maintainers with Xcode build the committed app using:
+Source is [Screencap.m](../native/Screencap.m); maintainers with Xcode build the committed app using:
 
 ```sh
 skills/screencap/native/build.sh
