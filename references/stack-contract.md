@@ -1,87 +1,75 @@
 # jstack conventions
 
-Read this when using any jstack skill. Reuse the project's existing paths and identifiers when present; the paths below are defaults. Skills are reusable process. Product knowledge, drivers, results, and evidence live in the target repository, never in the installed plugin.
+Apply the independence, project boundary, and scope rules to all jstack work. Read the record sections when mapping features or verifying behavior. Reuse existing project paths and identifiers; paths below are defaults.
 
 ## Agent and harness independence
 
-All jstack skills and workflows must be agent- and harness-agnostic. Do not overfit instructions, behavior, or implementation to a particular harness, provider, or model. Describe required capabilities and outcomes, and adapt to the actual environment's tools, permissions, and repository instructions.
-
-Mechanical helpers must use portable methods such as ordinary shell-invoked scripts and standard runtime APIs, including for waits, scheduling, state, and cancellation. Shared workflows must not require proprietary tool names, agent SDKs, model-specific prompting conventions, or one host's interaction semantics. Keep optional host discovery and packaging metadata separate from the shared workflow; the workflow must remain usable without that integration.
+Describe capabilities and outcomes without requiring a particular agent, harness, provider, model, or proprietary tool. Adapt to available tools, permissions, and repository instructions. Use portable scripts and standard runtime APIs for mechanical helpers, including waits, scheduling, state, and cancellation. Keep optional host integrations and packaging separate so workflows remain usable without them.
 
 ## Target project boundary
 
-Resolve the target project from the user's request and workspace before creating or updating records. Paths below are relative to that project, never to jstack's source or installation directory. If the target cannot be determined, ask for it before writing project content; do not substitute the plugin directory. The bundled `examples/wiki/` is a preserved demonstration, not an active project wiki or a template of project facts. Copy only the reusable reader asset when bootstrapping a real project. Plugin-authoring work may update skills, assets, and tests, but does not create an active wiki for jstack.
+Resolve the target project before writing its records, drivers, or evidence; ask if unclear. Store them in that repository, never in jstack's source, installation, or preserved `examples/wiki/`. Reuse skills and the reader asset, not example project facts. Plugin-authoring work updates reusable skills, assets, and tests without creating an active jstack wiki.
 
 ## Shared record
 
-Planning reuses the project's existing notes, docs, or wiki. The layout below applies when using jstack wiki; plan asks before adopting it when no documentation system exists.
+Planning follows existing project documentation. If no documentation system exists, `plan` asks before adopting jstack wiki. Feature and verification records default to:
 
 ```text
 docs/wiki/
   index.md
-  decisions/index.md
-  discussions/open-questions.md
-  journal/YYYY-MM-DD-topic.md
   features/index.md
   features/<feature>.md
   verification/setup.md
   verification/runs/<run-id>.md
   evidence/<run-id>/
-  _build.mjs
-  index.html
 ```
 
-Create folders only when used. Markdown is authoritative; HTML is a generated snapshot. Keep one feature description, with links from planning pages rather than duplicate specifications. A run can cover several features. Use relative Markdown links to connect decision → feature → recipe → run → evidence.
+Create folders only when used. Keep one authoritative feature description. Use relative Markdown links to connect decisions → features → recipes → runs → evidence. A run can cover several features. Markdown is authoritative; HTML is generated through `wiki`.
 
 ## Ownership and scope
 
-- `work-until-grill` carries work through completion and routes consequential unresolved user decisions to `grill-form`; it does not expand scope, replace action approvals, or own a separate record format.
-- `grill-me` owns requested design interviews: batched questions that resolve decision prerequisites. It uses `plan` to interpret and persist accepted decisions and open questions in the target project; it does not create a parallel record system or authorize implementation.
-- `grill-form` is an optional form presentation and answer-collection layer over `grill-me`. It uses prepared offline assets and lifecycle scripts; grill-me stays unaware of it. Scripts save submitted answers as a journal in an existing target wiki or a temporary transcript before removing session files; grill-me/plan interprets that transcript into decisions and open questions. Explicit cancellation permits discarding an unfinished round.
-- `plan` owns planning discussions and records in the project's existing documentation. It distinguishes requirements, proposals, observations, and accepted decisions and uses `wiki` for document operations when the project uses jstack wiki.
-- `wiki` owns generic page operations, navigation, attachment handling, structural validation, and rendering. It does not define content workflows or interpret domain metadata. Other skills use it directly without starting a planning workflow.
-- `feature-map` owns feature descriptions and verification recipes. It records intended behavior and separately labels observed or unresolved behavior.
-- `verify-change` owns verification setup, any needed project-local drivers, run reports, and evidence. Verification alone does not authorize product fixes, commits, merges, deployments, or external messages. Continue fixes when the enclosing task already authorizes them.
-- `maintain-verification` audits map/driver drift; it corrects documentation and verification tooling within scope, and reports product regressions separately.
-- `rule-lean` guides simple, efficient implementation and simplification of relevant existing code. It can be used independently; apply the record workflows only when the task calls for them.
+- `work-until-grill`: completion, routing consequential user decisions to `grill-form`.
+- `grill-me`: interviews; `plan` interprets and records accepted outcomes and open questions.
+- `grill-form`: optional presentation and answer collection; `grill-me` stays independent of it.
+- `plan`: planning content in existing documentation; use `wiki` when applicable.
+- `wiki`: generic document operations and rendering; callers own content workflows and metadata meanings.
+- `feature-map`: feature descriptions and verification recipes.
+- `verify-change`: setup, project-local drivers, runs, and evidence.
+- `maintain-verification`: documentation/tooling drift; report product regressions separately.
+- `rule-lean`: independent implementation guidance; records only when the task calls for them.
 
-With concurrent workers, give each worker distinct feature files or run IDs. One coordinator updates shared indexes and rebuilds HTML after the writers finish. Do not add a mandatory coordinating skill or require delegation.
+Preserve existing scope and authorization. Planning or verification alone does not authorize product changes, commits, merges, deployments, or external messages; continue work already authorized by the enclosing task.
+
+If workers run concurrently, assign distinct feature files or run IDs; one coordinator updates indexes and rebuilds after writers finish. Delegation is optional.
 
 ## Feature record
 
-Assign a stable ID such as `FEAT-session-rename`; never reuse it for another behavior. Put it in the body so the existing reader displays it. Keep these sections concise:
+Put a stable ID such as `FEAT-session-rename` in the body; never reuse it for another behavior. Include:
 
-- **Intent and basis:** what should happen, linked to accepted decisions or requirements. Label source-derived behavior as observed, not approved.
-- **Entry points and prerequisites:** user actions, roles/accounts, fixtures, flags, environment, and related features.
-- **Expected outcomes:** observable results and relevant invariants; identify unanswered expectations.
-- **Verification recipe:** actual commands or tool actions, stable selectors, initial state, expected results, and cleanup. Reference shared setup rather than copying it. Label unexecuted recipes as unvalidated.
-- **Coverage and limitations:** affected success/cancel/error/persistence paths; known unavailable paths and cross-feature journeys.
-- **Verification history:** links to dated runs with their tested revisions. A latest run is historical evidence, never a permanent certification of the feature.
+- **Intent and basis:** expected behavior linked to requirements or accepted decisions; label source-derived behavior as observed.
+- **Entry points and prerequisites:** actions, roles/accounts, fixtures, flags, environment, related features.
+- **Expected outcomes:** observable results, invariants, and unresolved expectations.
+- **Verification recipe:** real commands/actions, stable selectors, initial state, expected results, cleanup. Link shared setup; label unexecuted recipes unvalidated.
+- **Coverage and limitations:** relevant success/cancel/error/persistence paths, unavailable paths, cross-feature journeys.
+- **Verification history:** links to dated runs with tested revisions.
 
 ## Setup and run records
 
-`verification/setup.md` records the real launch command, readiness and build-identity checks, available interaction tools, test data/auth prerequisites, instance isolation, observable effects, evidence location, and cleanup. Prefer tools already available in the project or session. Add small project-local scripts only when they make repeated work reliable; execute them before treating them as usable.
+`verification/setup.md` records launch commands, readiness and build-identity checks, available tools, data/auth prerequisites, instance isolation, observable effects, evidence location, and cleanup. Prefer existing tools; execute new helpers before treating them as usable.
 
-Choose a unique run ID, for example `2026-09-27T103000Z-session-rename`. Reports use normal wiki frontmatter plus `result: Passed`, `Failed`, or `Untested`. For verification reports, `result` carries the run outcome; planning records use `status` independently. The reader treats both as generic metadata. `verify-change/scripts/check-reports.mjs` validates outcome metadata within the report directory; unrelated pages are outside its scope. Feature maps must not use historical run results as permanent feature certification. Use these report sections:
+Use unique run IDs, such as `2026-09-27T103000Z-session-rename`, and frontmatter `result: Passed`, `Failed`, or `Untested`. Planning `status` is independent. Include:
 
-- **Scope:** feature IDs with relative links, the requested change, selected scenarios, and why these cover it.
-- **Build and environment:** exact tested revision; if dirty, record that and a patch/content fingerprint. If no git exists, record a reproducible file manifest with hashes. Include platform, runtime, flags, fixtures, and instance identity without secrets.
-- **Results:** table of scenario, expected outcome, observed outcome, Passed/Failed/Untested, and evidence link. Untested includes blocked, skipped, and incomplete scenarios with their reason.
-- **Limits and follow-up:** untested scope and any needed judgment, repair, or re-run. Distinguish harness/environment failures from established product failures.
+- **Scope:** linked feature IDs, requested change, selected scenarios, and coverage rationale.
+- **Build and environment:** exact tested revision; if dirty, record that and a patch/content fingerprint. Without git, include a reproducible file manifest with hashes. Include platform, runtime, flags, fixtures, and instance identity without secrets.
+- **Results:** table of scenario, expected outcome, observed outcome, Passed/Failed/Untested, and evidence link. Explain blocked, skipped, incomplete, or unknown outcomes as Untested.
+- **Limits and follow-up:** untested scope, needed judgment, repairs, or reruns; distinguish tooling/environment failures from established product failures.
 
-Overall Failed means an exercised expectation failed. Otherwise Untested means any selected scenario remains untested or its outcome is unknown. Passed means all selected scenarios passed; it makes no claim about unselected features. Preserve earlier results after fixes by creating another run or an explicitly dated additional attempt. Correct factual report mistakes transparently; do not silently replace failed history.
+Overall **Failed** means an exercised expectation failed; otherwise **Untested** means any selected scenario is untested or unknown; **Passed** means all selected scenarios passed. Results apply only to the tested build and scope and never permanently certify a feature. Preserve earlier results with new runs or dated attempts after fixes; correct factual mistakes transparently.
+
+Run [verify-change's metadata checker](../skills/verify-change/SKILL.md#report-metadata-check) with the wiki root and any custom report location. It validates report outcome metadata, not observations; unrelated pages are outside its scope.
 
 ## Evidence and reader
 
-Store evidence in `docs/wiki/evidence/<run-id>/`. Link from a run using `../../evidence/<run-id>/<file>`; spaces and special characters must be URL-encoded. Supported local attachments: PNG/JPEG/GIF/WebP, MP4/WebM, PDF, TXT/LOG, JSON, CSV. The reader validates that linked files exist inside the evidence directory, rejects symlinks, and records their SHA-256 hashes. Evidence content changes require rebuilding the reader. HTTP(S) artifact links are also allowed, but availability and content are not validated by the builder.
+Store evidence under `evidence/<run-id>/` in the wiki; link from runs using `../../evidence/<run-id>/<file>`. Exclude credentials and raw private account data. Cleanup preserves evidence and removes only resources created by the run.
 
-Linked attachments open as separate files. Standard Markdown image syntax displays local PNG/JPEG/GIF/WebP attachments inline using the same validation and hashes; remote images and SVG are unsupported. Images remain separate files rather than being embedded into the HTML bytes. Share `index.html` together with its `evidence/` or `attachments/` directories to preserve local evidence access and image display. Sharing HTML alone shares readable reports but not those files. Do not store credentials or raw private account data in evidence. Cleanup must preserve evidence and only remove resources created by this run.
-
-After substantive changes, update relevant links and run from the project root:
-
-```sh
-node docs/wiki/_build.mjs
-node docs/wiki/_build.mjs --check
-```
-
-Build/check validates the document and attachment structure, not the truth of the verification claims. Keep the reader offline and dependency-free at runtime. No package installs or package files for wiki work. Existing application build/test commands remain available for product verification.
+Follow [wiki attachment rules](../skills/wiki/SKILL.md#attachments) and [build/check instructions](../skills/wiki/SKILL.md#build-and-hand-off) for formats, links, rendering, and sharing. Rebuild after source or evidence changes. Structural checks do not establish verification claims. Wiki operations require no package installation or package files.
