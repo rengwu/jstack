@@ -44,7 +44,7 @@ Example requests:
 
 The former `planning-wiki` skill is replaced by `plan` and `wiki`. Existing project Markdown and paths can be reused. Inspect local reader customizations before upgrading the builder.
 
-`capture-feedback` ships a small prebuilt Objective-C/AppKit app for macOS. It captures rectangular regions anywhere on screen, preserves drafts, and collects paired images and notes. Both capture-feedback and grill-form use “done” by default, with optional verified background completion and no repeated agent polling.
+`capture-feedback` ships a small prebuilt Objective-C/AppKit app for macOS. It captures rectangular regions anywhere on screen, preserves drafts, and collects paired images and notes. Both capture-feedback and grill-form prefer automatic completion through one silent local wait, with “done” as the fallback and no repeated agent polling. See [completion support](references/input-completion.md).
 
 ## Project boundary
 

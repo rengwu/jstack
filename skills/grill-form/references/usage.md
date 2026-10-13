@@ -1,14 +1,14 @@
 # Recovery and advanced use
 
-Normal use needs only SKILL.md and the script's returned next action. All mechanical operations use a local Node CLI with built-ins; there is no server, package installation, build step, or agent-specific API. `next.command` is quoted for POSIX shells; `next.argv` supplies the equivalent argument array for other runners.
+Normal use needs only SKILL.md and the script's returned next action. Collection uses a local Node CLI with built-ins; there is no server, package installation, or build step. Optional delivery adapters are separate from collection. `next.command` is quoted for POSIX shells; `next.argv` supplies the equivalent argument array for other runners.
 
 The host needs file access, ordinary command execution, Node, and access to the browser's downloaded answer file. Install the linked grill-me, plan, and wiki skills and shared references with their relative layout intact; copying only this skill's instructions is insufficient. Skill discovery and plugin installation use each host's own conventions. For a remote/container agent, supply an accessible download directory or explicit answer path; it cannot read a local browser's Downloads automatically.
 
 ## Completion without agent polling
 
-Follow [the shared waiting policy](../../../references/stack-contract.md#completion-and-waiting). Creation returns `next.when: user_done`: open the form, end the turn, and collect once when the user says “done.” There is no automatic agent polling schedule.
+Follow [the shared waiting policy](../../../references/stack-contract.md#completion-and-waiting). Creation returns `wait` for host-managed completion, `completion` for the optional shared delivery helper, and `next` for manual collection. Prefer automatic delivery; choose one route. A process ID requiring status checks is insufficient.
 
-The optional `background.command` runs `wait` as one silent local process. Use it only when the harness explicitly supports completion notifications that resume the conversation after the turn ends. A process/session ID that must be checked is insufficient. Do not launch both default collection and a background wait automatically.
+On a submission notice, run `next.command` once; a completed wait may already contain the answers. Use “done” only when automatic delivery is unavailable or has ended. The shared helper and compatibility evidence are described in [input completion](../../../references/input-completion.md).
 
 `wait` checks locally once per second, exits on receipt, and times out after one hour (`--timeout-seconds N`, 1–86400). It returns no retry command. `collect` writes a stop marker and checks once; an in-flight wait notices the marker within a second. A timeout, error, duplicate wait, or interrupted process falls back to manual collection. A stale wait cannot restart the session's automatic wait. No files are deleted because waiting ended.
 
@@ -16,7 +16,7 @@ The optional `background.command` runs `wait` as one silent local process. Use i
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --answer EXACT_FILE
-# Only with verified background completion notifications:
+# Run once through host completion or a pending tool call:
 node SKILL_DIR/scripts/grill-form.mjs wait --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 ```
 

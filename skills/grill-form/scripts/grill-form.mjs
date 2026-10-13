@@ -6,6 +6,7 @@ import {createHash, randomUUID} from 'node:crypto';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {normalizeSpec, validateSubmission, VERSION} from './model.mjs';
+import {completionCommand} from '../../../scripts/input-completion.mjs';
 
 const template = fileURLToPath(new URL('../assets/form.template.html', import.meta.url));
 const marker = '__GRILL_FORM_DATA__';
@@ -122,7 +123,7 @@ async function create(options) {
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
-    output({status: 'created', session: root, html: file, url: pathToFileURL(file).href, answerFilename: `grill-form-${state.sessionId}.json`, message: 'Open the form, then end the turn. Check once when the user says done. Use background only with a verified completion notification.', next: collectNext(root), background: collectionCommand('wait', root)});
+    output({status: 'created', session: root, html: file, url: pathToFileURL(file).href, answerFilename: `grill-form-${state.sessionId}.json`, message: 'Open the form and arm completion once, then end the turn. Use done only if automatic delivery is unavailable.', completion: completionCommand(root), wait: collectionCommand('wait', root), next: collectNext(root)});
   } catch (e) { await fs.rm(root, {recursive: true, force: true}); throw e; }
 }
 async function collect(options) {
@@ -210,7 +211,7 @@ async function cleanup(options) {
   if (!!options.recorded === !!options.discard) fail('Use finish to preserve answers, or cleanup --discard only after explicit cancellation');
   const {root, state} = await loadSession(options.session);
   await stopPolling(root);
-  const allowed = new Set(['form.html', 'session.json', 'receipt.json', 'poll.stop', 'polling.json', 'polling.next.json', 'wait.started.json', '.DS_Store']);
+  const allowed = new Set(['form.html', 'session.json', 'receipt.json', 'poll.stop', 'polling.json', 'polling.next.json', 'wait.started.json', 'completion.json', '.DS_Store']);
   const names = await fs.readdir(root);
   if (names.some(n => !allowed.has(n))) fail('Unexpected files in the session; nothing was deleted');
   for (const n of names) await regularFile(path.join(root, n), n === 'form.html' ? 10_000_000 : 2_000_000);

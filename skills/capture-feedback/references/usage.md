@@ -1,6 +1,6 @@
 # Usage and recovery
 
-The committed `bin/Feedback.app` contains a universal arm64/x86_64 executable targeting macOS 11 or later. Only Apple Silicon is exercised during development; Intel and older macOS versions need runtime verification. AppKit, Foundation, ImageIO, and `/usr/sbin/screencapture` come with macOS. There is no browser, server, package installation, runtime dependency, resident daemon, or build during skill use.
+The committed `bin/Feedback.app` contains a universal arm64/x86_64 executable targeting macOS 11 or later. Only Apple Silicon is exercised during development; Intel and older macOS versions need runtime verification. AppKit, Foundation, ImageIO, and `/usr/sbin/screencapture` come with macOS. The native app has no browser, server, package installation, resident daemon, or build during skill use. Its optional shared delivery helper uses an existing Node runtime; native waiting and manual collection do not require Node.
 
 The app is ad-hoc signed, not Developer ID signed or notarized. A downloaded copy may be blocked by Gatekeeper. Report that clearly and let the user approve trusted software through macOS; do not remove quarantine or weaken security automatically. Windows and Linux are not supported. Remote/container harnesses need the helper on the user's Mac and explicit transfer or shared access to its files; a skill alone cannot provide that connection.
 
@@ -18,13 +18,16 @@ Run the executable at `SKILL_DIR/bin/Feedback.app/Contents/MacOS/Feedback`:
 
 | Command | Result |
 | --- | --- |
-| `create --project ABSOLUTE_PATH` | Creates an isolated draft and returns launch/background commands. |
-| `launch --session ABSOLUTE_PATH` | Opens the draft and returns promptly for the `done` workflow. |
-| `show --session ABSOLUTE_PATH` | Runs the panel in this process; optional verified background completion only. |
+| `create --project ABSOLUTE_PATH` | Creates an isolated draft and returns launch, wait, and completion commands. |
+| `launch --session ABSOLUTE_PATH` | Opens the draft and returns promptly. |
+| `show --session ABSOLUTE_PATH` | Runs the panel in this process until submission or close. |
+| `wait --session ABSOLUTE_PATH [--timeout-seconds N]` | Waits silently for submission and returns the collected result; defaults to one hour. |
 | `collect --session ABSOLUTE_PATH` | Returns `waiting`, or paired absolute image paths, feedback, project, and receipt. Keeps files. |
 | `finish --session ABSOLUTE_PATH --receipt HASH` | Deletes a submitted batch only if it still matches the collected receipt and has no unexpected files. Use only after handling the feedback. |
 
-Sessions default to `~/Library/Application Support/jstack/feedback/UUID/`. They contain `batch.json`, capture PNGs, and a lock file; directories use 0700 and files use 0600. They persist across process exits and reboots. `create --sessions ABSOLUTE_PATH` overrides the parent for disposable tests. Successful CLI results are JSON on stdout; errors are JSON on stderr with exit 1. Returned `command` strings quote POSIX shell arguments; `argv` is available for other runners.
+Sessions default to `~/Library/Application Support/jstack/feedback/UUID/`. They contain `batch.json`, capture PNGs, a lock file, and optional completion/wait markers; directories use 0700 and files use 0600. They persist across process exits and reboots. `create --sessions ABSOLUTE_PATH` overrides the parent for disposable tests. Successful CLI results are JSON on stdout; errors are JSON on stderr with exit 1. Returned `command` strings quote POSIX shell arguments; `argv` is available for other runners.
+
+Use [shared completion](../../../references/stack-contract.md#completion-and-waiting) to deliver a wait result automatically. `collect` also stops an in-flight waiter. A timeout or interrupted waiter cannot restart automatically; the draft remains collectible.
 
 For recovery, use the session path from the conversation. If it is lost, inspect manifests under the session parent and match the project and captures with the user; do not automatically consume the newest directory. Reopen a draft with `launch`, or collect a submission. If cleanup finds changed files, a symlink, or unexpected files (including a capture left by an interrupted save), preserve everything and inspect the discrepancy. Do not bypass validation with recursive deletion. A stale `.lock` file is harmless: the OS releases the actual lock on process exit.
 

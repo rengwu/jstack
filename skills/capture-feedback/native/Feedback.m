@@ -21,6 +21,14 @@ static NSDictionary *Command(NSString *action, NSString *root) {
     for (NSString *arg in args) [quoted addObject:Quote(arg)];
     return @{@"argv":args, @"command":[quoted componentsJoinedByString:@" "]};
 }
+static NSDictionary *CompletionCommand(NSString *root) {
+    NSString *plugin = NSBundle.mainBundle.bundlePath;
+    for (int i = 0; i < 4; i++) plugin = plugin.stringByDeletingLastPathComponent;
+    NSArray *args = @[@"node", Join(plugin, @"scripts/input-completion.mjs"), @"start", @"--session", root];
+    NSMutableArray *quoted = [NSMutableArray array];
+    for (NSString *arg in args) [quoted addObject:Quote(arg)];
+    return @{@"argv":args, @"command":[quoted componentsJoinedByString:@" "]};
+}
 static NSData *JSON(id value) {
     NSError *error;
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:NSJSONWritingPrettyPrinted|NSJSONWritingSortedKeys error:&error];
@@ -122,10 +130,14 @@ static void RequireSubmitted(NSDictionary *batch) {
 }
 static NSDictionary *Waiting(NSString *root) {
     return @{@"status":@"waiting", @"session":root, @"next":Command(@"collect", root),
-             @"instruction":@"The batch is still a draft. End the turn; check once when the user says done. Do not poll."};
+             @"instruction":@"No submitted batch was returned. Preserve the session; collect once when the user says done. Do not poll or restart waiting."};
 }
 static void Collect(NSString *root) {
     NSDictionary *batch = Load(root, &root);
+    int stop = open(Join(root, @".wait.stop").fileSystemRepresentation, O_WRONLY|O_CREAT|O_NOFOLLOW|O_NONBLOCK, 0600);
+    Check(stop >= 0, @"Cannot stop automatic waiting.");
+    struct stat stopInfo; BOOL regularStop = fstat(stop, &stopInfo) == 0 && S_ISREG(stopInfo.st_mode);
+    close(stop); Check(regularStop, @"Invalid wait marker; preserve the session.");
     int lock = Lock(root);
     if (lock < 0) { Output(Waiting(root)); return; }
     @try {
@@ -138,6 +150,33 @@ static void Collect(NSString *root) {
                  @"instruction":@"Open each image with the agent's image tool and handle its feedback. Finish with this receipt only after all feedback is handled."});
     } @finally { close(lock); }
 }
+static void Wait(NSString *root, NSString *seconds) {
+    seconds = seconds ?: @"3600";
+    NSCharacterSet *nonDigits = NSCharacterSet.decimalDigitCharacterSet.invertedSet;
+    Check(seconds.length && [seconds rangeOfCharacterFromSet:nonDigits].location == NSNotFound
+          && seconds.integerValue >= 1 && seconds.integerValue <= 86400, @"--timeout-seconds must be an integer from 1 to 86400.");
+    Load(root, &root);
+    int started = open(Join(root, @".wait.started").fileSystemRepresentation, O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW, 0600);
+    if (started < 0) { Check(errno == EEXIST, @"Cannot start automatic waiting."); Output(Waiting(root)); return; }
+    close(started);
+    NSTimeInterval deadline = NSProcessInfo.processInfo.systemUptime + seconds.integerValue;
+    while (NSProcessInfo.processInfo.systemUptime < deadline) {
+        @autoreleasepool {
+            if (![FM fileExistsAtPath:root]) { Output(@{@"status":@"stopped"}); return; }
+            if ([FM fileExistsAtPath:Join(root, @".wait.stop")]) { Output(Waiting(root)); return; }
+            // Draft images can change while the window edits them. Fully validate
+            // only after submission, through the normal collector and its lock.
+            NSDictionary *batch = [NSJSONSerialization JSONObjectWithData:Read(Join(root, @"batch.json")) options:0 error:nil];
+            if ([batch[@"status"] isEqual:@"submitted"]) {
+                int lock = Lock(root);
+                if (lock >= 0) { close(lock); Collect(root); return; }
+            }
+        }
+        [NSThread sleepForTimeInterval:1];
+    }
+    Output(@{@"status":@"waiting", @"session":root, @"next":Command(@"collect", root),
+             @"instruction":@"Automatic waiting ended. Preserve the batch; collect when the user says done. Do not restart waiting."});
+}
 static void Finish(NSString *root, NSString *receipt) {
     NSDictionary *batch = Load(root, &root);
     int lock = Lock(root);
@@ -145,7 +184,7 @@ static void Finish(NSString *root, NSString *receipt) {
     @try {
         batch = Load(root, NULL); RequireSubmitted(batch);
         Check(receipt.length == 64 && [receipt isEqual:Digest(root, batch)], @"Missing or changed receipt. Collect and handle the current batch before finish.");
-        NSMutableSet *known = [NSMutableSet setWithArray:@[@"batch.json", @".lock"]];
+        NSMutableSet *known = [NSMutableSet setWithArray:@[@"batch.json", @".lock", @".wait.started", @".wait.stop", @"completion.json"]];
         for (NSDictionary *item in batch[@"items"]) [known addObject:item[@"image"]];
         NSError *error;
         NSArray *names = [FM contentsOfDirectoryAtPath:root error:&error];
@@ -503,9 +542,9 @@ int main(int argc, const char *argv[]) {
         Executable = NSBundle.mainBundle.executablePath;
         @try {
             NSArray *args = NSProcessInfo.processInfo.arguments;
-            Check(args.count >= 2, @"Usage: Feedback create --project PATH | launch|show|collect --session PATH | finish --session PATH --receipt HASH");
+            Check(args.count >= 2, @"Usage: Feedback create --project PATH | launch|show|wait|collect --session PATH | finish --session PATH --receipt HASH");
             NSString *command = args[1];
-            NSDictionary *allowed = @{@"create":@[@"project", @"sessions"], @"launch":@[@"session"], @"show":@[@"session"], @"collect":@[@"session"], @"finish":@[@"session", @"receipt"]};
+            NSDictionary *allowed = @{@"create":@[@"project", @"sessions"], @"launch":@[@"session"], @"show":@[@"session"], @"collect":@[@"session"], @"wait":@[@"session", @"timeout-seconds"], @"finish":@[@"session", @"receipt"]};
             Check(allowed[command] != nil, @"Unknown command.");
             NSMutableDictionary *options = [NSMutableDictionary dictionary];
             for (NSUInteger i = 2; i < args.count; i += 2) {
@@ -530,8 +569,9 @@ int main(int argc, const char *argv[]) {
                 NSDictionary *batch = @{@"kind":@"jstack-capture-feedback", @"schemaVersion":@1, @"id":identifier, @"directory":root, @"project":project,
                     @"status":@"draft", @"items":@[]};
                 Save(root, batch);
-                Output(@{@"status":@"created", @"session":root, @"next":Command(@"launch", root), @"background":Command(@"show", root)});
+                Output(@{@"status":@"created", @"session":root, @"next":Command(@"launch", root), @"completion":CompletionCommand(root), @"wait":Command(@"wait", root)});
             } else if ([command isEqual:@"collect"]) Collect(options[@"session"]);
+            else if ([command isEqual:@"wait"]) Wait(options[@"session"], options[@"timeout-seconds"]);
             else if ([command isEqual:@"finish"]) Finish(options[@"session"], options[@"receipt"]);
             else {
                 NSString *root; NSMutableDictionary *batch = Load(options[@"session"], &root);
@@ -542,7 +582,7 @@ int main(int argc, const char *argv[]) {
                     task.arguments = @[@"-n", NSBundle.mainBundle.bundlePath, @"--args", @"show", @"--session", root];
                     NSError *error; Check([task launchAndReturnError:&error], error.localizedDescription);
                     [task waitUntilExit]; Check(task.terminationStatus == 0, @"Could not open Feedback.app.");
-                    Output(@{@"status":@"opened", @"session":root, @"next":Command(@"collect", root), @"instruction":@"End the turn. After Submit, the user says done; collect once. Do not poll."});
+                    Output(@{@"status":@"opened", @"session":root, @"completion":CompletionCommand(root), @"wait":Command(@"wait", root), @"next":Command(@"collect", root), @"instruction":@"Choose one automatic route from the shared completion policy: wait through the host, or completion through the optional adapter. Use done only as fallback. Do not poll."});
                 } else {
                     int lock = Lock(root); Check(lock >= 0, @"This session is already open.");
                     FeedbackApp *delegate = [[FeedbackApp alloc] init]; delegate.root = root; delegate.batch = Load(root, NULL); delegate.lock = lock;

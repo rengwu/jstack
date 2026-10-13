@@ -13,8 +13,8 @@ Use the committed Objective-C/AppKit helper on the user's Mac. It needs a local 
    ```
 
    Retain this invocation's exact `session` path in the conversation. Each invocation gets its own batch.
-2. **Open and yield.** Follow [completion and waiting](../../references/stack-contract.md#completion-and-waiting). Normally run the returned `next.command` once and end the turn: “Capture regions, add notes, and Submit. Then say done.” Only with verified background completion notifications, run `background.command` once through that capability instead. It runs the panel until submission or close. Never poll its status. A draft close or interrupted process is not submission.
-3. **Collect once.** On “done,” or a background result of `submitted`, run:
+2. **Open and wait.** Run the returned `next.command` to open the panel. Choose one automatic route from [completion and waiting](../../references/stack-contract.md#completion-and-waiting), using the returned `wait` or `completion` command. Tell the user to capture regions, add notes, and Submit; mention “done” only when falling back. Never poll or repeat wait commands. Closing the panel preserves its draft.
+3. **Collect once.** On a submission notice or “done,” run the command below. If a completed wait already returned `received`, use that result directly.
 
    ```sh
    "SKILL_DIR/bin/Feedback.app/Contents/MacOS/Feedback" collect --session "SESSION_DIR"

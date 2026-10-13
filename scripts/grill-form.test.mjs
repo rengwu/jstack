@@ -177,11 +177,12 @@ test('explicit cancellation removes only owned temporary data and requires a fla
   assert.equal(ok(f.cleanup('--discard')).status, 'cleaned');
 });
 
-test('creation defaults to done and legacy poll commands cannot schedule another tool call', async t => {
+test('creation offers completion and a portable wait; legacy polling stays manual', async t => {
   const f = await fixture(t);
   assert.equal(f.next.when, 'user_done');
   assert.equal(f.next.action, 'collect');
-  assert.equal(f.background.action, 'wait');
+  assert.equal(f.wait.action, 'wait');
+  assert.equal(f.completion.action, 'start');
   const legacy = ok(f.poll());
   assert.equal(legacy.next.when, 'user_done');
   assert.equal(legacy.next.action, 'collect');
