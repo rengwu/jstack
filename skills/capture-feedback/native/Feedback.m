@@ -289,8 +289,10 @@ static void Finish(NSString *root, NSString *receipt) {
     if (getenv("JSTACK_FEEDBACK_METRICS")) { fprintf(stderr, "feedback-ready\n"); fflush(stderr); }
 }
 - (void)buildPanel {
+    // Use one coordinate space for the content and title bar. The layout guide below
+    // keeps scrolling content out of the title bar, including during live scrolling.
     self.panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 144)
-        styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskUtilityWindow backing:NSBackingStoreBuffered defer:NO];
+        styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskUtilityWindow|NSWindowStyleMaskFullSizeContentView backing:NSBackingStoreBuffered defer:NO];
     self.panel.title = @"Feedback"; self.panel.delegate = self;
     self.panel.titlebarAppearsTransparent = NO;
     self.panel.floatingPanel = YES; self.panel.hidesOnDeactivate = NO;
@@ -373,7 +375,8 @@ static void Finish(NSString *root, NSString *receipt) {
         [self.list setFrameSize:NSMakeSize(width, height)];
         if (!self.userSized) {
             NSRect frame = self.panel.frame;
-            CGFloat desired = 48 + MAX(96, MIN(384, height));
+            CGFloat titleHeight = self.panel.contentView.bounds.size.height - self.panel.contentLayoutRect.size.height;
+            CGFloat desired = titleHeight + 48 + MAX(96, MIN(384, height));
             if (fabs(self.panel.contentView.bounds.size.height - desired) > 0.5) {
                 [self.panel setContentSize:NSMakeSize(self.panel.contentView.bounds.size.width, desired)];
                 [self.panel setFrameTopLeftPoint:NSMakePoint(frame.origin.x, NSMaxY(frame))];

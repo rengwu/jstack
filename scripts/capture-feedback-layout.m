@@ -42,6 +42,7 @@ int main(void) {
             [app layoutBatch];
             NSRect usable = [app.panel.contentView convertRect:app.panel.contentLayoutRect fromView:nil];
             Require(NSMinY(app.scroll.frame) >= 48 && NSMaxY(app.scroll.frame) <= NSMaxY(usable), @"The batch overlaps the footer or title bar.");
+            Require(fabs(app.scroll.contentSize.height - 384) < 0.5, @"The title bar consumes part of the compact batch viewport.");
             Require(fabs(NSWidth(row.frame) - app.scroll.contentSize.width) < 0.5, @"A scrollbar obscures the row controls.");
             Require(row.editor.enclosingScrollView == app.scroll, @"The note uses a nested scroll area.");
             [row.editor scrollRangeToVisible:NSMakeRange(row.editor.string.length, 0)];

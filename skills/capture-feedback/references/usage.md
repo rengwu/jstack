@@ -38,3 +38,5 @@ node --test scripts/capture-feedback.test.mjs
 ```
 
 Commit source and the rebuilt app together. `build.sh` cross-compiles both architectures, strips local symbols, and ad-hoc signs the bundle. Session fixtures belong outside the repository. Exercise actual region selection, inline edits, scrolling, close/reopen, removal, and the five-second submission notice on macOS after UI changes. Measure startup and idle memory on the tested machine; binary architecture and signing checks do not establish runtime compatibility.
+
+For title-bar clipping, use notes taller than the viewport and scroll in both directions, then focus and edit a note. Check that thumbnails, text, and remove buttons stay below the title bar and above the footer. Repeat after resizing. The offscreen layout test checks geometry; verify live scrolling visually too.
