@@ -6,6 +6,12 @@ Apply the independence, project boundary, and scope rules to all jstack work. Re
 
 Describe capabilities and outcomes without requiring a particular agent, harness, provider, model, or proprietary tool. Adapt to available tools, permissions, and repository instructions. Use portable scripts and standard runtime APIs for mechanical helpers, including waits, scheduling, state, and cancellation. Keep optional host integrations and packaging separate so workflows remain usable without them.
 
+## Completion and waiting
+
+Do not spend model turns checking whether a user has finished a form or feedback batch. Default to ending the turn and collecting once when the user says “done.” Keep the exact session path in conversation context; never consume another conversation's latest batch.
+
+An optional silent local process may wait when the host has a verified background-completion notification that resumes the conversation. Launch it once and end the turn. A process ID requiring status checks is not a completion notification. Never add agent polling, repeated wait calls, or a required host-specific service. After timeout, interruption, or uncertain notification support, preserve the session and use “done”; do not restart automatically.
+
 ## Target project boundary
 
 Resolve the target project before writing its records, drivers, or evidence; ask if unclear. Store them in that repository, never in jstack's source, installation, or preserved `examples/wiki/`. Reuse skills and the reader asset, not example project facts. Plugin-authoring work updates reusable skills, assets, and tests without creating an active jstack wiki.

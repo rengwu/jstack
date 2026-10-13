@@ -4,29 +4,25 @@ Normal use needs only SKILL.md and the script's returned next action. All mechan
 
 The host needs file access, ordinary command execution, Node, and access to the browser's downloaded answer file. Install the linked grill-me, plan, and wiki skills and shared references with their relative layout intact; copying only this skill's instructions is insufficient. Skill discovery and plugin installation use each host's own conventions. For a remote/container agent, supply an accessible download directory or explicit answer path; it cannot read a local browser's Downloads automatically.
 
-## Polling and immediate collection
+## Completion without agent polling
 
-Creation returns `next.when: now` and a `poll` command. Run it immediately with an ordinary command runner. The CLI uses Node timers, checks downloads only when due, and saves its start time and completed checks in `polling.json`. The schedule is defined in [polling.mjs](../scripts/polling.mjs). Each invocation waits at most 30 seconds, then returns either a receipt, a command to continue, or a manual next action. No agent-specific wait tool, task scheduler, or background process is required.
+Follow [the shared waiting policy](../../../references/stack-contract.md#completion-and-waiting). Creation returns `next.when: user_done`: open the form, end the turn, and collect once when the user says “done.” There is no automatic agent polling schedule.
 
-When the user says “done,” run `next.immediate.command` once. This is the ordinary `collect` command: it writes a persistent stop marker, cancels an in-flight polling wait, and checks once. Even a missing download ends automatic polling. A receipt or polling error also stops polling. After exhaustion or expiry, `next.when` becomes `user_done`: report that polling ended, end the turn, and collect again only on user request. Do not discard the form or answers when polling ends. A stale `poll` command cannot restart a stopped session.
+The optional `background.command` runs `wait` as one silent local process. Use it only when the harness explicitly supports completion notifications that resume the conversation after the turn ends. A process/session ID that must be checked is insufficient. Do not launch both default collection and a background wait automatically.
 
-Re-run the same `poll` command after an interrupted process; deadlines and progress resume from disk. Missed checks are skipped after one overdue check, rather than replayed in a burst; an expired schedule stops without checking again. Unrelated user input does not reset the schedule. Explicit cancellation follows the procedure below.
-
-For runners with a shorter command timeout, `poll --max-wait-seconds N` accepts 1–60 and preserves that limit in subsequent commands; it changes only how often the CLI returns control, not the download-check schedule. The host controls when a new chat message reaches the agent. If it queues messages behind a running command, interrupt the turn before sending “done”; a script cannot override that interface behavior.
-
-## Resume or change the download location
+`wait` checks locally once per second, exits on receipt, and times out after one hour (`--timeout-seconds N`, 1–86400). It returns no retry command. `collect` writes a stop marker and checks once; an in-flight wait notices the marker within a second. A timeout, error, duplicate wait, or interrupted process falls back to manual collection. A stale wait cannot restart the session's automatic wait. No files are deleted because waiting ended.
 
 ```sh
-node SKILL_DIR/scripts/grill-form.mjs poll --session SESSION_DIR
-node SKILL_DIR/scripts/grill-form.mjs poll --session SESSION_DIR --downloads CUSTOM_DOWNLOADS --max-wait-seconds 10
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 node SKILL_DIR/scripts/grill-form.mjs collect --session SESSION_DIR --answer EXACT_FILE
+# Only with verified background completion notifications:
+node SKILL_DIR/scripts/grill-form.mjs wait --session SESSION_DIR --downloads CUSTOM_DOWNLOADS
 ```
 
-The default is `~/Downloads`. `collect` checks once and returns a manual next action if no download exists. Both next commands preserve a custom download location or explicit answer path. Already-collected answers return from the receipt, so an interrupted turn can resume. An unfinished/invalid answer file produces an error and remains untouched; retry on user request after the browser finishes saving it. Older saved commands containing `--wait-seconds` or `--poll-step` must omit those removed options and use manual collection; do not reconstruct an old schedule from conversation memory.
+The default is `~/Downloads`. Returned collection commands preserve the custom location or explicit answer path. Already-collected answers return from the receipt after an interrupted turn. An unfinished or invalid download produces an error and remains untouched; retry on user request after saving completes. Old `poll` commands now perform one manual check. Removed `--wait-seconds` and `--poll-step` options must be omitted; never reconstruct an old schedule.
 
-The static form cannot notify an ended agent turn or confirm receipt. Browser download settings may require choosing a save location. **Download and close form** starts the same answer download and requests tab closure; browsers may refuse to close a tab they did not open through a script. If it stays open, the form tells the user to save the file and close it manually. Closing the tab does not confirm a download; only the collector validates receipt. Draft recovery on file URLs depends on browser storage support.
+The static form cannot notify an ended agent turn or confirm receipt. Browser download settings may require choosing a save location. **Download and close form** starts the download and requests tab closure; browsers may refuse. Closing the tab does not confirm a download; only the collector validates receipt. Draft recovery on file URLs depends on browser storage support.
 
 ## Finish
 
@@ -51,7 +47,7 @@ Common errors:
 | Changed answer/transcript, symlink, or unexpected session files | Preserve the files and report the conflict. Do not bypass checks or use broad deletion. |
 | Session created by an older skill version lacks a project | Preserve its answer files and recover through the previous version or an explicitly requested migration. Do not invent a destination. |
 
-Errors are JSON on stderr with exit 1. Successful results are JSON on stdout with exit 0. `waiting` means no receipt was returned and the process has exited; a short polling slice may end before a download check is due. Follow the next command while `next.when` is `now`; for `user_done`, report the missing download and end the turn. `stopped` means another command finished or discarded the session while this poll was waiting.
+Errors are JSON on stderr with exit 1. Successful results are JSON on stdout with exit 0. `waiting` means no receipt was returned and the process has exited: end the turn and collect only on user request. `stopped` means another command finished or discarded the session while the local process was waiting.
 
 ## Cancel
 

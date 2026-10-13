@@ -7,7 +7,6 @@ import {fileURLToPath} from 'node:url';
 import {spawn, spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {normalizeSpec, validateSubmission} from '../skills/grill-form/scripts/model.mjs';
-import {startPolling, pollingWindow, advancePolling} from '../skills/grill-form/scripts/polling.mjs';
 import {chrome} from './helpers/chrome.mjs';
 
 const cli = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
@@ -35,7 +34,6 @@ async function fixture(t, input = spec, createArgs = []) {
     write: (value = payload, file = answer) => fs.writeFile(file, JSON.stringify(value)),
     collect: (...args) => run(['collect', '--session', created.session, '--downloads', downloadDir, ...args]),
     poll: () => run(['poll', '--session', created.session, '--downloads', downloadDir, '--max-wait-seconds', '1']),
-    progress: value => fs.writeFile(path.join(created.session, 'polling.json'), JSON.stringify(value)),
     cleanup: (...args) => run(['cleanup', '--session', created.session, '--downloads', downloadDir, ...args]),
     finish: (...args) => run(['finish', '--session', created.session, '--downloads', downloadDir, ...args]),
   };
@@ -179,97 +177,79 @@ test('explicit cancellation removes only owned temporary data and requires a fla
   assert.equal(ok(f.cleanup('--discard')).status, 'cleaned');
 });
 
-test('the mechanical schedule has 21 checks over 139 minutes and skips missed checks after suspension', () => {
-  let now = 1000, progress = startPolling(now);
-  const delays = [];
-  while (pollingWindow(progress, now)) {
-    const window = pollingWindow(progress, now);
-    delays.push((window.dueAt - now) / 60_000);
-    assert.ok(delays.length <= 21, 'polling must terminate');
-    now = window.dueAt;
-    progress = advancePolling(progress, now);
-  }
-  assert.deepEqual(delays, [1, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]);
-  assert.equal(delays.reduce((sum, minutes) => sum + minutes, 0), 139);
-  assert.equal(pollingWindow(startPolling(0), 139 * 60_000 + 1), null);
-  const resumed = advancePolling(startPolling(0), 5 * 60_000);
-  assert.equal(pollingWindow(resumed, 5 * 60_000).dueAt, 8 * 60_000);
-  assert.throws(() => pollingWindow({startedAt: 0, checked: 22}, 0), /Invalid polling state/);
-});
-
-test('poll owns the wait, preserves progress and command options, and checks downloads only when due', async t => {
-  const f = await fixture(t); await f.write();
-  assert.equal(f.next.when, 'now');
-  assert.equal(f.next.action, 'poll');
-  const scheduled = ok(f.poll());
-  assert.equal(scheduled.next.when, 'now');
-  assert.ok(scheduled.next.immediate.argv.includes(f.downloadDir));
-  assert.ok(scheduled.next.argv.includes('--max-wait-seconds'));
-  const progressFile = path.join(f.session, 'polling.json');
-  const progress = JSON.parse(await fs.readFile(progressFile, 'utf8'));
-  assert.equal(progress.checked, 0);
-  assert.equal(ok(f.poll()).next.when, 'now');
-  assert.deepEqual(JSON.parse(await fs.readFile(progressFile, 'utf8')), progress, 'repeated invocations must not reset the clock');
-  await assert.rejects(fs.stat(path.join(f.session, 'receipt.json')), {code: 'ENOENT'});
-  const before = Date.now();
-  await f.progress({startedAt: before - 60_000 + 500, checked: 0});
-  const received = ok(f.poll());
-  assert.ok(Date.now() - before >= 500, 'the CLI must wait for the scheduled check');
-  assert.equal(received.status, 'received');
-  assert.equal(received.next.action, 'finish');
-  assert.equal(ok(f.poll()).next.when, 'user_done');
-  assert.equal(ok(f.finish()).status, 'finished');
-});
-
-test('done cancels an in-flight poll through ordinary CLI commands and stale commands cannot restart it', async t => {
+test('creation defaults to done and legacy poll commands cannot schedule another tool call', async t => {
   const f = await fixture(t);
-  const child = spawn(process.execPath, [cli, 'poll', '--session', f.session, '--downloads', f.downloadDir], {stdio: ['ignore', 'pipe', 'pipe']});
+  assert.equal(f.next.when, 'user_done');
+  assert.equal(f.next.action, 'collect');
+  assert.equal(f.background.action, 'wait');
+  const legacy = ok(f.poll());
+  assert.equal(legacy.next.when, 'user_done');
+  assert.equal(legacy.next.action, 'collect');
+  await f.write();
+  assert.equal(ok(f.collect()).status, 'received');
+  ok(f.finish());
+});
+
+function backgroundWait(t, f, extra = []) {
+  const child = spawn(process.execPath, [cli, 'wait', '--session', f.session, '--downloads', f.downloadDir, ...extra], {stdio: ['ignore', 'pipe', 'pipe']});
   t.after(() => child.kill());
   let stdout = '', stderr = '';
   child.stdout.on('data', chunk => { stdout += chunk; });
   child.stderr.on('data', chunk => { stderr += chunk; });
   const finished = new Promise(resolve => child.on('close', status => resolve({status, stdout, stderr})));
+  return {finished, output: () => stdout};
+}
+async function waitStarted(f) {
   const deadline = Date.now() + 3000;
-  while (!(await fs.readdir(f.session)).includes('polling.json')) {
-    assert.ok(Date.now() < deadline, 'poll should persist its progress before waiting');
-    await new Promise(resolve => setTimeout(resolve,20));
+  while (!(await fs.readdir(f.session)).includes('wait.started.json')) {
+    assert.ok(Date.now() < deadline, 'local wait must start');
+    await new Promise(resolve => setTimeout(resolve, 20));
   }
-  const before = Date.now();
-  const immediate = ok(run(f.next.immediate.argv.slice(2).concat('--downloads', f.downloadDir)));
-  assert.equal(immediate.status, 'waiting');
-  assert.equal(immediate.next.when, 'user_done');
-  assert.equal(ok(await finished).next.when, 'user_done');
-  assert.ok(Date.now() - before < 3000, 'manual collection should wake the waiting CLI promptly');
-  assert.equal(ok(f.poll()).next.when, 'user_done');
+}
+
+test('one background process stays silent until a download arrives', async t => {
+  const f = await fixture(t), wait = backgroundWait(t, f);
+  await waitStarted(f);
+  assert.equal(wait.output(), '');
+  await f.write();
+  const received = ok(await wait.finished);
+  assert.equal(received.status, 'received');
+  assert.equal(received.next.action, 'finish');
+  assert.equal(ok(f.finish()).status, 'finished');
+});
+
+test('done stops the local wait; stale waits cannot restart it', async t => {
+  const f = await fixture(t), wait = backgroundWait(t, f);
+  await waitStarted(f);
+  assert.equal(ok(f.collect()).next.when, 'user_done');
+  assert.equal(ok(await wait.finished).next.when, 'user_done');
+  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
   await f.write();
   assert.equal(ok(f.collect()).status, 'received');
-  assert.equal(ok(f.finish()).status, 'finished');
+  ok(f.finish());
 });
 
-test('an expired schedule requires manual collection even when an answer is present', async t => {
-  const f = await fixture(t); await f.write();
-  await f.progress({startedAt: Date.now() - 139 * 60_000 - 1000, checked: 0});
-  const expired = ok(f.poll());
-  assert.equal(expired.next.when, 'user_done');
-  await assert.rejects(fs.stat(path.join(f.session, 'receipt.json')), {code: 'ENOENT'});
-  assert.equal(ok(run(expired.next.argv.slice(2))).status, 'received');
-  assert.equal(ok(f.finish()).status, 'finished');
-});
-
-test('a missing scheduled download advances persisted progress and polling errors stop without deleting answers', async t => {
+test('timeout preserves the draft and returns only manual collection, including on retry', async t => {
   const f = await fixture(t);
-  const startedAt = Date.now() - 60_000;
-  await f.progress({startedAt, checked: 0});
-  assert.equal(ok(f.poll()).next.when, 'now');
-  assert.deepEqual(JSON.parse(await fs.readFile(path.join(f.session, 'polling.json'), 'utf8')), {startedAt, checked: 1});
-  await f.progress({startedAt: Date.now() - 60_000, checked: 0});
+  const result = ok(run(['wait', '--session', f.session, '--downloads', f.downloadDir, '--timeout-seconds', '1']));
+  assert.equal(result.next.when, 'user_done');
+  await fs.stat(f.html);
+  await f.write();
+  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
+  assert.equal(ok(f.collect()).status, 'received');
+  ok(f.finish());
+});
+
+test('local wait errors stop without deleting invalid answers', async t => {
+  const f = await fixture(t);
   await f.write({...f.payload, sessionId: 'wrong'});
-  bad(f.poll(), /different session/);
+  bad(run(['wait', '--session', f.session, '--downloads', f.downloadDir]), /different session/);
   await fs.stat(f.answer);
   await f.write();
-  assert.equal(ok(f.poll()).next.when, 'user_done');
+  assert.equal(ok(run(['wait', '--session', f.session])).next.when, 'user_done');
   assert.equal(ok(f.collect()).status, 'received');
-  for (const seconds of ['0', '-1', '61', '1.5']) bad(run(['poll', '--session', f.session, '--max-wait-seconds', seconds]), /must be an integer/);
+  ok(f.finish());
+  for (const seconds of ['0', '-1', '86401', '1.5']) bad(run(['wait', '--session', f.session, '--timeout-seconds', seconds]), /must be an integer/);
 });
 
 test('question schema enforces round boundaries and collector uses authoritative labels', () => {

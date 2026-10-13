@@ -1,6 +1,6 @@
 # jstack
 
-A collection of twelve skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of thirteen skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 ## Skills
 
@@ -17,6 +17,7 @@ A collection of twelve skills for clarifying designs, implementing lean solution
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
 | [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
 | [concise-writing](skills/concise-writing/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
+| [capture-feedback](skills/capture-feedback/SKILL.md) | Capture screen regions and inline feedback in a native macOS panel, then hand the batch to an agent |
 | [commit](skills/commit/SKILL.md) | Commit all changes, splitting as needed |
 
 ## Using the collection
@@ -42,6 +43,8 @@ Example requests:
 `grill-me` feeds planning outcomes into `plan`; `grill-form` optionally presents its rounds without changing grill-me. Its prepared native HTML template works offline; Node scripts collect answers, save a transcript in an existing target wiki or temporary directory, and remove session files. The agent then interprets the transcript through grill-me/plan. It needs no server, frameworks, packages, build, or per-interview UI development. `plan` reuses existing project documentation and asks before adopting jstack wiki when none exists. `feature-map` and verification workflows use `wiki` for document operations. Wiki renders generic metadata. The report checker in `verify-change` validates its own outcome vocabulary and report location; the reader does not interpret those states.
 
 The former `planning-wiki` skill is replaced by `plan` and `wiki`. Existing project Markdown and paths can be reused. Inspect local reader customizations before upgrading the builder.
+
+`capture-feedback` ships a small prebuilt Objective-C/AppKit app for macOS. It captures rectangular regions anywhere on screen, preserves drafts, and collects paired images and notes. Both capture-feedback and grill-form use “done” by default, with optional verified background completion and no repeated agent polling.
 
 ## Project boundary
 

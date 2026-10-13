@@ -1,0 +1,4 @@
+interface:
+  display_name: "Capture Feedback"
+  short_description: "Capture screen regions and send feedback to your agent"
+  default_prompt: "Use $capture-feedback to collect my visual feedback on this project."
