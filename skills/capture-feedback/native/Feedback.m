@@ -165,56 +165,87 @@ static void Finish(NSString *root, NSString *receipt) {
 @property NSString *itemID;
 @end
 @implementation FeedbackText
+- (void)drawRect:(NSRect)dirtyRect {
+    [super drawRect:dirtyRect];
+    if (!self.string.length) {
+        NSPoint origin = self.textContainerOrigin;
+        origin.x += self.textContainer.lineFragmentPadding;
+        [@"Add feedback…" drawAtPoint:origin withAttributes:@{NSFontAttributeName:self.font, NSForegroundColorAttributeName:NSColor.placeholderTextColor}];
+    }
+}
 @end
 
-@interface FeedbackRow : NSTableCellView
+@interface FeedbackList : NSView
+@end
+@implementation FeedbackList
+- (BOOL)isFlipped { return YES; }
+@end
+
+@interface FeedbackRow : FeedbackList
 @property NSImageView *thumbnail;
-@property NSScrollView *editorScroll;
 @property FeedbackText *editor;
 @property NSButton *removeButton;
+@property NSBox *separator;
+- (CGFloat)layoutForWidth:(CGFloat)width;
 @end
 @implementation FeedbackRow
 - (instancetype)initWithFrame:(NSRect)frame {
     if ((self = [super initWithFrame:frame])) {
-        _thumbnail = [[NSImageView alloc] initWithFrame:NSMakeRect(10, 17, 72, 60)];
+        self.clipsToBounds = YES;
+        _thumbnail = [[NSImageView alloc] initWithFrame:NSMakeRect(12, 14, 72, 60)];
         _thumbnail.imageScaling = NSImageScaleProportionallyUpOrDown;
         [_thumbnail setAccessibilityLabel:@"Captured region"];
         [self addSubview:_thumbnail];
-        _editorScroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(94, 10, frame.size.width - 128, 76)];
-        _editorScroll.autoresizingMask = NSViewWidthSizable;
-        _editorScroll.hasVerticalScroller = YES;
-        _editorScroll.drawsBackground = NO;
-        _editor = [[FeedbackText alloc] initWithFrame:_editorScroll.contentView.bounds];
-        _editor.minSize = NSMakeSize(0, 76); _editor.maxSize = NSMakeSize(CGFLOAT_MAX, CGFLOAT_MAX);
-        _editor.verticallyResizable = YES; _editor.horizontallyResizable = NO;
-        _editor.autoresizingMask = NSViewWidthSizable;
-        _editor.textContainer.containerSize = NSMakeSize(_editorScroll.contentSize.width, CGFLOAT_MAX);
+        _editor = [[FeedbackText alloc] initWithFrame:NSMakeRect(94, 8, MAX(100, frame.size.width - 132), 64)];
+        _editor.minSize = NSZeroSize; _editor.maxSize = NSMakeSize(CGFLOAT_MAX, CGFLOAT_MAX);
+        _editor.verticallyResizable = NO; _editor.horizontallyResizable = NO;
         _editor.textContainer.widthTracksTextView = YES;
+        _editor.textContainer.heightTracksTextView = NO;
         _editor.font = [NSFont systemFontOfSize:NSFont.systemFontSize];
         _editor.textColor = NSColor.labelColor; _editor.drawsBackground = NO;
         _editor.richText = NO; _editor.importsGraphics = NO; _editor.allowsUndo = YES;
         _editor.textContainerInset = NSMakeSize(0, 4);
         [_editor setAccessibilityLabel:@"Feedback"];
-        _editorScroll.documentView = _editor;
-        [self addSubview:_editorScroll];
+        [self addSubview:_editor];
         _removeButton = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"trash" accessibilityDescription:@"Remove capture"] target:nil action:nil];
-        _removeButton.frame = NSMakeRect(frame.size.width - 28, 37, 20, 22);
-        _removeButton.autoresizingMask = NSViewMinXMargin;
         _removeButton.bordered = NO; _removeButton.contentTintColor = NSColor.secondaryLabelColor;
         _removeButton.toolTip = @"Remove capture";
         [self addSubview:_removeButton];
+        _separator = [[NSBox alloc] init]; _separator.boxType = NSBoxSeparator;
+        [self addSubview:_separator];
     }
     return self;
 }
+- (CGFloat)layoutForWidth:(CGFloat)width {
+    CGFloat editorWidth = MAX(100, width - 132);
+    [self.editor setFrameSize:NSMakeSize(editorWidth, self.editor.frame.size.height)];
+    self.editor.textContainer.containerSize = NSMakeSize(editorWidth, CGFLOAT_MAX);
+    NSLayoutManager *layout = self.editor.layoutManager;
+    [layout ensureLayoutForTextContainer:self.editor.textContainer];
+    CGFloat bottom = NSMaxY([layout usedRectForTextContainer:self.editor.textContainer]);
+    // A trailing newline has its own insertion line, outside usedRect.
+    if (layout.extraLineFragmentTextContainer == self.editor.textContainer)
+        bottom = MAX(bottom, NSMaxY(layout.extraLineFragmentRect));
+    CGFloat editorHeight = MAX(64, ceil(bottom + 2 * self.editor.textContainerInset.height));
+    CGFloat height = MAX(88, editorHeight + 20);
+    [self setFrameSize:NSMakeSize(width, height)];
+    self.editor.frame = NSMakeRect(94, 8, editorWidth, editorHeight);
+    self.removeButton.frame = NSMakeRect(width - 28, 12, 20, 22);
+    self.separator.frame = NSMakeRect(12, height - 1, width - 24, 1);
+    return height;
+}
 @end
 
-@interface FeedbackApp : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTableViewDataSource, NSTableViewDelegate, NSTextViewDelegate>
+@interface FeedbackApp : NSObject <NSApplicationDelegate, NSWindowDelegate, NSTextViewDelegate>
 @property NSString *root;
 @property NSMutableDictionary *batch;
 @property int lock;
 @property NSPanel *panel;
 @property NSPanel *toast;
-@property NSTableView *table;
+@property FeedbackList *list;
+@property NSMutableArray<FeedbackRow *> *rows;
+@property BOOL layingOut;
+@property BOOL userSized;
 @property NSScrollView *scroll;
 @property NSTextField *empty;
 @property NSButton *captureButton;
@@ -250,27 +281,44 @@ static void Finish(NSString *root, NSString *receipt) {
     for (NSArray *entry in @[@[@"Undo", @"undo:", @"z"], @[@"Cut", @"cut:", @"x"], @[@"Copy", @"copy:", @"c"], @[@"Paste", @"paste:", @"v"], @[@"Select All", @"selectAll:", @"a"]])
         [edit addItemWithTitle:entry[0] action:NSSelectorFromString(entry[1]) keyEquivalent:entry[2]];
     NSApp.mainMenu = menu;
+    [self buildPanel];
+    NSRect screen = NSScreen.mainScreen.visibleFrame;
+    [self.panel setFrameTopLeftPoint:NSMakePoint(NSMaxX(screen) - self.panel.frame.size.width - 24, NSMaxY(screen) - 24)];
+    [self.panel makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
+    // Opt-in maintainer timing marker; never an agent completion event.
+    if (getenv("JSTACK_FEEDBACK_METRICS")) { fprintf(stderr, "feedback-ready\n"); fflush(stderr); }
+}
+- (void)buildPanel {
     self.panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 400, 144)
         styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskUtilityWindow backing:NSBackingStoreBuffered defer:NO];
     self.panel.title = @"Feedback"; self.panel.delegate = self;
+    self.panel.titlebarAppearsTransparent = NO;
     self.panel.floatingPanel = YES; self.panel.hidesOnDeactivate = NO;
     self.panel.becomesKeyOnlyIfNeeded = NO; self.panel.releasedWhenClosed = NO;
     self.panel.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces|NSWindowCollectionBehaviorFullScreenAuxiliary;
     self.panel.contentMinSize = NSMakeSize(360, 140); self.panel.contentMaxSize = NSMakeSize(700, 800);
     NSView *content = self.panel.contentView;
+    content.wantsLayer = YES;
+    content.clipsToBounds = YES;
     self.scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 48, 400, 96)];
-    self.scroll.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
-    self.scroll.hasVerticalScroller = YES; self.scroll.drawsBackground = NO;
-    self.table = [[NSTableView alloc] initWithFrame:self.scroll.bounds];
-    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"feedback"]; column.width = 400;
-    [self.table addTableColumn:column]; self.table.headerView = nil;
-    self.table.dataSource = self; self.table.delegate = self;
-    self.table.rowHeight = 96; self.table.intercellSpacing = NSMakeSize(0, 1);
-    self.table.backgroundColor = NSColor.windowBackgroundColor;
-    self.table.selectionHighlightStyle = NSTableViewSelectionHighlightStyleNone;
-    self.table.columnAutoresizingStyle = NSTableViewLastColumnOnlyAutoresizingStyle;
-    self.table.style = NSTableViewStylePlain;
-    self.scroll.documentView = self.table; [content addSubview:self.scroll];
+    self.scroll.translatesAutoresizingMaskIntoConstraints = NO;
+    self.scroll.hasVerticalScroller = YES; self.scroll.autohidesScrollers = YES;
+    self.scroll.drawsBackground = YES; self.scroll.backgroundColor = NSColor.windowBackgroundColor;
+    self.scroll.clipsToBounds = YES; self.scroll.contentView.clipsToBounds = YES;
+    self.scroll.automaticallyAdjustsContentInsets = NO;
+    self.scroll.contentView.postsFrameChangedNotifications = YES;
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(viewportChanged:)
+        name:NSViewFrameDidChangeNotification object:self.scroll.contentView];
+    self.list = [[FeedbackList alloc] initWithFrame:self.scroll.contentView.bounds];
+    self.list.clipsToBounds = YES;
+    self.scroll.documentView = self.list; [content addSubview:self.scroll];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.scroll.leadingAnchor constraintEqualToAnchor:content.leadingAnchor],
+        [self.scroll.trailingAnchor constraintEqualToAnchor:content.trailingAnchor],
+        [self.scroll.topAnchor constraintEqualToAnchor:[self.panel.contentLayoutGuide topAnchor]],
+        [self.scroll.bottomAnchor constraintEqualToAnchor:content.bottomAnchor constant:-48]
+    ]];
+    self.rows = [NSMutableArray array];
     self.empty = [NSTextField wrappingLabelWithString:@"Capture an area, then add feedback."];
     self.empty.frame = NSMakeRect(20, 82, 360, 22); self.empty.alignment = NSTextAlignmentCenter;
     self.empty.textColor = NSColor.secondaryLabelColor;
@@ -289,33 +337,71 @@ static void Finish(NSString *root, NSString *receipt) {
     self.submitButton.toolTip = @"Submit batch (⌘Return)";
     [content addSubview:self.submitButton];
     [self refresh];
-    NSRect screen = NSScreen.mainScreen.visibleFrame;
-    [self.panel setFrameTopLeftPoint:NSMakePoint(NSMaxX(screen) - self.panel.frame.size.width - 24, NSMaxY(screen) - 24)];
-    [self.panel makeKeyAndOrderFront:nil]; [NSApp activateIgnoringOtherApps:YES];
-    // Opt-in maintainer timing marker; never an agent completion event.
-    if (getenv("JSTACK_FEEDBACK_METRICS")) { fprintf(stderr, "feedback-ready\n"); fflush(stderr); }
 }
 - (void)refresh {
     self.empty.hidden = self.items.count > 0;
-    [self.table reloadData];
-    NSRect old = self.panel.frame;
-    [self.panel setContentSize:NSMakeSize(old.size.width, 48 + MAX(96, MIN(384, self.items.count * 97)))];
-    [self.panel setFrameTopLeftPoint:NSMakePoint(old.origin.x, NSMaxY(old))];
+    self.scroll.hidden = !self.items.count;
+    NSMutableArray *rows = [NSMutableArray array];
+    for (NSDictionary *item in self.items) {
+        FeedbackRow *row;
+        for (FeedbackRow *existing in self.rows)
+            if ([existing.editor.itemID isEqual:item[@"id"]]) { row = existing; break; }
+        if (!row) {
+            row = [self rowForItem:item];
+            [self.list addSubview:row];
+        }
+        [rows addObject:row];
+    }
+    for (FeedbackRow *row in self.rows) if (![rows containsObject:row]) [row removeFromSuperview];
+    self.rows = rows;
+    [self layoutBatch];
     [self updateSubmit];
+}
+- (void)layoutBatch {
+    if (self.layingOut || !self.list) return;
+    self.layingOut = YES;
+    NSPoint origin = self.scroll.contentView.bounds.origin;
+    // A native non-overlay scroller can change the available width when it appears.
+    for (NSUInteger pass = 0; pass < 3; pass++) {
+        [self.panel.contentView layoutSubtreeIfNeeded];
+        [self.scroll tile];
+        CGFloat width = self.scroll.contentSize.width, height = 0;
+        for (FeedbackRow *row in self.rows) {
+            [row setFrameOrigin:NSMakePoint(0, height)];
+            height += [row layoutForWidth:width];
+        }
+        [self.list setFrameSize:NSMakeSize(width, height)];
+        if (!self.userSized) {
+            NSRect frame = self.panel.frame;
+            CGFloat desired = 48 + MAX(96, MIN(384, height));
+            if (fabs(self.panel.contentView.bounds.size.height - desired) > 0.5) {
+                [self.panel setContentSize:NSMakeSize(self.panel.contentView.bounds.size.width, desired)];
+                [self.panel setFrameTopLeftPoint:NSMakePoint(frame.origin.x, NSMaxY(frame))];
+            }
+        }
+        [self.panel.contentView layoutSubtreeIfNeeded];
+        [self.scroll reflectScrolledClipView:self.scroll.contentView];
+        [self.scroll tile];
+        if (fabs(self.scroll.contentSize.width - width) < 0.5) break;
+    }
+    origin.y = MAX(0, MIN(origin.y, self.list.frame.size.height - self.scroll.contentSize.height));
+    [self.scroll.contentView scrollToPoint:origin];
+    [self.scroll reflectScrolledClipView:self.scroll.contentView];
+    self.layingOut = NO;
+}
+- (void)windowWillStartLiveResize:(NSNotification *)notification { self.userSized = YES; }
+- (void)windowDidResize:(NSNotification *)notification { [self layoutBatch]; }
+- (void)viewportChanged:(NSNotification *)notification {
+    if (fabs(self.list.frame.size.width - self.scroll.contentSize.width) > 0.5) [self layoutBatch];
 }
 - (void)updateSubmit {
     BOOL ready = self.items.count > 0 && !self.saveFailed && !self.captureTask;
     for (NSDictionary *item in self.items) if (!Trim(item[@"feedback"]).length) ready = NO;
     self.submitButton.enabled = ready;
 }
-- (NSInteger)numberOfRowsInTableView:(NSTableView *)table { return self.items.count; }
-- (BOOL)tableView:(NSTableView *)table shouldSelectRow:(NSInteger)row { return NO; }
-- (NSView *)tableView:(NSTableView *)table viewForTableColumn:(NSTableColumn *)column row:(NSInteger)index {
-    FeedbackRow *row = [table makeViewWithIdentifier:@"item" owner:self];
-    if (!row) { row = [[FeedbackRow alloc] initWithFrame:NSMakeRect(0, 0, column.width, 96)]; row.identifier = @"item"; }
-    NSDictionary *item = self.items[index];
-    row.editor.delegate = nil; row.editor.string = item[@"feedback"]; row.editor.itemID = item[@"id"];
-    [row.editor.undoManager removeAllActions]; row.editor.delegate = self;
+- (FeedbackRow *)rowForItem:(NSDictionary *)item {
+    FeedbackRow *row = [[FeedbackRow alloc] initWithFrame:NSMakeRect(0, 0, self.scroll.contentSize.width, 88)];
+    row.editor.string = item[@"feedback"]; row.editor.itemID = item[@"id"]; row.editor.delegate = self;
     row.removeButton.identifier = item[@"id"]; row.removeButton.target = self; row.removeButton.action = @selector(remove:);
     CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:Join(self.root, item[@"image"])], NULL);
     if (source) {
@@ -330,7 +416,9 @@ static void Finish(NSString *root, NSString *receipt) {
 - (void)textDidChange:(NSNotification *)notification {
     FeedbackText *editor = notification.object;
     for (NSMutableDictionary *item in self.items) if ([item[@"id"] isEqual:editor.itemID]) { item[@"feedback"] = editor.string; break; }
-    [self save]; [self updateSubmit];
+    [self save]; [self layoutBatch]; [self updateSubmit];
+    editor.needsDisplay = YES;
+    [editor scrollRangeToVisible:editor.selectedRange];
 }
 - (void)remove:(NSButton *)sender {
     NSUInteger index = [self.items indexOfObjectPassingTest:^BOOL(NSDictionary *item, NSUInteger i, BOOL *stop) { return [item[@"id"] isEqual:sender.identifier]; }];
@@ -364,9 +452,9 @@ static void Finish(NSString *root, NSString *receipt) {
                     Check(valid, @"The capture could not be read. Try Capture again.");
                     [self.items addObject:[@{@"id":identifier, @"image":file.lastPathComponent, @"feedback":@""} mutableCopy]];
                     [self save]; [self refresh];
-                    NSInteger index = self.items.count - 1; [self.table scrollRowToVisible:index];
-                    FeedbackRow *row = [self.table viewAtColumn:0 row:index makeIfNecessary:YES];
+                    FeedbackRow *row = self.rows.lastObject;
                     [self.panel makeFirstResponder:row.editor];
+                    [row.editor scrollRangeToVisible:NSMakeRange(0, 0)];
                 } @catch (NSException *error) { [self showError:error.reason]; }
             } else if (ended.terminationStatus != 0) {
                 [self showError:@"Capture did not complete. If macOS requests Screen Recording access, allow it in System Settings, then try Capture again. Escape cancels a selection."];

@@ -10,7 +10,7 @@ Click **Capture** (⌘N), drag a rectangle anywhere on screen, and enter feedbac
 
 macOS may request Screen Recording permission for the app or launching host. The user grants that through the system prompt or System Settings. The helper does not change permissions. No Accessibility permission is required by the helper.
 
-Draft notes are saved atomically as they change. Closing preserves the draft. A session lock prevents concurrent editors. Captures stay full resolution on disk; the list decodes small thumbnails. Very long notes scroll inside their row, and long batches scroll inside the panel.
+Draft notes are saved atomically as they change. Closing preserves the draft. A session lock prevents concurrent editors. Captures stay full resolution on disk; the list decodes small thumbnails. Notes grow to show their full text. One scroll area moves the whole batch; the title bar and buttons stay fixed. The panel grows up to a compact maximum unless the user resizes it.
 
 ## Commands and storage
 

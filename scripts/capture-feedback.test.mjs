@@ -45,6 +45,18 @@ macTest('committed app is universal, signed, and matches its source plist', asyn
     await fs.readFile(new URL('../skills/capture-feedback/native/Info.plist', import.meta.url), 'utf8'));
 });
 
+macTest('native note layout grows without clipping or nested scrolling', async t => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-feedback-layout-'));
+  t.after(() => fs.rm(temporary, {recursive:true, force:true}));
+  const executable = path.join(temporary, 'layout-test');
+  const source = fileURLToPath(new URL('./capture-feedback-layout.m', import.meta.url));
+  const built = spawnSync('/usr/bin/xcrun', ['clang', '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
+    '-framework', 'AppKit', '-framework', 'ImageIO', source, '-o', executable], {encoding:'utf8', timeout:30000});
+  assert.equal(built.status, 0, built.stderr);
+  const checked = spawnSync(executable, [], {encoding:'utf8', timeout:10000});
+  assert.equal(checked.status, 0, checked.stderr);
+});
+
 macTest('create isolates sessions, restricts permissions, and draft collection checks once', async t => {
   const f = await fixture(t);
   assert.equal((await fs.stat(f.session)).mode & 0o777, 0o700);
