@@ -7,7 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const binary = fileURLToPath(new URL('../skills/capture-feedback/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
+const binary = fileURLToPath(new URL('../skills/screencap/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsPInvYLYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BbQHKU9LC7/CP1AAAAABJRU5ErkJggg==', 'base64');
 const macTest = (name, fn) => test(name, {skip: process.platform !== 'darwin'}, fn);
 const run = (...args) => spawnSync(binary, args, {encoding:'utf8', timeout:5000});
@@ -42,14 +42,14 @@ macTest('committed app is universal, signed, and matches its source plist', asyn
   const signature = spawnSync('/usr/bin/codesign', ['--verify', '--strict', app], {encoding:'utf8'});
   assert.equal(signature.status, 0, signature.stderr);
   assert.equal(await fs.readFile(path.join(app, 'Contents/Info.plist'), 'utf8'),
-    await fs.readFile(new URL('../skills/capture-feedback/native/Info.plist', import.meta.url), 'utf8'));
+    await fs.readFile(new URL('../skills/screencap/native/Info.plist', import.meta.url), 'utf8'));
 });
 
 macTest('native note layout grows without clipping or nested scrolling', async t => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-feedback-layout-'));
   t.after(() => fs.rm(temporary, {recursive:true, force:true}));
   const executable = path.join(temporary, 'layout-test');
-  const source = fileURLToPath(new URL('./capture-feedback-layout.m', import.meta.url));
+  const source = fileURLToPath(new URL('./screencap-layout.m', import.meta.url));
   const built = spawnSync('/usr/bin/xcrun', ['clang', '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
     '-framework', 'AppKit', '-framework', 'ImageIO', source, '-o', executable], {encoding:'utf8', timeout:30000});
   assert.equal(built.status, 0, built.stderr);

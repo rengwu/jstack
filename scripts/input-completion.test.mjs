@@ -11,7 +11,7 @@ import {notification} from './completion/codex.mjs';
 
 const execute = promisify(execFile);
 const grill = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
-const capture = fileURLToPath(new URL('../skills/capture-feedback/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
+const capture = fileURLToPath(new URL('../skills/screencap/bin/Feedback.app/Contents/MacOS/Feedback', import.meta.url));
 const env = {...process.env, CODEX_THREAD_ID: ''}; // Tests must never message a real conversation.
 const parse = result => { assert.equal(result.status, 0, result.stderr || result.stdout); return JSON.parse(result.stdout); };
 const call = (argv, input) => parse(spawnSync(argv[0], argv.slice(1), {env, input: input && JSON.stringify(input), encoding: 'utf8', timeout: 5000}));
@@ -63,8 +63,8 @@ else require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.a
   return {temp, session, log, program, testEnv, args, complete, state, settled, started, submit, collect, finish};
 }
 
-for (const kind of ['grill-form', 'capture-feedback']) {
-  test(`${kind}: silent detached wait sends one notice and preserves the collectible submission`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+for (const kind of ['grill-form', 'screencap']) {
+  test(`${kind}: silent detached wait sends one notice and preserves the collectible submission`, {skip: kind === 'screencap' && process.platform !== 'darwin'}, async t => {
     const f = await fixture(t, kind), other = await fixture(t, kind);
     assert.equal(f.complete().status, 'armed');
     await f.started();
@@ -83,7 +83,7 @@ for (const kind of ['grill-form', 'capture-feedback']) {
     assert.match(notices[0], new RegExp(`^${kind} ready: `));
     assert.ok(!notices[0].includes(other.session));
     const result = f.collect(); assert.equal(result.status, 'received');
-    if (kind === 'capture-feedback') {
+    if (kind === 'screencap') {
       assert.equal(result.items[0].feedback, 'Synthetic capture feedback');
       await fs.stat(result.items[0].image);
     } else assert.equal(result.answers[0].notes, 'Synthetic answer');
@@ -92,7 +92,7 @@ for (const kind of ['grill-form', 'capture-feedback']) {
     await assert.rejects(fs.stat(f.session), {code: 'ENOENT'});
   });
 
-  test(`${kind}: timeout and manual collection stop waiting without losing later submissions`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+  test(`${kind}: timeout and manual collection stop waiting without losing later submissions`, {skip: kind === 'screencap' && process.platform !== 'darwin'}, async t => {
     for (const mode of ['timeout', 'manual']) {
       const f = await fixture(t, kind);
       assert.equal(f.complete('--timeout-seconds', mode === 'timeout' ? '1' : '30').status, 'armed');
@@ -105,7 +105,7 @@ for (const kind of ['grill-form', 'capture-feedback']) {
     }
   });
 
-  test(`${kind}: startup errors and delivery failures preserve the submission`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+  test(`${kind}: startup errors and delivery failures preserve the submission`, {skip: kind === 'screencap' && process.platform !== 'darwin'}, async t => {
     const f = await fixture(t, kind);
     const invalid = spawnSync(f.program[0], [...f.program.slice(1), ...f.args, '--timeout-seconds', '0'], {env: f.testEnv, encoding: 'utf8'});
     assert.equal(invalid.status, 1);
@@ -119,7 +119,7 @@ for (const kind of ['grill-form', 'capture-feedback']) {
     await assert.rejects(fs.stat(f.log), {code: 'ENOENT'});
   });
 
-  test(`${kind}: old wait markers prevent an automatic restart`, {skip: kind === 'capture-feedback' && process.platform !== 'darwin'}, async t => {
+  test(`${kind}: old wait markers prevent an automatic restart`, {skip: kind === 'screencap' && process.platform !== 'darwin'}, async t => {
     const f = await fixture(t, kind);
     await fs.writeFile(path.join(f.session, 'completion.json'), '{}');
     assert.equal(f.complete().status, 'fallback');

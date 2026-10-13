@@ -1,0 +1,4 @@
+interface:
+  display_name: "Screencap"
+  short_description: "Capture screen regions and send feedback to your agent"
+  default_prompt: "Use $screencap to collect my visual feedback on this project."

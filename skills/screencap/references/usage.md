@@ -37,8 +37,8 @@ For recovery, use the session path from the conversation. If it is lost, inspect
 Source is [Feedback.m](../native/Feedback.m); maintainers with Xcode build the committed app using:
 
 ```sh
-skills/capture-feedback/native/build.sh
-node --test scripts/capture-feedback.test.mjs
+skills/screencap/native/build.sh
+node --test scripts/screencap.test.mjs
 ```
 
 Commit source and the rebuilt app together. `build.sh` cross-compiles both architectures, strips local symbols, and ad-hoc signs the bundle. Session fixtures belong outside the repository. Exercise actual region selection, inline edits, scrolling, close/reopen, removal, and the five-second submission notice on macOS after UI changes. Measure startup and idle memory on the tested machine; binary architecture and signing checks do not establish runtime compatibility.

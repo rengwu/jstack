@@ -12,7 +12,7 @@ Each collector exclusively creates one `.wait` file to prevent duplicate attempt
 
 `armed` confirms the collector started, not that future delivery is guaranteed. `fallback` means no waiter started; its reason distinguishes an unavailable adapter from an existing attempt. An error or failed notification preserves the session for manual collection. The status file is for recovery, not agent polling.
 
-The bundled optional adapter uses `CODEX_THREAD_ID` and an installed `codex queue --thread ... --message ...` command. It probes CLI support before launching; older versions remain usable through the other routes. It targets the exact originating conversation and never searches for a latest thread. The short notice, `capture-feedback ready: SESSION_PATH` or `grill-form ready: SESSION_PATH`, identifies the saved submission. The resumed agent collects and validates it normally.
+The bundled optional adapter uses `CODEX_THREAD_ID` and an installed `codex queue --thread ... --message ...` command. It probes CLI support before launching; older versions remain usable through the other routes. It targets the exact originating conversation and never searches for a latest thread. The short notice, `screencap ready: SESSION_PATH` or `grill-form ready: SESSION_PATH`, identifies the saved submission. The resumed agent collects and validates it normally.
 
 Internally, the launcher passes the adapter's argument array through `wait --notify JSON_ARGV`; the collector replaces an argument exactly equal to `{message}` and executes it without a shell. `complete` and `wait` both accept `--timeout-seconds`; grill-form also accepts `--downloads` or `--answer` for a custom answer location.
 
@@ -22,7 +22,7 @@ Measured on Apple Silicon on 2026-10-13 with Node 22.19.0, disposable drafts, a 
 
 | Collector | Before | After |
 | --- | --- | --- |
-| capture-feedback | 2 processes, 48.7 MiB | 1 process, 9.6 MiB |
+| screencap | 2 processes, 48.7 MiB | 1 process, 9.6 MiB |
 | grill-form | 2 processes, 84.1 MiB | 1 process, 43.8 MiB |
 
 The universal native executable remains about 250 KiB. Removing the resident launcher accounts for the memory reduction; startup timings are not compared because the measurements used different adapter probes.
@@ -33,7 +33,7 @@ Checked 2026-10-13. Capabilities vary by version; inspect the current tool contr
 
 | Harness | No-setup route | Evidence and limits |
 | --- | --- | --- |
-| Codex | Bundled queue adapter when available; otherwise native completion or one pending tool call | CLI 0.162.1: real grill-form and capture-feedback submissions woke the originating idle conversation. Answers and the captured image with its paired note were read, then both sessions were finished. A process ID from the terminal tool alone is insufficient. |
+| Codex | Bundled queue adapter when available; otherwise native completion or one pending tool call | CLI 0.162.1: real grill-form and screencap submissions woke the originating idle conversation. Answers and the captured image with its paired note were read, then both sessions were finished. A process ID from the terminal tool alone is insufficient. |
 | Claude Code | Run `wait.command` through background Bash, using its completion notification | [Background Bash](https://code.claude.com/docs/en/interactive-mode#background-bash-commands) is documented. Completion events are also described in the [upstream tracker](https://github.com/anthropics/claude-code/issues/18544). Not exercised in a live model session here; the subscription is unavailable. |
 | OpenCode | Run `wait.command` through one pending Bash call, within that version's timeout; use native background completion if the installed tools expose it | [Bash](https://opencode.ai/docs/tools/#bash) is built in. The [upstream implementation](https://github.com/anomalyco/opencode/blob/dev/packages/core/src/tool/bash.ts) has bounded synchronous execution. CLI 1.18.34 was inspected locally, but no live model handoff was tested. This route resumes from a pending call, not an ended turn. |
 | Other local harnesses | Use their completion capability or one pending call; otherwise “done” | No universal idle-conversation wake-up API is assumed. Cursor and Gemini CLI were not live-tested. |

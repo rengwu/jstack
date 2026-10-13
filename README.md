@@ -17,7 +17,7 @@ A collection of thirteen skills for clarifying designs, implementing lean soluti
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
 | [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
 | [concise-writing](skills/concise-writing/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
-| [capture-feedback](skills/capture-feedback/SKILL.md) | Capture screen regions and inline feedback in a native macOS panel, then hand the batch to an agent |
+| [screencap](skills/screencap/SKILL.md) | Capture screen regions and inline feedback in a native macOS panel, then hand the batch to an agent |
 | [commit](skills/commit/SKILL.md) | Commit all changes, splitting as needed |
 
 ## Using the collection
@@ -44,7 +44,7 @@ Example requests:
 
 The former `planning-wiki` skill is replaced by `plan` and `wiki`. Existing project Markdown and paths can be reused. Inspect local reader customizations before upgrading the builder.
 
-`capture-feedback` ships a small prebuilt Objective-C/AppKit app for macOS. It captures rectangular regions anywhere on screen, preserves drafts, and collects paired images and notes. Both capture-feedback and grill-form prefer automatic completion through one silent local wait, with “done” as the fallback and no repeated agent polling. See [completion support](references/input-completion.md).
+`screencap` ships a small prebuilt Objective-C/AppKit app for macOS. It captures rectangular regions anywhere on screen, preserves drafts, and collects paired images and notes. Both screencap and grill-form prefer automatic completion through one silent local wait, with “done” as the fallback and no repeated agent polling. See [completion support](references/input-completion.md).
 
 ## Project boundary
 

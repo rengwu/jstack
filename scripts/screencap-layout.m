@@ -1,6 +1,6 @@
 // Maintainer regression test: real AppKit/TextKit layout, without showing a window.
 #define main FeedbackApplicationMain
-#import "../skills/capture-feedback/native/Feedback.m"
+#import "../skills/screencap/native/Feedback.m"
 #undef main
 
 static void Require(BOOL condition, NSString *message) {

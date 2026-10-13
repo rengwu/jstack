@@ -1,8 +1,8 @@
 ---
-name: capture-feedback
+name: screencap
 description: Collect visual feedback for an agent by capturing screen regions and inline notes in a compact native macOS panel. Use when the user wants to point at UI issues in native apps, websites, or anywhere on screen, then submit a batch.
 ---
-# Capture feedback
+# Screencap
 
 Use the committed Objective-C/AppKit helper on the user's Mac. It needs a local graphical session and an agent that can read local images. Do not compile on the user's machine. For unsupported platforms, remote agents, or launch failures, see [usage](references/usage.md).
 

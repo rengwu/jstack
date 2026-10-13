@@ -149,7 +149,7 @@ static NSDictionary *Collect(NSString *root, BOOL stopWait) {
     } @finally { close(lock); }
 }
 static void Notify(NSArray *argv, NSString *root) {
-    NSString *message = [@"capture-feedback ready: " stringByAppendingString:root];
+    NSString *message = [@"screencap ready: " stringByAppendingString:root];
     NSMutableArray *args = [NSMutableArray array];
     for (NSString *arg in [argv subarrayWithRange:NSMakeRange(1, argv.count - 1)]) [args addObject:[arg isEqual:@"{message}"] ? message : arg];
     NSTask *task = [[NSTask alloc] init];
