@@ -55,12 +55,24 @@ export async function chrome(t) {
   const command = (method, params) => send(method, params, sessionId);
   await command('Page.enable'); await command('Runtime.enable'); await command('Network.enable');
   await command('Network.emulateNetworkConditions', {offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0});
-  return {
-    command, events,
-    async evaluate(expression) {
-      const result = await command('Runtime.evaluate', {expression, awaitPromise: true, returnByValue: true});
-      if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
-      return result.result.value;
-    },
+  function controller(command) {
+    return {command, events,
+      async evaluate(expression) {
+        const result = await command('Runtime.evaluate', {expression, awaitPromise: true, returnByValue: true});
+        if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+        return result.result.value;
+      },
+    };
+  }
+  return {...controller(command),
+    async frames() {
+      const {targetInfos} = await send('Target.getTargets');
+      return Promise.all(targetInfos.filter(info=>info.type==='iframe').map(async info=>{
+        const {sessionId: child} = await send('Target.attachToTarget',{targetId:info.targetId,flatten:true});
+        const childCommand=(method,params)=>send(method,params,child);
+        await childCommand('Runtime.enable'); await childCommand('Network.enable');
+        return controller(childCommand);
+      }));
+    }
   };
 }

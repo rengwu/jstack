@@ -8,7 +8,7 @@ import path from 'node:path';
 import {createHash, randomUUID} from 'node:crypto';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {setTimeout as sleep} from 'node:timers/promises';
-import {normalizeSpec, validateSubmission, VERSION} from './model.mjs';
+import {normalizeSpec, validateSubmission, validRegion, VERSION, IMAGE_LIMITS, IMAGE_EXTENSIONS, SUBMISSION_BYTES, SPEC_BYTES} from './model.mjs';
 import {start} from '../../../scripts/input-completion.mjs';
 
 const template = fileURLToPath(new URL('../assets/form.template.html', import.meta.url));
@@ -41,23 +41,29 @@ function outsidePlugin(project) {
   if (project === pluginRoot || project.startsWith(pluginRoot + path.sep)) fail('Choose the target project, not the jstack plugin directory');
 }
 
-async function regularFile(file, maxBytes = 2_000_000) {
+async function regularBytes(file, maxBytes = 2_000_000) {
   const st = await fs.lstat(file);
   if (!st.isFile() || st.isSymbolicLink()) fail(`Not a regular file: ${file}`);
   if (st.size > maxBytes) fail(`File too large: ${file}`);
-  return fs.readFile(file, 'utf8');
+  return fs.readFile(file);
 }
+async function regularFile(file, maxBytes) { return (await regularBytes(file, maxBytes)).toString('utf8'); }
 async function exists(file) {
   try { await fs.lstat(file); return true; } catch (e) { if (e.code === 'ENOENT') return false; throw e; }
+}
+async function ensureDirectory(directory) {
+  if (!(await exists(directory))) await fs.mkdir(directory, {mode: 0o700});
+  const st = await fs.lstat(directory);
+  if (st.isSymbolicLink() || !st.isDirectory()) fail('Destination is not a regular directory; nothing was deleted');
 }
 async function loadSession(input) {
   if (!input) fail('Missing --session');
   const root = path.resolve(input), st = await fs.lstat(root);
   if (!st.isDirectory() || st.isSymbolicLink() || !/^grill-form-[\w-]+$/.test(path.basename(root))) fail('Not a grill-form session directory');
   const actual = await fs.realpath(root);
-  const state = JSON.parse(await regularFile(path.join(actual, 'session.json')));
+  const state = JSON.parse(await regularFile(path.join(actual, 'session.json'), SPEC_BYTES * 4));
   if (state.kind !== 'jstack-grill-form' || state.schemaVersion !== VERSION || state.directory !== actual || !/^[a-f0-9-]{36}$/.test(state.sessionId)) fail('Invalid session marker');
-  state.spec = normalizeSpec(state.spec, {richText: state.richText === true});
+  state.spec = normalizeSpec(state.spec, {richText: state.richText === true, review: state.review === true});
   if (hash(JSON.stringify(state.spec)) !== state.specDigest) fail('Session question data was modified');
   if (typeof state.project !== 'string' || !path.isAbsolute(state.project)) fail('Session has no target project; preserve it and consult references/usage.md');
   if (state.temporary !== true) outsidePlugin(state.project);
@@ -84,11 +90,11 @@ async function candidates(state, options) {
   return names.filter(n => downloadPattern(state).test(n)).sort().map(n => path.join(directory, n));
 }
 async function readAnswer(file, state) {
-  const data = await regularFile(file), input = JSON.parse(data);
+  const data = await regularFile(file, SUBMISSION_BYTES), input = JSON.parse(data);
   return {path: file, sha256: hash(data), data: validateSubmission(state, input), submission: input};
 }
 async function readReceipt(root, state) {
-  const receipt = JSON.parse(await regularFile(path.join(root, 'receipt.json')));
+  const receipt = JSON.parse(await regularFile(path.join(root, 'receipt.json'), SUBMISSION_BYTES));
   if (receipt.sessionId !== state.sessionId || !Array.isArray(receipt.files) || !receipt.files.length) fail('Invalid receipt');
   const data = validateSubmission(state, receipt.submission);
   for (const file of receipt.files) {
@@ -105,15 +111,17 @@ async function create(options) {
   if (!options.temporary) outsidePlugin(project);
   let input = '';
   process.stdin.setEncoding('utf8');
-  for await (const chunk of process.stdin) { input += chunk; if (input.length > 200_000) fail('Question data is too large'); }
-  const spec = normalizeSpec(JSON.parse(input), {richText: true});
+  for await (const chunk of process.stdin) { input += chunk; if (input.length > SPEC_BYTES) fail('Question data is too large'); }
+  const spec = normalizeSpec(JSON.parse(input), {richText: true, review: true});
   let raw = await fs.readFile(template, 'utf8');
   if (raw.split(marker).length !== 2) fail('Invalid prepared template: expected one question-data placeholder');
   if (raw.split(rendererMarker).length !== 2) fail('Invalid prepared template: expected one renderer placeholder');
   const descriptions = spec.questions.map(q => q.context).join('\n');
   const libraries = descriptions.trim() ? ['marked.js', 'purify.js'] : [];
-  if (/mermaid/i.test(descriptions)) libraries.push('mermaid.js');
+  if (/mermaid/i.test(descriptions)) libraries.push('pele.js');
   const scripts = [];
+  scripts.push('<script>\n' + validRegion.toString() + '\n</script>');
+  for (const asset of ['notes-editor.js','review.js']) scripts.push('<script>\n' + await fs.readFile(new URL('../assets/'+asset, import.meta.url), 'utf8') + '\n</script>');
   for (const name of libraries) {
     const source = await fs.readFile(new URL('../assets/vendor/' + name, import.meta.url), 'utf8');
     scripts.push('<script>\n' + source.replace(/<\/script/gi, '<\\/script').replace(/^\/\/# sourceMappingURL=.*$/gm, '') + '\n</script>');
@@ -121,7 +129,7 @@ async function create(options) {
   raw = raw.replace(rendererMarker, () => scripts.join('\n'));
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'grill-form-')));
   try {
-    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, richText: true, temporary: !!options.temporary, sessionId: randomUUID(), directory: root, project, projectName: path.basename(project), createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
+    const state = {kind: 'jstack-grill-form', schemaVersion: VERSION, richText: true, review: true, imageLimits: IMAGE_LIMITS, temporary: !!options.temporary, sessionId: randomUUID(), directory: root, project, projectName: path.basename(project), createdAt: new Date().toISOString(), specDigest: hash(JSON.stringify(spec)), spec};
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
@@ -141,7 +149,7 @@ async function collectAnswers(root, state, options) {
       const selected = await readAnswer(path.resolve(options.answer), state);
       if (JSON.stringify(selected.data) !== JSON.stringify(data)) fail('Different answers were already collected; preserve both submissions and resolve which round to retain');
     }
-    return {status: 'received', recovered: true, ...data, next: finishNext(root, options)};
+    return {status: 'received', recovered: true, ...answerSummary(data), next: finishNext(root, options)};
   }
   const files = await candidates(state, options);
   if (files.length) {
@@ -149,9 +157,13 @@ async function collectAnswers(root, state, options) {
     if (incoming.some(x => JSON.stringify(x.data) !== JSON.stringify(incoming[0].data))) fail('Conflicting submissions; choose the intended file with --answer');
     const receipt = {sessionId: state.sessionId, receivedAt: new Date().toISOString(), submission: incoming[0].submission, files: incoming.map(({path, sha256}) => ({path, sha256}))};
     await saveJSON(path.join(root, 'receipt.json'), receipt);
-    return {status: 'received', ...incoming[0].data, next: finishNext(root, options)};
+    return {status: 'received', ...answerSummary(incoming[0].data), next: finishNext(root, options)};
   }
   return null;
+}
+function answerSummary(data) {
+  const summary = answer => ({...answer, ...(answer.images ? {images: answer.images.map(({dataUrl, ...image}) => image)} : {}), ...(answer.comments ? {comments: answer.comments.map(summary)} : {})});
+  return {...data, answers: data.answers.map(summary)};
 }
 async function complete(options) {
   const {root} = await loadSession(options.session);
@@ -200,13 +212,16 @@ async function wait(options) {
 }
 // Old saved commands degrade to one manual check instead of reviving a loop.
 async function poll(options) { await collect(options); }
-function transcript(state, data) {
+const imageFilename = image => `image-${image.id}.${IMAGE_EXTENSIONS[image.mimeType]}`;
+function transcript(state, data, imageDirectory, previewFile) {
   let text = '---\ntitle: Interview answers\nsection: Journal\nupdated: ' + state.createdAt.slice(0, 10) + '\nstatus: Submitted\n---\n# Interview answers\n\nSubmitted answers; interpretation and accepted decisions are recorded through grill-me/plan.\n\nSession: `' + state.sessionId + '`\n';
+  if (previewFile) text += `\n[Saved visual review${previewFile.endsWith('.json') ? ' source' : ''}](${previewFile})\n\nPreview revision: \`${state.specDigest}\`\n`;
   for (const answer of data.answers) {
     const question = state.spec.questions.find(q => q.id === answer.questionId);
-    const content = ['Round: ' + data.title, 'Question: ' + question.prompt, (state.richText ? 'Description (Markdown source):\n' : 'Context: ') + question.context, 'Recommendation: ' + question.recommendation, 'Options: ' + question.options.map(o => o.label).join(' / '), 'Selected: ' + (answer.choice ?? '(notes only)'), 'Notes: ' + answer.notes].join('\n');
+    const content = ['Round: ' + data.title, 'Question: ' + question.prompt, (state.richText ? 'Description (Markdown source):\n' : 'Context: ') + question.context, 'Recommendation: ' + question.recommendation, 'Options: ' + question.options.map(o => o.label).join(' / '), 'Selected: ' + (answer.choice ?? (!state.review ? '(notes only)' : answer.status === 'untouched' ? '(untouched; no approval)' : '(notes or adjustments only)')), 'Notes: ' + answer.notes, ...(state.review ? ['Status: '+answer.status, 'Prototype states: '+JSON.stringify(answer.states), 'Comments: '+JSON.stringify(answerSummary({answers:answer.comments}).answers)] : [])].join('\n');
     const fence = '`'.repeat(Math.max(3, ...[...content.matchAll(/`+/g)].map(m => m[0].length + 1)));
     text += `\n## Question ${answer.number}\n\n${fence}text\n${content}\n${fence}\n`;
+    for (const image of [answer,...(answer.comments ?? [])].flatMap(a=>a.images ?? [])) text += `\n![Image #${image.id}](${imageDirectory}/${imageFilename(image)})\n`;
   }
   return text;
 }
@@ -218,18 +233,52 @@ async function finish(options) {
   let directory = state.temporary === true ? await fs.realpath(os.tmpdir()) : state.project;
   for (const segment of state.temporary === true ? [] : ['docs', 'wiki', 'journal']) {
     directory = path.join(directory, segment);
-    if (!(await exists(directory))) await fs.mkdir(directory);
-    const st = await fs.lstat(directory);
-    if (st.isSymbolicLink() || !st.isDirectory()) fail('Wiki path is not a regular directory; nothing was deleted');
+    await ensureDirectory(directory);
   }
   const record = path.join(directory, `${state.createdAt.slice(0, 10)}-grill-${state.sessionId}.md`);
-  const body = transcript(state, data);
+  const imageDirectory = path.basename(record, '.md') + '-images';
+  const images = data.answers.flatMap(a => [a,...(a.comments ?? [])]).flatMap(a=>a.images ?? []);
+  const imageParent = state.temporary === true ? directory : path.join(path.dirname(directory), 'attachments');
+  const destination = path.join(imageParent, imageDirectory);
+  if (images.length) {
+    await ensureDirectory(imageParent);
+    await ensureDirectory(destination);
+    for (const image of images) {
+      const file = path.join(destination, imageFilename(image));
+      const bytes = Buffer.from(image.dataUrl.split(',')[1], 'base64');
+      if (!(await exists(file))) await fs.writeFile(file, bytes, {mode: 0o600, flag: 'wx'});
+      if (!(await regularBytes(file, IMAGE_LIMITS.fileBytes)).equals(bytes)) fail('Saved image changed; nothing was deleted');
+    }
+  }
+  let previewFile, previewLink;
+  if (state.spec.questions.some(q=>q.preview||q.options.some(o=>o.preview))) {
+    await ensureDirectory(imageParent);
+    previewFile = path.join(imageParent, path.basename(record,'.md')+'-review.html');
+    const original = await regularFile(path.join(root,'form.html'), SPEC_BYTES * 8);
+    if (hash(original) !== state.formDigest) fail('Form was modified; nothing was deleted');
+    const archived = {...state, archived:true, savedAnswers:data.answers};
+    const saved = original.replace(/(<script type="application\/json" id="grill-data">)[\s\S]*?(<\/script>)/, (_,open,close)=>open+encode(archived)+close);
+    if (!(await exists(previewFile))) await fs.writeFile(previewFile,saved,{mode:0o600,flag:'wx'});
+    if (await regularFile(previewFile,SPEC_BYTES*8+SUBMISSION_BYTES) !== saved) fail('Saved review changed; nothing was deleted');
+    previewLink = path.basename(previewFile);
+    // The wiki supports JSON attachments, not executable HTML. Keep its reader
+    // unchanged and link the review's source/state record; return the HTML path.
+    if (!state.temporary) {
+      const sourceFile = previewFile.replace(/\.html$/,'.json');
+      const source = JSON.stringify({specDigest:state.specDigest, spec:state.spec, answers:answerSummary(data).answers, preview:{file:path.basename(previewFile),sha256:hash(saved)}},null,2)+'\n';
+      if (!(await exists(sourceFile))) await fs.writeFile(sourceFile,source,{mode:0o600,flag:'wx'});
+      if (await regularFile(sourceFile,SPEC_BYTES*8+SUBMISSION_BYTES) !== source) fail('Saved review source changed; nothing was deleted');
+      previewLink = path.basename(sourceFile);
+    }
+  }
+  const relativePrefix = state.temporary === true ? '' : '../attachments/';
+  const body = transcript(state, data, relativePrefix + imageDirectory, previewLink && relativePrefix + previewLink);
   if (await exists(record)) {
-    if (await regularFile(record) !== body) fail('Saved transcript changed; nothing was deleted');
+    if (await regularFile(record, SUBMISSION_BYTES) !== body) fail('Saved transcript changed; nothing was deleted');
   } else await fs.writeFile(record, body, {mode: 0o600, flag: 'wx'});
   // Verify the durable copy before deleting any session or answer file.
-  if (await regularFile(record) !== body) fail('Transcript verification failed; nothing was deleted');
-  await cleanup({...options, recorded: true, record});
+  if (await regularFile(record, SUBMISSION_BYTES) !== body) fail('Transcript verification failed; nothing was deleted');
+  await cleanup({...options, recorded: true, record, preview: previewFile, images: images.map(image => ({id: image.id, path: path.join(destination, imageFilename(image))}))});
 }
 async function cleanup(options) {
   if (!!options.recorded === !!options.discard) fail('Use finish to preserve answers, or cleanup --discard only after explicit cancellation');
@@ -238,7 +287,7 @@ async function cleanup(options) {
   const allowed = new Set(['form.html', 'session.json', 'receipt.json', 'poll.stop', 'polling.json', 'polling.next.json', 'wait.started.json', 'completion.json', '.wait', '.DS_Store']);
   const names = await fs.readdir(root);
   if (names.some(n => !allowed.has(n))) fail('Unexpected files in the session; nothing was deleted');
-  for (const n of names) await regularFile(path.join(root, n), n === 'form.html' ? 10_000_000 : 2_000_000);
+  for (const n of names) await regularFile(path.join(root, n), n === 'form.html' ? SPEC_BYTES * 8 : n === 'receipt.json' ? SUBMISSION_BYTES : n === 'session.json' ? SPEC_BYTES * 4 : 2_000_000);
   if (await exists(path.join(root, 'form.html')) && hash(await fs.readFile(path.join(root, 'form.html'))) !== state.formDigest) fail('Form was modified; nothing was deleted');
   const hasReceipt = await exists(path.join(root, 'receipt.json'));
   if (options.recorded && !hasReceipt) fail('Collect the answers before finish');
@@ -261,7 +310,7 @@ async function cleanup(options) {
   for (const file of files) if (await exists(file.path)) await fs.unlink(file.path);
   for (const n of names) await fs.unlink(path.join(root, n));
   await fs.rmdir(root);
-  output(options.record ? {status: 'finished', record: options.record, next: {action: 'interpret', instruction: state.temporary === true ? 'Use the temporary transcript with grill-me/plan. Follow the project record rules; do not initialize a wiki automatically.' : 'Use the saved transcript with grill-me. Update accepted decisions and open questions in the target wiki, link this journal, then build/check the wiki.'}} : {status: 'cleaned', session: root});
+  output(options.record ? {status: 'finished', record: options.record, ...(options.preview ? {preview:options.preview} : {}), ...(options.images?.length ? {images: options.images} : {}), next: {action: 'interpret', instruction: state.temporary === true ? 'Interpret the temporary feedback, captured preview state, and linked images through the review or grill-me/plan. Follow the project record rules; do not initialize a wiki automatically.' : 'Interpret the saved feedback, captured preview state, and linked images through the review or grill-me. Update accepted decisions and open questions in the target wiki, link this journal, then build/check the wiki.'}} : {status: 'cleaned', session: root});
 }
 
 const [command, ...args] = process.argv.slice(2);

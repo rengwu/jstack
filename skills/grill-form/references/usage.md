@@ -22,7 +22,15 @@ node SKILL_DIR/scripts/grill-form.mjs wait --session SESSION_DIR --downloads CUS
 
 The default is `~/Downloads`. Returned collection commands preserve the custom location or explicit answer path. Already-collected answers return from the receipt after an interrupted turn. An unfinished or invalid download produces an error and remains untouched; retry on user request after saving completes. Old `poll` commands now perform one manual check. Removed `--wait-seconds` and `--poll-step` options must be omitted; never reconstruct an old schedule.
 
-The static form cannot notify an ended agent turn or confirm receipt. Browser download settings may require choosing a save location. **Download and close form** starts the download and requests tab closure; browsers may refuse. Closing the tab does not confirm a download; only the collector validates receipt. Draft recovery on file URLs depends on browser storage support.
+The static form cannot notify an ended agent turn or confirm receipt. Browser download settings may require choosing a save location. **Submit feedback** downloads the answer file and leaves the form open. Closing the tab does not confirm a download; only the collector validates receipt. Draft recovery on file URLs depends on browser storage support.
+
+## Inline images in answers
+
+Paste clipboard images directly into Notes or a region comment. Each becomes a numbered `[Image #N]` chip at the cursor, alongside the text that refers to it. Click a chip (or focus it and press Enter) to preview the image; Escape closes the preview. Backspace after a chip, Delete before it, or deletion of a selection removes the whole chip. Native undo restores it. Copy and cut within the same form preserve image references; copying into other applications supplies the plain text labels.
+
+PNG, JPEG, GIF, and WebP are supported: up to 5 MiB per image, 20 images, and 20 MiB total per form. Numbering is shared across questions, and deleting a chip does not renumber the remaining images. Notes still allow 12,000 characters, including image labels. Images stay local and are embedded in the single answer JSON download. Pending or unreadable images block submission until they finish loading or their chips are removed. If browser draft storage is unavailable or full, the form shows a message to keep the tab open until download.
+
+The collector validates image types, size limits, and reference positions. Its output lists image metadata without base64 data. `finish` returns the saved image paths and links them from the transcript; inspect those files to interpret the inline references. Plain-text submissions from older forms remain supported.
 
 ## Finish
 
@@ -32,9 +40,9 @@ Use `create --project PROJECT_DIR --temporary` unless the project already uses j
 node SKILL_DIR/scripts/grill-form.mjs finish --session SESSION_DIR
 ```
 
-Finish requires a collected receipt. Without `--temporary` at creation, it writes and rereads a transcript at `PROJECT/docs/wiki/journal/DATE-grill-SESSION_ID.md` before cleanup. The transcript records submitted answers, not accepted decisions; grill-me/plan must interpret it, link it into the wiki, and build/check the reader. Use this journal as the round's source rather than creating another raw-answer record.
+Finish requires a collected receipt. Without `--temporary` at creation, it writes and rereads a transcript at `PROJECT/docs/wiki/journal/DATE-grill-SESSION_ID.md` before cleanup. Images are verified under `docs/wiki/attachments/DATE-grill-SESSION_ID-images/`, following the [wiki attachment rules](../../wiki/SKILL.md#attachments). Temporary rounds keep their image directory beside the temporary transcript, outside the project. The transcript records submitted feedback, not accepted decisions; interpret it through the review or grill-me/plan, link it into the wiki, and build/check the reader. Use this journal as the round's source rather than creating another raw-answer record.
 
-Matching answer downloads, the temporary HTML, session state, and receipt are then removed. Unrelated downloads remain untouched. A retry reuses an identical transcript; an edited transcript stops cleanup so no newer work is overwritten. Validation failures can leave a saved transcript and the original temporary files intact.
+Matching answer downloads, the temporary HTML, session state, and receipt are then removed. Unrelated downloads remain untouched. A retry reuses identical transcripts and images; edited saved files stop cleanup so no newer work is overwritten. Validation failures can leave saved copies and the original temporary files intact.
 
 Common errors:
 
@@ -61,9 +69,11 @@ This deletes only the session's known files and matching validated answer downlo
 
 ## Question data
 
-Each question needs `prompt`, `recommendation`, and 2–8 distinct option strings. Optional `number` continues numbering; optional `context` is the description and accepts [rich Markdown](authoring.md). Explicit question `id` and `{ "id": "...", "label": "..." }` option objects are also supported. IDs use letters, digits, `_`, or `-`, start with a letter/digit, and are at most 80 characters; `other` is reserved.
+Items support open feedback, optional recommendations and choices, and isolated visual previews. See [authoring](authoring.md) for the schema and examples. Optional `number` continues numbering; explicit question `id` and option `{id,label}` objects are supported. IDs use letters, digits, `_`, or `-`, start with a letter/digit, and are at most 80 characters; `other` is reserved.
 
-Limits: title 200 characters; prompt 2,000; context 12,000; recommendation 3,000; option label 1,000; notes 12,000. Use 1–10 questions per round. All fields except context are plain text. The script creates IDs, detects duplicates, safely embeds data, and validates downloads against the round's identity and question digest. Existing sessions retain their original plain-text normalization and transcript format; new sessions preserve description whitespace and embed the needed renderers in one offline HTML file.
+Limits: title 200 characters; prompt 2,000; recommendation 3,000; option label 1,000; notes 12,000. The collector validates submissions against the round's identity and specification digest. Older sessions retain their original normalization, required-answer behavior, and transcript format.
+
+For rounds with previews, `finish` also returns `preview`: a saved offline HTML review beside temporary transcripts or in the wiki's attachments folder. It restores submitted prototype state and feedback, disables resubmission, and embeds the original preview source. Region comments retain their own state, viewport, and scroll positions; use **View area** to reopen the selection. Wiki transcripts link a JSON source/state record alongside the HTML, preserving compatibility with the existing reader. Modified archives stop cleanup just like modified transcripts. A state change counts as feedback, never automatic approval.
 
 ## Maintenance
 
@@ -75,4 +85,4 @@ The optional browser test uses an installed Chrome/Chromium executable and Node 
 GRILL_FORM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node --test scripts/grill-form.test.mjs
 ```
 
-It runs an isolated headless browser with page networking disabled, checks rendering and expansion, and downloads synthetic answers into a disposable test directory. Without `GRILL_FORM_BROWSER`, the browser test is skipped. `GRILL_FORM_SCREENSHOT` optionally saves a desktop PNG and a companion `.mobile.png` for visual review.
+It runs an isolated headless browser with page networking disabled, checks rendering, iframe isolation, prototype state and comments, inline image editing, draft recovery, and expansion, and downloads synthetic answers into a disposable test directory. Without `GRILL_FORM_BROWSER`, browser tests are skipped. `GRILL_FORM_SCREENSHOT` optionally saves desktop/mobile PNGs, including `.images.png` and `.images-mobile.png` for the notes editor.
