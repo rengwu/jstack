@@ -1,7 +1,7 @@
 {
   "name": "jstack",
   "version": "0.1.0+codex.20260928112445",
-  "description": "Clarify designs, implement lean solutions, map features, and verify changes in your projects.",
+  "description": "Clarify designs, create plain UI, implement lean solutions, map features, and verify changes in your projects.",
   "author": {
     "name": "rengwu"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "jstack",
     "shortDescription": "Planning, lean implementation, and verification.",
-    "longDescription": "Skills support autonomous work with decision interviews, planning, design interviews, offline interview forms, lean implementation, feature maps, and evidence-based verification, with generic wiki operations for project records.",
+    "longDescription": "Skills support autonomous work with decision interviews, planning, design interviews, offline interview forms, plain UI design and implementation, lean implementation, feature maps, and evidence-based verification, with generic wiki operations for project records.",
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],

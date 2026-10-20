@@ -1,6 +1,6 @@
 # jstack
 
-A collection of thirteen skills for clarifying designs, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of fourteen skills for clarifying designs, creating plain UI, implementing lean solutions, mapping features, and verifying changes. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 ## Skills
 
@@ -16,6 +16,7 @@ A collection of thirteen skills for clarifying designs, implementing lean soluti
 | [verify-change](skills/verify-change/SKILL.md) | Exercise the real product and record build-specific results and evidence |
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
 | [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
+| [rule-plain-ui](skills/rule-plain-ui/SKILL.md) | Create UI designs, mockups, prototypes, and implementations without unnecessary text or elements |
 | [concise-writing](skills/concise-writing/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
 | [screencap](skills/screencap/SKILL.md) | Capture screen regions and inline feedback in a native macOS panel, then hand the batch to an agent |
 | [commit](skills/commit/SKILL.md) | Commit all changes, splitting as needed |
@@ -28,6 +29,8 @@ Start in the project you want to work on. Ask for a design interview with `grill
 
 Use `rule-lean` on its own or alongside other skills for flexible guidance on KISS, YAGNI, DRY, and simplifying relevant code. It does not require a wiki workflow.
 
+Use `rule-plain-ui` on its own or alongside other skills when designing or implementing UI. It keeps text and elements focused on a justifiable UX purpose.
+
 Example requests:
 
 - “Use work-until-grill to implement this autonomously; grill me when a consequential decision needs my input.”
@@ -37,6 +40,7 @@ Example requests:
 - “Use feature-map to document conversation renaming and its expected outcomes.”
 - “Use verify-change to check this fix and record what passed, failed, or remains untested.”
 - “Use rule-lean to implement this change and simplify the relevant code.”
+- “Use rule-plain-ui to design this settings screen.”
 
 ## Separation of responsibilities
 

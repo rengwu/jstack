@@ -1,0 +1,3 @@
+interface:
+  display_name: "Rule Plain UI"
+  short_description: "Create clear UI without unnecessary text or elements."

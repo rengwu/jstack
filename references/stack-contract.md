@@ -48,6 +48,7 @@ Create folders only when used. Keep one authoritative feature description. Use r
 - `verify-change`: setup, project-local drivers, runs, and evidence.
 - `maintain-verification`: documentation/tooling drift; report product regressions separately.
 - `rule-lean`: independent implementation guidance; records only when the task calls for them.
+- `rule-plain-ui`: independent UI design and implementation guidance; no wiki workflow required.
 
 Preserve existing scope and authorization. Planning or verification alone does not authorize product changes, commits, merges, deployments, or external messages; continue work already authorized by the enclosing task.
 
