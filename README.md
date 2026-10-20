@@ -9,7 +9,7 @@ A collection of fourteen skills for clarifying designs, creating plain UI, imple
 | [work-until-grill](skills/work-until-grill/SKILL.md) | Continue work autonomously and use grill-form when a consequential decision needs user input |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
 | [grill-form](skills/grill-form/SKILL.md) | Present offline visual reviews, interactive previews, and interviews; collect feedback and clean up temporary files |
-| [grill-form-concise](skills/grill-form-concise/SKILL.md) | Use grill-form with concise-writing guidance for questions and answers |
+| [grill-form-adhd](skills/grill-form-adhd/SKILL.md) | Use grill-form with ADHD writing guidance for questions and answers |
 | [plan](skills/plan/SKILL.md) | Discuss choices and keep decisions and important open questions in existing project notes |
 | [wiki](skills/wiki/SKILL.md) | Create, edit, link, validate, and render pages and attachments without prescribing their purpose |
 | [feature-map](skills/feature-map/SKILL.md) | Describe user-facing behavior, entry points, expected outcomes, and verification recipes |
@@ -17,7 +17,7 @@ A collection of fourteen skills for clarifying designs, creating plain UI, imple
 | [maintain-verification](skills/maintain-verification/SKILL.md) | Repair stale maps and verification tooling while reporting product regressions separately |
 | [rule-lean](skills/rule-lean/SKILL.md) | Implement and simplify relevant code with practical performance and minimal unnecessary complexity |
 | [rule-plain-ui](skills/rule-plain-ui/SKILL.md) | Create UI designs, mockups, prototypes, and implementations without unnecessary text or elements |
-| [concise-writing](skills/concise-writing/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
+| [adhd](skills/adhd/SKILL.md) | Write clear, concise, and direct responses while preserving important details |
 | [screencap](skills/screencap/SKILL.md) | Capture screen regions and inline feedback in a native macOS panel, then hand the batch to an agent |
 | [commit](skills/commit/SKILL.md) | Commit all changes, splitting as needed |
 
