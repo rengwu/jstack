@@ -5,8 +5,10 @@
 # Local historical demonstration: conversation records and machine-specific evidence.
 /examples/wiki/
 
-# Project records belong in the consuming project, never in this plugin.
-/docs/wiki/
+# Development wiki sources and relevant evidence are tracked.
+# The reader is generated locally from the canonical bundled asset.
+/docs/wiki/_build.mjs
+/docs/wiki/index.html
 
 # Local configuration and secrets
 .env

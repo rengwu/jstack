@@ -1,16 +1,24 @@
 ---
-title: Grill-form rich authoring
-updated: 2026-10-06
+title: jstack development
+updated: 2026-10-21
 ---
-# Grill-form rich authoring
+# jstack development
 
-Design discussion for extending grill-form. These records are here under the user's explicit exception for this interview; the normal project-target rules remain unchanged.
+Development decisions, findings, open questions, and verification evidence for jstack.
+
+## Development notes
+
+- [Development wiki policy](decisions/development-wiki.md) — the accepted scope and tracking policy for this wiki.
+- [Windows agent workflow feedback](discussions/2026-10-21-windows-agent-workflow.md) — observed friction, proposed improvements, what worked, and suggested priorities.
+
+## Rich authoring history
+
+The following records document the October 2026 grill-form rich-authoring interview and implementation. They were originally added under an interview-specific exception and remain part of the development history.
 
 - [Accepted decisions](decisions/index.md)
 - [Open questions](discussions/open-questions.md)
 - [Round-one answers](journal/2026-10-05-grill-863620f9-6754-4523-a4d4-df829ac2de6a.md)
 - [Round-two answers](journal/2026-10-05-grill-1524864d-d2c2-4cca-b2c1-c5541d50db4f.md)
-
 - [Round-three answers](journal/2026-10-05-grill-911b2856-2c6c-45f9-8e4a-588835770d99.md)
 
 The interview is complete. Rich forms are the initial scope; matching wiki rendering is a separate follow-up.

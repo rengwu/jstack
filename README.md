@@ -52,7 +52,7 @@ The former `planning-wiki` skill is replaced by `plan` and `wiki`. Existing proj
 
 ## Project boundary
 
-**Project records belong in the target project's repository, never in jstack.** The default location is `docs/wiki/` inside that project. jstack contains the reusable skills, reader asset, and development tests. The local historical demonstration is excluded from this public repository.
+**Project records belong in the project being developed.** For jstack itself, the [development wiki](docs/wiki/index.md) holds relevant decisions, findings, open questions, and verification evidence. Other projects keep their own records. Follow the [target project boundary](references/stack-contract.md#target-project-boundary); the plugin installation is never a fallback destination. The local historical demonstration remains excluded from this public repository.
 
 The [shared conventions](references/stack-contract.md) connect decisions → features → verification recipes → dated runs → evidence. A passing run applies only to the recorded build and selected scenarios.
 
@@ -68,6 +68,8 @@ node docs/wiki/_build.mjs --check
 The builder embeds its dependencies and needs no package installation. Open the generated `index.html` locally. Standard Markdown images display local PNG/JPEG/GIF/WebP attachments inline. Share its `attachments/` directory (or the supported legacy `evidence/` directory) as well so images and linked files remain available. Markdown remains authoritative.
 
 ## Development
+
+Keep relevant development notes in [`docs/wiki/`](docs/wiki/index.md). Its Markdown and supporting evidence can be committed normally. To render it, copy `skills/wiki/assets/_build.mjs` to `docs/wiki/_build.mjs` and run the build/check commands above. The copied builder and generated `index.html` are ignored.
 
 Reader and report-checker tests use Node built-ins and temporary isolated fixtures:
 

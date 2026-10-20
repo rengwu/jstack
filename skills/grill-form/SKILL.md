@@ -6,7 +6,7 @@ description: Present offline visual reviews and questionnaires, including grill-
 
 Use [grill-me](../grill-me/SKILL.md) for decision interviews. For design critique, lead with the design and invite open feedback; add choices where useful. Show the thing being judged when appearance or interaction matters, including visuals in options. Offer a recommendation whenever useful; it is encouraged, not mandatory. Read [authoring](references/authoring.md) for previews, diagrams, and examples.
 
-1. **Create.** Replace `SKILL_DIR` with this skill's absolute directory, `PROJECT_DIR` with the existing target project, and the example below with the round's questions. The form shows the project folder's name above the round title. Add `--temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when project records are prohibited, as in jstack development.
+1. **Create.** Replace `SKILL_DIR` with this skill's absolute directory, `PROJECT_DIR` with the existing target project, and the example below with the round's questions. The form shows the project folder's name above the round title. Add `--temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when project records are prohibited. For jstack development, use `--temporary` for raw interview output and record relevant findings in its development wiki.
 
    ```sh
    node "SKILL_DIR/scripts/grill-form.mjs" create --project "PROJECT_DIR" <<'JSON'

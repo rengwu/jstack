@@ -19,7 +19,9 @@ Never poll status, repeat wait calls, or spawn an agent just to wait. On a timeo
 
 ## Target project boundary
 
-Resolve the target project before writing its records, drivers, or evidence; ask if unclear. Store them in that repository, never in jstack's source, installation, or preserved `examples/wiki/`. Reuse skills and the reader asset, not example project facts. Plugin-authoring work updates reusable skills, assets, and tests without creating an active jstack wiki.
+Resolve the target project before writing its records, drivers, or evidence; ask if unclear. Store them in that project's repository. When developing jstack itself, use `docs/wiki/` in its source checkout for relevant development decisions, findings, open questions, and verification evidence. When using jstack in another project, keep that project's records there; the plugin source and installation directory are never fallback destinations.
+
+Reuse skills and the reader asset, not example project facts. Keep `examples/wiki/` as a preserved demonstration. Do not create speculative sample wikis or fill jstack's development wiki with invented project data. Use temporary directories for generated sample wikis, demo sessions, and scratch files; record only their relevant development findings and supporting evidence in the wiki.
 
 ## Shared record
 

@@ -8,9 +8,9 @@ Maintain a browsable Markdown tree and generate a standalone HTML snapshot. Mark
 
 ## Location and initialization
 
-Resolve the target project from the user's request and workspace before writing. Use its existing wiki location, or `docs/wiki/` in that project by default. Never put project content in jstack's source, installation directory, or examples. Ask for the destination if it cannot be determined.
+Resolve the target project from the user's request and workspace before writing. Use its existing wiki location, or `docs/wiki/` in that project by default, following the [target project boundary](../../references/stack-contract.md#target-project-boundary). This includes jstack's own development wiki when jstack is the project being developed. Ask for the destination if it cannot be determined.
 
-Read the target project's instructions and inspect existing pages and builder before editing. Preserve local modifications. For a new wiki, copy [assets/_build.mjs](assets/_build.mjs) beside its Markdown and create `index.md` with the caller's title and navigation. Resolve the asset relative to this skill, not the target project. Do not execute the builder in the skill's asset directory: it scans its own directory.
+Read the target project's instructions and inspect existing pages and builder before editing. Preserve local modifications. If the wiki has no builder, copy [assets/_build.mjs](assets/_build.mjs) beside its Markdown. For a new wiki, also create `index.md` with the caller's title and navigation. Resolve the asset relative to this skill, not the target project. Do not execute the builder in the skill's asset directory: it scans its own directory.
 
 Only create pages and folders needed for the supplied content. Do not prescribe a topic taxonomy or add a workflow to the project's instructions. When upgrading an existing builder, compare it with the asset and preserve intentional customizations; existing Markdown does not need to move.
 

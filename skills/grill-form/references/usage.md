@@ -34,7 +34,9 @@ The collector validates image types, size limits, and reference positions. Its o
 
 ## Finish
 
-Use `create --project PROJECT_DIR --temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when repository instructions prohibit project records. The project still supplies the form header, but `finish` saves the verified transcript in the OS temporary directory and creates no project files. This mode also supports interviews about jstack itself. Interpret the transcript through plan: reuse existing project documentation and ask before adopting jstack wiki when none exists. For jstack development, keep the discussion in the conversation. The transcript remains after session cleanup, but OS cleanup may eventually remove it.
+Use `create --project PROJECT_DIR --temporary` unless the project already uses jstack wiki at `docs/wiki/`, or when repository instructions prohibit project records. The project still supplies the form header, but `finish` saves the verified transcript in the OS temporary directory and creates no project files. Interpret the transcript through plan: reuse existing project documentation and ask before adopting jstack wiki when none exists. The transcript remains after session cleanup, but OS cleanup may eventually remove it.
+
+The collector requires `--temporary` when interviewing jstack itself. Record relevant findings, accepted decisions, and supporting evidence in the source checkout's development wiki under the [target project boundary](../../../references/stack-contract.md#target-project-boundary). Raw sessions and synthetic questionnaire content stay temporary.
 
 ```sh
 node SKILL_DIR/scripts/grill-form.mjs finish --session SESSION_DIR
@@ -48,7 +50,7 @@ Common errors:
 
 | Error | Recovery |
 | --- | --- |
-| Missing project / ENOENT during create | Use the correct existing target directory; create it only within the user's authorized scope. Never substitute jstack's source directory. |
+| Missing project / ENOENT during create | Use the correct existing target directory; create it only within the user's authorized scope. Never substitute the plugin directory for an unrelated target project. |
 | Invalid question data | Correct the named field and rerun create; validation happens before any temporary session is created. |
 | Different session or question revision | Use the answer download from this exact form. |
 | Conflicting submissions | Ask which submission is intended, then collect with `--answer EXACT_FILE`. Preserve conflicting copies until resolved. |
