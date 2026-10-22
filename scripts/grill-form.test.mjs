@@ -1,13 +1,16 @@
+import {until, symlink} from './helpers/fixtures.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {spawn, spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {normalizeSpec, validateSubmission, IMAGE_LIMITS} from '../skills/grill-form/scripts/model.mjs';
 import {chrome} from './helpers/chrome.mjs';
+import {EventEmitter} from 'node:events';
+import {browserCommand, openBrowser} from '../skills/grill-form/scripts/open.mjs';
 
 const cli = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
 const template = fileURLToPath(new URL('../skills/grill-form/assets/form.template.html', import.meta.url));
@@ -72,6 +75,47 @@ test('collect checks once and persists a stop marker without scheduling an autom
   assert.ok(!result.next.argv.includes('--wait-seconds'));
   assert.deepEqual((await fs.readdir(f.session)).sort(), ['.wait', 'form.html', 'session.json']);
   bad(f.collect('--wait-seconds', '45'), /Unknown or repeated option/);
+});
+
+test('file input handles UTF-8 BOM and browser failure preserves a usable session', async t => {
+  const f = await fixture(t);
+  const input = path.join(f.downloadDir, "round ' $ `literal`.json");
+  await fs.writeFile(input, '\uFEFF' + JSON.stringify(spec));
+  const missingBrowser = path.join(f.downloadDir, 'missing-browser');
+  const created = ok(run(['create', '--project', f.project, '--input', input, '--open', '--browser', missingBrowser]));
+  t.after(() => fs.rm(created.session, {recursive: true, force: true}));
+  assert.equal(created.launch.status, 'fallback');
+  assert.equal(created.url, pathToFileURL(created.html).href);
+  await fs.stat(created.html);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(created.session, 'session.json'), 'utf8')).spec, f.state.spec);
+  const retried = ok(spawnSync(created.open.argv[0], [...created.open.argv.slice(1), '--browser', missingBrowser], {encoding: 'utf8'}));
+  assert.equal(retried.launch.status, 'fallback');
+  assert.equal(retried.html, created.html);
+  await fs.stat(created.html);
+  bad(run(['create', '--project', f.project, '--browser', missingBrowser], spec), /Use --open/);
+  await fs.writeFile(input, '{unfinished');
+  bad(run(['create', '--project', f.project, '--input', input]), /JSON/);
+  await fs.stat(created.html);
+});
+
+test('browser launch uses literal argv, bounds stuck launchers, and leaves an explicit browser running', async () => {
+  const url = pathToFileURL(path.join(os.tmpdir(), "form ' $ `literal` &.html")).href;
+  assert.deepEqual(browserCommand(url, undefined, 'darwin').argv, ['open', url]);
+  assert.deepEqual(browserCommand(url, undefined, 'linux').argv, ['xdg-open', url]);
+  const windows = browserCommand(url, undefined, 'win32');
+  assert.equal(windows.env.JSTACK_FORM_URL, url);
+  assert.ok(!windows.argv.includes(url));
+  assert.deepEqual(browserCommand(url, 'custom browser', 'win32').argv, ['custom browser', url]);
+  let killed = false, unref = false;
+  const child = new EventEmitter(); child.kill = () => { killed = true; }; child.unref = () => { unref = true; };
+  const timedOut = await openBrowser(url, undefined, {spawnProcess: () => child, timeout: 10});
+  assert.equal(timedOut.status, 'fallback'); assert.equal(killed, true); assert.equal(unref, true);
+  killed = false;
+  const requested = await openBrowser(url, 'custom browser', {spawnProcess: (file, args, options) => {
+    assert.equal(file, 'custom browser'); assert.deepEqual(args, [url]); assert.equal(options.detached, true);
+    queueMicrotask(() => child.emit('spawn')); return child;
+  }});
+  assert.equal(requested.status, 'requested'); assert.equal(killed, false);
 });
 
 test('answers survive interrupted receipt; cleanup preserves unrelated files', async t => {
@@ -178,7 +222,7 @@ test('finish preserves edited or symlinked image copies and retries without losi
   const image = path.join(attachments, imageDirectory, 'image-1.png');
   await fs.writeFile(image, 'edited'); bad(f.finish(), /Saved image changed/); await fs.stat(f.answer);
   const elsewhere = path.join(f.downloadDir, 'original.png'); await fs.writeFile(elsewhere, Buffer.from(png.split(',')[1], 'base64'));
-  await fs.unlink(image); await fs.symlink(elsewhere, image); bad(f.finish(), /Not a regular file/); await fs.stat(f.answer);
+  await fs.unlink(image); if (!await symlink(t, elsewhere, image)) return; bad(f.finish(), /Not a regular file/); await fs.stat(f.answer);
   await fs.unlink(image); await fs.unlink(unexpected);
   assert.equal(ok(f.finish()).images[0].path, image);
   assert.deepEqual(await fs.readFile(image), await fs.readFile(elsewhere));
@@ -247,9 +291,9 @@ test('cleanup refuses changed answers, unexpected session files, and uncollected
 
 test('cleanup refuses modified forms, symlinked answers, and symlinked session directories', async t => {
   const f = await fixture(t); await f.write();
-  const alias = path.join(f.downloadDir, 'grill-form-alias'); await fs.symlink(f.session, alias);
+  const alias = path.join(f.downloadDir, 'grill-form-alias'); if (!await symlink(t, f.session, alias)) return;
   bad(run(['cleanup', '--session', alias, '--discard']), /Not a grill-form session/);
-  const target = path.join(f.downloadDir, 'actual.json'); await fs.rename(f.answer, target); await fs.symlink(target, f.answer);
+  const target = path.join(f.downloadDir, 'actual.json'); await fs.rename(f.answer, target); if (!await symlink(t, target, f.answer)) return;
   bad(f.collect(), /Not a regular file/); await fs.unlink(f.answer); await fs.rename(target, f.answer);
   ok(f.collect()); await fs.appendFile(f.html, '<!-- changed -->');
   bad(f.finish(), /Form was modified/); await fs.stat(f.answer);
@@ -363,7 +407,7 @@ test('plain-string options get stable IDs and returned commands drive collection
   assert.equal(waiting.next.action, 'collect');
   const payload = {...f.payload, answers: [{questionId: 'q8', choiceId: 'option2', notes: 'Prefer a team.'}]};
   const answer = path.join(custom, f.answerFilename); await fs.writeFile(answer, JSON.stringify(payload));
-  const execute = next => spawnSync('/bin/sh', ['-c', next.command], {cwd: os.tmpdir(), encoding: 'utf8'});
+  const execute = next => spawnSync(next.argv[0], next.argv.slice(1), {cwd: os.tmpdir(), encoding: 'utf8'});
   const received = ok(execute(waiting.next));
   assert.equal(received.answers[0].choice, 'A team');
   const finished = ok(execute(received.next));
@@ -392,7 +436,7 @@ test('finish survives a cleanup failure, refuses edited transcripts, and can ret
 test('finish never follows a symlinked wiki destination or removes the only answer copy', async t => {
   const f = await fixture(t); await f.write(); ok(f.collect());
   const elsewhere = path.join(f.downloadDir, 'elsewhere'); await fs.mkdir(elsewhere);
-  await fs.symlink(elsewhere, path.join(f.project, 'docs'));
+  if (!await symlink(t, elsewhere, path.join(f.project, 'docs'))) return;
   bad(f.finish(), /not a regular directory/);
   await fs.stat(f.answer); await fs.stat(f.html);
   assert.deepEqual(await fs.readdir(elsewhere), []);
@@ -506,6 +550,37 @@ test('reviews accept partial feedback, enforce requirements, and validate region
   assert.throws(()=>normalizeSpec({title:'x',questions:[{}]},{review:true}),/prompt, context, or preview/);
 });
 
+test('concise feedback separates final and comment-time settings while details and archives retain geometry', async t => {
+  const f = await fixture(t, {title: 'State snapshots', questions: [
+    {id: 'design', preview: {html: '<h2>Design</h2>', state: {size: 16}}},
+    {id: 'later', prompt: 'Anything else?'},
+  ]});
+  const region = {x: 20, y: 30, width: 100, height: 50, viewportWidth: 600, viewportHeight: 280, scroll: [{path: [], x: 0, y: 90}]};
+  await f.write({...f.payload, answers: [
+    {questionId: 'design', choiceId: null, notes: 'Use this direction', states: {main: {size: 24}},
+      comments: [{preview: 'main', region, state: {size: 20}, notes: 'Keep this size [Image #1]', images: [{id: 1, offset: 15, dataUrl: png}]}]},
+    {questionId: 'later', choiceId: null, notes: ''},
+  ]});
+  const compact = ok(f.collect()), answer = compact.answers[0];
+  assert.deepEqual(answer.finalStates, {main: {size: 24}});
+  assert.equal(answer.comments[0].notes, 'Keep this size [Image #1]');
+  assert.deepEqual(answer.comments[0].stateAtComment, {size: 20});
+  assert.equal(answer.comments[0].region, undefined);
+  assert.equal(answer.comments[0].area, 'selected region');
+  assert.equal(answer.comments[0].images[0].dataUrl, undefined);
+  assert.equal(compact.answers[1].status, 'untouched');
+  assert.equal(compact.answers[1].comments, undefined);
+  const detailed = ok(f.collect('--details'));
+  assert.deepEqual(detailed.answers[0].comments[0].region, region);
+  assert.deepEqual(detailed.answers[0].states, answer.finalStates);
+  assert.deepEqual(detailed.answers[0].comments[0].state, answer.comments[0].stateAtComment);
+  const finished = ok(f.finish());
+  const source = JSON.parse(await fs.readFile(finished.preview.replace(/\.html$/, '.json'), 'utf8'));
+  assert.deepEqual(source.answers[0].comments[0].region, region);
+  assert.deepEqual(source.answers[0].states, answer.finalStates);
+  await fs.stat(finished.images[0].path);
+});
+
 test('visual review archives preserve source, comments and state; changed archives block cleanup', async t => {
   const input={title:'Saved review',questions:[{id:'design',preview:{html:'<p>Design revision A</p>',anchors:['Heading'],state:{size:16}}}]};
   const f=await fixture(t,input);
@@ -564,14 +639,9 @@ test('offline previews isolate styles and scripts, capture free regions, and res
   await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:f.downloadDir});
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
   await browser.command('Page.navigate',{url:f.url});
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelectorAll('iframe').length===2?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`document.querySelectorAll('iframe').length===2`);
   // Attach through DevTools to the real cross-origin frames, retaining sandbox/site isolation.
-  let frames=[];
-  for(let i=0;i<30;i++){frames=await browser.frames();if(frames.length===2)break;await new Promise(r=>setTimeout(r,50))}
-  assert.equal(frames.length,2);
-  let prototype;
-  for(const frame of frames)if(await frame.evaluate(`!!document.querySelector('#grow')`))prototype=frame;
-  assert.ok(prototype);
+  const prototype=await browser.frame(`!!document.querySelector('#grow')`);
   assert.equal(await prototype.evaluate(`window.parentAccess`),false);
   assert.equal(await browser.evaluate(`document.querySelector('iframe').contentDocument===null`),true);
   assert.equal(await browser.evaluate(`getComputedStyle(document.body).backgroundColor`),'rgb(24, 24, 27)');
@@ -582,8 +652,8 @@ test('offline previews isolate styles and scripts, capture free regions, and res
   assert.equal(await browser.evaluate(`getComputedStyle(document.body).boxSizing`),'border-box');
   // External styles and network APIs are denied by the child CSP even when the browser is online.
   await prototype.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
-  const blocked=await prototype.evaluate(`(async()=>{const violations=[];document.addEventListener('securitypolicyviolation',e=>violations.push(e.effectiveDirective));const link=document.createElement('link');link.rel='stylesheet';link.href='https://example.invalid/leak.css';document.head.append(link);let denied=false;try{await fetch('https://example.invalid/data')}catch{denied=true}await new Promise(r=>setTimeout(r,50));return {denied,violations}})()`);
-  assert.equal(blocked.denied,true);assert.ok(blocked.violations.includes('style-src-elem'));
+  await prototype.evaluate(`(async()=>{window.violations=[];document.addEventListener('securitypolicyviolation',e=>violations.push(e.effectiveDirective));const link=document.createElement('link');link.rel='stylesheet';link.href='https://example.invalid/leak.css';document.head.append(link);window.denied=false;try{await fetch('https://example.invalid/data')}catch{denied=true}})()`);
+  await prototype.waitFor(`denied&&violations.includes('style-src-elem')`);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`),true);
   await prototype.evaluate(`document.querySelector('#grow').click();document.querySelector('#title').click();document.querySelector('#scroll').scrollTop=110;window.scrollTo(0,40)`);
   assert.equal(await browser.evaluate(`document.querySelectorAll('.comment-dialog').length`),0,'ordinary prototype clicks do not create comments');
@@ -593,13 +663,13 @@ test('offline previews isolate styles and scripts, capture free regions, and res
     await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:bounds.x+170,y:bounds.y+100,button:'left',clickCount:1});
     await browser.command('Input.dispatchMouseEvent',{type:'mouseMoved',x:bounds.x+20,y:bounds.y+50,button:'left',buttons:1});
     await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:bounds.x+20,y:bounds.y+50,button:'left',clickCount:1});
-    await browser.evaluate(`new Promise(r=>setTimeout(r,100))`);
+    await browser.waitFor(`!!document.querySelector('.comment-dialog')`);
     assert.equal(await browser.evaluate(`!!document.querySelector('.comment-dialog')`),true,JSON.stringify(await browser.evaluate(`({hint:document.querySelector('.comment-hint').textContent,hidden:document.querySelector('.comment-surface').hidden,rect:document.querySelector('.comment-region').style.cssText,comments:answers[0].comments})`)));
   };
   await openComment();
   assert.equal(await browser.evaluate(`document.querySelector('.save-comment').disabled`),true);
   await browser.evaluate(`document.querySelector('.comment-dialog .comment-actions .quiet').click()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>!document.querySelector('.comment-dialog')?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`!document.querySelector('.comment-dialog')`);
   assert.equal(await browser.evaluate(`answers[0].comments.length`),0,'cancelling a blank comment leaves no empty fields');
   await openComment();
   await browser.evaluate(`const note=document.querySelector('.comment-dialog .notes-editor');note.textContent='Keep the larger heading';note.dispatchEvent(new Event('input',{bubbles:true}))`);
@@ -619,16 +689,17 @@ test('offline previews isolate styles and scripts, capture free regions, and res
     const data=new DataTransfer();data.items.add(new File([Uint8Array.from(atob(canvas.toDataURL().split(',')[1]),c=>c.charCodeAt(0))],'comment.png',{type:'image/png'}));
     editor.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));
   })()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>answers[0].comments[0].images?.[0]?.dataUrl?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`answers[0].comments[0].images?.[0]?.dataUrl`);
   await browser.evaluate(`document.querySelector('.save-comment').click()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelector('.comment-summary')?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`document.querySelector('.comment-summary')`);
   assert.equal(await browser.evaluate(`document.querySelectorAll('.comment-summary .notes-editor').length`),0,'saved comments are compact text, not more input boxes');
   await browser.evaluate(`document.querySelector('.comment-summary .quiet').click();document.querySelector('.comment-dialog .notes-editor').textContent='Cancelled edit';document.querySelector('.comment-dialog .notes-editor').dispatchEvent(new Event('input',{bubbles:true}));document.querySelectorAll('.comment-actions .quiet')[1].click()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>!document.querySelector('.comment-dialog')?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`!document.querySelector('.comment-dialog')`);
   assert.equal(await browser.evaluate(`answers[0].comments[0].notes`),'Keep the larger heading[Image #1]');
   await prototype.evaluate(`document.querySelector('#grow').click()`);
+  await browser.waitFor(`answers[0].states.main.size===20`);
   await browser.command('Page.reload');
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelector('.comment-summary')?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`document.querySelector('.comment-summary')`);
   assert.equal(await browser.evaluate(`document.querySelector('.comment-body').textContent`),'Keep the larger heading[Image #1]');
   assert.equal(await browser.evaluate(`answers[0].states.main.size`),20);
   if(process.env.GRILL_FORM_SCREENSHOT){const {data}=await browser.command('Page.captureScreenshot',{format:'png'});await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT+'.review.png',Buffer.from(data,'base64'))}
@@ -636,29 +707,22 @@ test('offline previews isolate styles and scripts, capture free regions, and res
   assert.equal(await browser.evaluate(`document.documentElement.scrollWidth<=innerWidth`),true);
   if(process.env.GRILL_FORM_SCREENSHOT){const {data}=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT+'.review-mobile.png',Buffer.from(data,'base64'))}
   await browser.evaluate(`document.querySelector('#submit').click()`);
-  await browser.evaluate(`new Promise(r=>setTimeout(r,200))`);
-  const collected=ok(f.collect());
+  await until(async()=>JSON.parse(await fs.readFile(f.answer,'utf8')),Boolean,{label:'Answer download'});
+  const collected=ok(f.collect('--details'));
   assert.deepEqual(collected.answers.map(a=>a.status),['feedback','untouched','untouched']);
   assert.deepEqual(collected.answers[0].comments[0].region,region);
   assert.equal(collected.answers[0].comments[0].images.length,1);
   const finished=ok(f.finish());
-  await browser.command('Page.navigate',{url:new URL('file://'+finished.preview).href});
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelector('.comment-summary')?resolve():setTimeout(check,20);check()})`);
+  await browser.command('Page.navigate',{url:pathToFileURL(finished.preview).href});
+  await browser.waitFor(`document.querySelector('.comment-summary')`);
   assert.equal(await browser.evaluate(`document.querySelector('#actions').hidden`),true);
   assert.equal(await browser.evaluate(`document.querySelector('.comment-summary button').textContent`),'View area');
   assert.equal(await browser.evaluate(`document.querySelector('.comment-summary .image-chip').textContent`),'[Image #1]');
   assert.equal(await browser.evaluate(`answers[0].states.main.size`),20);
-  const savedFrames=await browser.frames();
-  let restored=false;for(const frame of savedFrames)if(await frame.evaluate(`document.querySelector('#size')?.textContent==='20'`))restored=true;
-  assert.equal(restored,true,'saved prototype restores the submitted state in its own document');
+  await browser.frame(`document.querySelector('#size')?.textContent==='20'`);
   await browser.evaluate(`document.querySelector('.comment-summary button').click()`);
-  let selectedView;
-  for(let i=0;i<30&&!selectedView;i++){
-    for(const frame of await browser.frames())if(await frame.evaluate(`document.querySelector('#size')?.textContent==='18'`))selectedView=frame;
-    if(!selectedView)await new Promise(r=>setTimeout(r,50));
-  }
-  assert.ok(selectedView);
-  await selectedView.evaluate(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+  const selectedView=await browser.frame(`document.querySelector('#size')?.textContent==='18'`);
+  await selectedView.waitFor(`scrollY===40&&document.querySelector('#scroll').scrollTop===110`);
   assert.deepEqual(await selectedView.evaluate(`({width:innerWidth,height:innerHeight,scroll:scrollY,nested:document.querySelector('#scroll').scrollTop})`),{width:region.viewportWidth,height:region.viewportHeight,scroll:40,nested:110},'archived area replays its original viewport, state and scrolling even on a smaller screen');
   assert.equal(await browser.evaluate(`document.querySelector('.comment-dialog .notes-editor')===null`),true);
   assert.equal(await browser.evaluate(`document.documentElement.scrollWidth<=innerWidth`),true);
@@ -671,9 +735,10 @@ test('region comments support touch, keyboard, cancellation, deletion and draggi
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await browser.command('Emulation.setTouchEmulationEnabled',{enabled:true});
   await browser.command('Page.navigate',{url:f.url});
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelector('.comment-toggle')?resolve():setTimeout(check,20);check()})`);
-  const waitDialog=()=>browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelector('.comment-dialog')?resolve():setTimeout(check,20);check()})`);
-  const waitClosed=()=>browser.evaluate(`new Promise(resolve=>{const check=()=>!document.querySelector('.comment-dialog')?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`document.querySelector('.comment-toggle')`);
+  await browser.frame(`document.readyState==='complete'&&!!window.grill`);
+  const waitDialog=()=>browser.waitFor(`document.querySelector('.comment-dialog')`);
+  const waitClosed=()=>browser.waitFor(`!document.querySelector('.comment-dialog')`);
   const start=async()=>{
     await browser.evaluate(`document.querySelector('.comment-toggle').click()`);
     return browser.evaluate(`(()=>{const r=document.querySelector('.comment-surface').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}})()`);
@@ -725,24 +790,21 @@ test('choice previews omit comment actions and entire cards select across iframe
   const f=await fixture(t,input),browser=await chrome(t);
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1100,height:800,deviceScaleFactor:1,mobile:false});
   await browser.command('Page.navigate',{url:f.url});
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>document.querySelectorAll('iframe').length===3?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`document.querySelectorAll('iframe').length===3`);
   assert.equal(await browser.evaluate(`document.querySelectorAll('.comment-toggle,.preview-toolbar').length`),0,'neither the question preview nor its options need comment actions');
   assert.equal(await browser.evaluate(`document.querySelectorAll('fieldset .notes-editor').length`),1,'choices share one notes field');
-  let frames=[];
-  for(let i=0;i<30;i++){frames=await browser.frames();if(frames.length===3)break;await new Promise(r=>setTimeout(r,50))}
-  assert.equal(frames.length,3);
-  let interactive,visual;
-  for(const frame of frames){if(await frame.evaluate(`!!document.querySelector('#counter')`))interactive=frame;else if(await frame.evaluate(`!!document.querySelector('#symbol')`))visual=frame}
+  const interactive=await browser.frame(`!!document.querySelector('#counter')`);
+  const visual=await browser.frame(`!!document.querySelector('#symbol')`);
   await visual.evaluate(`document.querySelector('circle').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>answers[0].choiceId==='b'?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`answers[0].choiceId==='b'`);
   await interactive.evaluate(`document.querySelector('#counter').click()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>answers[0].choiceId==='a'&&answers[0].states?.['option-a']?.count===1?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`answers[0].choiceId==='a'&&answers[0].states?.['option-a']?.count===1`);
   assert.equal(await interactive.evaluate(`grill.state.count`),1,'selecting the option preserves its own interactive action');
   await visual.evaluate(`document.body.click()`);
-  await browser.evaluate(`new Promise(resolve=>{const check=()=>answers[0].choiceId==='b'?resolve():setTimeout(check,20);check()})`);
+  await browser.waitFor(`answers[0].choiceId==='b'`);
   await browser.evaluate(`document.querySelector('.choice-card').click()`);
   assert.equal(await browser.evaluate(`answers[0].choiceId`),'a');
-  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,160))`);
+  await browser.waitFor(`getComputedStyle(document.querySelector('.choice-card')).borderTopColor==='rgb(183, 166, 255)'`);
   const borders=await browser.evaluate(`(()=>{const card=document.querySelector('.choice-card'),label=card.querySelector('.choice');const outer=getComputedStyle(card),inner=getComputedStyle(label);return {top:outer.borderTopWidth,bottom:outer.borderBottomWidth,left:outer.borderLeftWidth,color:outer.borderTopColor,outline:outer.outlineStyle,innerBorder:inner.borderTopWidth,innerOutline:inner.outlineStyle}})()`);
   assert.deepEqual(borders,{top:'2px',bottom:'2px',left:'2px',color:'rgb(183, 166, 255)',outline:'none',innerBorder:'0px',innerOutline:'none'});
   if(process.env.GRILL_FORM_SCREENSHOT){const {data}=await browser.command('Page.captureScreenshot',{format:'png'});await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT+'.cards.png',Buffer.from(data,'base64'))}
@@ -757,7 +819,7 @@ test('offline notes paste inline chips, delete and undo atomically, preview, rel
   await browser.command('Browser.setDownloadBehavior', {behavior: 'allow', downloadPath: f.downloadDir});
   await browser.command('Emulation.setDeviceMetricsOverride', {width: 1100, height: 850, deviceScaleFactor: 1, mobile: false});
   await browser.command('Page.navigate', {url: f.url});
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelector('.notes-editor')?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelector('.notes-editor')`);
   await browser.evaluate(`
     globalThis.editor=document.querySelector('.notes-editor');
     globalThis.caret=(node,offset)=>{editor.focus();const range=document.createRange();range.setStart(node,offset);range.collapse(true);getSelection().removeAllRanges();getSelection().addRange(range)};
@@ -766,7 +828,7 @@ test('offline notes paste inline chips, delete and undo atomically, preview, rel
     // Move and type before FileReader completes: the image must stay at the paste point.
     caret(editor,editor.childNodes.length);document.execCommand('insertText',false,' Keep the label.');
   `);
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>!document.querySelector('#submit').disabled?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`!document.querySelector('#submit').disabled`);
   assert.equal(await browser.evaluate(`editor.querySelectorAll('.image-chip').length`), 1);
   assert.equal(await browser.evaluate(`editor.textContent`), 'Use this spacing [Image #1] and this color. Keep the label.');
   await browser.evaluate(`editor.querySelector('.image-chip').click()`);
@@ -792,7 +854,7 @@ test('offline notes paste inline chips, delete and undo atomically, preview, rel
   assert.equal(await browser.evaluate(`editor.querySelectorAll('.image-chip').length`), 1);
   await browser.evaluate(`caret(editor,editor.childNodes.length);document.execCommand('insertText',false,'\\nCompare ')`);
   await browser.evaluate(`pasteImages(2)`);
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>!document.querySelector('#submit').disabled?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`!document.querySelector('#submit').disabled`);
   assert.deepEqual(await browser.evaluate(`[...editor.querySelectorAll('.image-chip')].map(chip=>chip.textContent)`), ['[Image #1]', '[Image #2]', '[Image #3]']);
   await browser.command('Input.insertText', {text: ' for contrast.'});
   assert.equal(await browser.evaluate(`editor.querySelectorAll('.image-chip').length`), 3);
@@ -807,7 +869,7 @@ test('offline notes paste inline chips, delete and undo atomically, preview, rel
   await key('Backspace', 8);
   assert.deepEqual(await browser.evaluate(`[...editor.querySelectorAll('.image-chip')].map(chip=>chip.textContent)`), ['[Image #1]', '[Image #3]']);
   await browser.command('Page.reload');
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelectorAll('.image-chip').length===2?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelectorAll('.image-chip').length===2`);
   assert.deepEqual(await browser.evaluate(`[...document.querySelectorAll('.image-chip')].map(chip=>chip.textContent)`), ['[Image #1]', '[Image #3]']);
   if (process.env.GRILL_FORM_SCREENSHOT) {
     const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
@@ -820,7 +882,7 @@ test('offline notes paste inline chips, delete and undo atomically, preview, rel
     await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.images-mobile.png', Buffer.from(data, 'base64'));
   }
   await browser.evaluate(`document.querySelector('#submit').click()`);
-  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
+  await until(async()=>JSON.parse(await fs.readFile(f.answer,'utf8')),Boolean,{label:'Answer download'});
   const payload = JSON.parse(await fs.readFile(f.answer, 'utf8'));
   const answer = payload.answers[0];
   assert.deepEqual(answer.images.map(image=>image.id), [1, 3]);
@@ -836,7 +898,7 @@ test('offline notes preserve copied chips and handle invalid images, text paste,
   const f = await fixture(t), browser = await chrome(t);
   await browser.command('Browser.setDownloadBehavior', {behavior: 'allow', downloadPath: f.downloadDir});
   await browser.command('Page.navigate', {url: f.url});
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelector('.notes-editor')?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelector('.notes-editor')`);
   await browser.evaluate(`
     globalThis.editors=[...document.querySelectorAll('.notes-editor')];
     globalThis.end=editor=>{editor.focus();const range=document.createRange();range.selectNodeContents(editor);range.collapse(false);getSelection().removeAllRanges();getSelection().addRange(range)};
@@ -850,10 +912,10 @@ test('offline notes preserve copied chips and handle invalid images, text paste,
   await browser.evaluate(`pasteFile('image/png',new Uint8Array(5*1024*1024+1))`);
   assert.match(await browser.evaluate(`document.querySelector('#notes-audience-error').textContent`), /5 MiB/);
   await browser.evaluate(`pasteFile('image/png','not an image')`);
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelector('#notes-audience-error').textContent.includes('could not be read')?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelector('#notes-audience-error').textContent.includes('could not be read')`);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`), true);
   await browser.evaluate(`selectChip(editors[0]);document.execCommand('delete');end(editors[0]);const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;pasteFile('image/png',Uint8Array.from(atob(canvas.toDataURL().split(',')[1]),c=>c.charCodeAt(0)))`);
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>!document.querySelector('#submit').disabled?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`!document.querySelector('#submit').disabled`);
   const pastedId = await browser.evaluate(`editors[0].querySelector('.image-chip').dataset.imageId`);
   // Undo/redo the insertion itself, not only a later deletion.
   await browser.evaluate(`document.execCommand('undo')`);
@@ -874,7 +936,7 @@ test('offline notes preserve copied chips and handle invalid images, text paste,
   assert.equal(await browser.evaluate(`document.querySelector('#draft-message').hidden`), false);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`), false);
   await browser.evaluate(`document.querySelector('#submit').click();`);
-  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
+  await until(async()=>JSON.parse(await fs.readFile(f.answer,'utf8')),Boolean,{label:'Answer download'});
   const received = ok(f.collect());
   assert.equal(received.answers[0].notes, 'Literal [Image #99]');
   assert.equal(received.answers[0].images, undefined);
@@ -894,7 +956,8 @@ test('form keeps descriptions, notes, selection controls, and submission compact
   await browser.command('Browser.setDownloadBehavior', {behavior: 'allow', downloadPath: f.downloadDir});
   await browser.command('Emulation.setDeviceMetricsOverride', {width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false});
   await browser.command('Page.navigate', {url: f.url});
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelectorAll('.description').length===4?requestAnimationFrame(()=>requestAnimationFrame(resolve)):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelectorAll('.description').length===4`);
+  await browser.evaluate(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
   const initial = await browser.evaluate(`({boxed:[...document.querySelectorAll('.description')].map(d=>d.classList.contains('has-expansion')),plainButton:!!document.querySelector('.description').querySelector('.expand'),clear:document.querySelector('.clear-selection').hidden,notes:[...document.querySelectorAll('fieldset>.notes-editor')].map(n=>n.getBoundingClientRect().height),submit:document.querySelectorAll('#actions button').length})`);
   assert.deepEqual(initial.boxed, [false, false, false, true], 'only overflowing content needs expansion');
   assert.equal(initial.plainButton, false);
@@ -908,7 +971,7 @@ test('form keeps descriptions, notes, selection controls, and submission compact
   await browser.evaluate(`document.querySelector('input[type=radio]').click()`);
   assert.equal(await browser.evaluate(`document.querySelector('.clear-selection').hidden`), false);
   await browser.command('Page.reload');
-  await browser.evaluate(`new Promise(resolve=>{const ready=()=>document.querySelector('input:checked')?resolve(true):setTimeout(ready,20);ready()})`);
+  await browser.waitFor(`document.querySelector('input:checked')`);
   assert.equal(await browser.evaluate(`document.querySelector('.clear-selection').hidden`), false, 'restored choices can be cleared');
   await browser.evaluate(`document.querySelector('.clear-selection').click()`);
   assert.equal(await browser.evaluate(`document.querySelector('.clear-selection').hidden`), true);
@@ -928,7 +991,8 @@ test('form keeps descriptions, notes, selection controls, and submission compact
     const {data} = await browser.command('Page.captureScreenshot', {format: 'png'});
     await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.actions.png', Buffer.from(data, 'base64'));
   }
-  await browser.evaluate(`globalThis.closeRequests=0;window.close=()=>closeRequests++;document.querySelector('#submit').click();new Promise(resolve=>setTimeout(resolve,200))`);
+  await browser.evaluate(`globalThis.closeRequests=0;window.close=()=>closeRequests++;document.querySelector('#submit').click()`);
+  await until(async()=>JSON.parse(await fs.readFile(f.answer,'utf8')),Boolean,{label:'Answer download'});
   assert.equal(await browser.evaluate(`globalThis.closeRequests`), 0);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').textContent`), 'Download answers again');
   const received = ok(f.collect());
@@ -985,7 +1049,7 @@ test('offline browser renders rich content, handles diagram errors, expands, and
   }
   await browser.evaluate(`document.querySelector('input[type=radio]').click();document.querySelector('.notes-editor').textContent='Synthetic browser test';document.querySelector('.notes-editor').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#submit').click()`);
   assert.equal(await browser.evaluate(`document.querySelector('#submit').disabled`), false);
-  await browser.evaluate(`new Promise(resolve=>setTimeout(resolve,200))`);
+  await until(async()=>JSON.parse(await fs.readFile(f.answer,'utf8')),Boolean,{label:'Answer download'});
   const received = ok(f.collect());
   assert.equal(received.status, 'received');
   assert.equal(received.answers[0].choice, 'Review first');
@@ -994,5 +1058,32 @@ test('offline browser renders rich content, handles diagram errors, expands, and
   assert.ok((await fs.readFile(record, 'utf8')).includes(input.questions[0].context));
   const network = browser.events.filter(e => e.method === 'Network.requestWillBeSent').map(e => e.params.request.url);
   assert.deepEqual(network.filter(url => /^https?:/.test(url)), []);
+  assert.deepEqual(browser.events.filter(e => e.method === 'Runtime.exceptionThrown'), []);
+});
+
+test('bundled examples render as visual choices, adjustable settings and an open layout', {skip: !process.env.GRILL_FORM_BROWSER, timeout: 30000}, async t => {
+  const example = JSON.parse(await fs.readFile(new URL('../skills/grill-form/assets/examples.json', import.meta.url), 'utf8'));
+  const f = await fixture(t, example), browser = await chrome(t);
+  await browser.command('Emulation.setDeviceMetricsOverride', {width: 1200, height: 1100, deviceScaleFactor: 1, mobile: false});
+  await browser.command('Page.navigate', {url: f.url});
+  await browser.waitFor(`document.querySelectorAll('iframe').length===5`);
+  const settings = await browser.frame(`!!document.querySelector('#size')`);
+  assert.equal(await settings.evaluate(`document.querySelector('#size').value`), '24');
+  await settings.evaluate(`document.querySelector('#size').value=30;document.querySelector('#size').dispatchEvent(new Event('input'));document.querySelector('#accent').value='mint';document.querySelector('#accent').dispatchEvent(new Event('change'))`);
+  await browser.waitFor(`answers[1].states.main.size===30&&answers[1].states.main.accent==='mint'`);
+  const layout=await browser.frame(`document.querySelector('h2')?.textContent==='Reading room'`);
+  assert.equal(await browser.evaluate(`document.querySelectorAll('.comment-toggle').length`), 2);
+  if (process.env.GRILL_FORM_SCREENSHOT) {
+    await browser.evaluate(`document.querySelectorAll('iframe')[4].scrollIntoView({block:'center'})`);
+    await layout.evaluate(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+    const view = await browser.command('Page.captureScreenshot', {format: 'png'});
+    await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.examples-layout.png', Buffer.from(view.data, 'base64'));
+    await browser.evaluate(`scrollTo(0,0);new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+    const {data} = await browser.command('Page.captureScreenshot', {format: 'png', captureBeyondViewport: true});
+    await fs.writeFile(process.env.GRILL_FORM_SCREENSHOT + '.examples.png', Buffer.from(data, 'base64'));
+  }
+  await browser.command('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true});
+  assert.equal(await browser.evaluate(`document.documentElement.scrollWidth<=innerWidth`), true);
+  for (const frame of await browser.frames()) assert.equal(await frame.evaluate(`document.documentElement.scrollWidth<=innerWidth`), true);
   assert.deepEqual(browser.events.filter(e => e.method === 'Runtime.exceptionThrown'), []);
 });

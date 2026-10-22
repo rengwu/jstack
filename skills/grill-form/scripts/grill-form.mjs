@@ -10,6 +10,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {normalizeSpec, validateSubmission, validRegion, VERSION, IMAGE_LIMITS, IMAGE_EXTENSIONS, SUBMISSION_BYTES, SPEC_BYTES} from './model.mjs';
 import {start} from '../../../scripts/input-completion.mjs';
+import {openBrowser} from './open.mjs';
 
 const template = fileURLToPath(new URL('../assets/form.template.html', import.meta.url));
 const marker = '__GRILL_FORM_DATA__';
@@ -29,6 +30,7 @@ function collectionCommand(action, root, options = {}) {
   const args = [action, '--session', root];
   if (options.downloads) args.push('--downloads', path.resolve(options.downloads));
   if (options.answer) args.push('--answer', path.resolve(options.answer));
+  if (options.details) args.push('--details');
   if (['wait', 'complete'].includes(action) && options['timeout-seconds']) args.push('--timeout-seconds', options['timeout-seconds']);
   return nextCommand(action, ...args);
 }
@@ -104,15 +106,18 @@ async function readReceipt(root, state) {
 }
 
 async function create(options) {
-  if (options.input && options.input !== '-') fail('Send the question JSON on stdin');
+  if (options.browser && !options.open) fail('Use --open with --browser');
   if (!options.project) fail('Missing --project: supply the target project directory');
   const project = await fs.realpath(path.resolve(options.project));
   if (!(await fs.stat(project)).isDirectory()) fail('--project must be a directory');
   if (!options.temporary) outsidePlugin(project);
   let input = '';
-  process.stdin.setEncoding('utf8');
-  for await (const chunk of process.stdin) { input += chunk; if (input.length > SPEC_BYTES) fail('Question data is too large'); }
-  const spec = normalizeSpec(JSON.parse(input), {richText: true, review: true});
+  if (options.input && options.input !== '-') input = await regularFile(path.resolve(options.input), SPEC_BYTES);
+  else {
+    process.stdin.setEncoding('utf8');
+    for await (const chunk of process.stdin) { input += chunk; if (Buffer.byteLength(input) > SPEC_BYTES) fail('Question data is too large'); }
+  }
+  const spec = normalizeSpec(JSON.parse(input.replace(/^\uFEFF/, '')), {richText: true, review: true});
   let raw = await fs.readFile(template, 'utf8');
   if (raw.split(marker).length !== 2) fail('Invalid prepared template: expected one question-data placeholder');
   if (raw.split(rendererMarker).length !== 2) fail('Invalid prepared template: expected one renderer placeholder');
@@ -133,8 +138,16 @@ async function create(options) {
     const file = path.join(root, 'form.html');
     await fs.writeFile(file, raw.replace(marker, () => encode(state)), {mode: 0o600, flag: 'wx'});
     await saveJSON(path.join(root, 'session.json'), {...state, formDigest: hash(await fs.readFile(file))});
-    output({status: 'created', session: root, html: file, url: pathToFileURL(file).href, answerFilename: `grill-form-${state.sessionId}.json`, completion: collectionCommand('complete', root), wait: collectionCommand('wait', root), next: collectionCommand('collect', root)});
+    const url = pathToFileURL(file).href;
+    const launch = options.open ? await openBrowser(url, options.browser) : undefined;
+    output({status: 'created', session: root, html: file, url, ...(launch ? {launch} : {}), open: nextCommand('open', 'open', '--session', root), answerFilename: `grill-form-${state.sessionId}.json`, completion: collectionCommand('complete', root), wait: collectionCommand('wait', root), next: collectionCommand('collect', root)});
   } catch (e) { await fs.rm(root, {recursive: true, force: true}); throw e; }
+}
+async function open(options) {
+  const {root} = await loadSession(options.session);
+  const html = path.join(root, 'form.html'), url = pathToFileURL(html).href;
+  await regularBytes(html, SPEC_BYTES * 8);
+  output({session: root, html, url, launch: await openBrowser(url, options.browser)});
 }
 async function collect(options) {
   const {root, state} = await loadSession(options.session);
@@ -149,7 +162,7 @@ async function collectAnswers(root, state, options) {
       const selected = await readAnswer(path.resolve(options.answer), state);
       if (JSON.stringify(selected.data) !== JSON.stringify(data)) fail('Different answers were already collected; preserve both submissions and resolve which round to retain');
     }
-    return {status: 'received', recovered: true, ...answerSummary(data), next: finishNext(root, options)};
+    return {status: 'received', recovered: true, ...collectedFeedback(data, options), next: finishNext(root, options)};
   }
   const files = await candidates(state, options);
   if (files.length) {
@@ -157,13 +170,25 @@ async function collectAnswers(root, state, options) {
     if (incoming.some(x => JSON.stringify(x.data) !== JSON.stringify(incoming[0].data))) fail('Conflicting submissions; choose the intended file with --answer');
     const receipt = {sessionId: state.sessionId, receivedAt: new Date().toISOString(), submission: incoming[0].submission, files: incoming.map(({path, sha256}) => ({path, sha256}))};
     await saveJSON(path.join(root, 'receipt.json'), receipt);
-    return {status: 'received', ...answerSummary(incoming[0].data), next: finishNext(root, options)};
+    return {status: 'received', ...collectedFeedback(incoming[0].data, options), next: finishNext(root, options)};
   }
   return null;
 }
 function answerSummary(data) {
   const summary = answer => ({...answer, ...(answer.images ? {images: answer.images.map(({dataUrl, ...image}) => image)} : {}), ...(answer.comments ? {comments: answer.comments.map(summary)} : {})});
   return {...data, answers: data.answers.map(summary)};
+}
+function collectedFeedback(data, options) {
+  const summary = answerSummary(data);
+  if (options.details) return summary;
+  return {...summary, answers: summary.answers.map(({states, comments, ...answer}) => ({
+    ...answer,
+    ...(states && Object.keys(states).length ? {finalStates: states} : {}),
+    ...(comments?.length ? {comments: comments.map(({preview, notes, images, state, anchor}, index) => ({
+      number: index + 1, notes, ...(images ? {images} : {}), preview,
+      ...(anchor ? {anchor} : {area: 'selected region'}), stateAtComment: state,
+    }))} : {}),
+  }))};
 }
 async function complete(options) {
   const {root} = await loadSession(options.session);
@@ -315,23 +340,25 @@ async function cleanup(options) {
 
 const [command, ...args] = process.argv.slice(2);
 const allowedOptions = {
-  create: new Set(['input', 'project', 'temporary']),
-  collect: new Set(['session', 'answer', 'downloads']),
+  create: new Set(['input', 'project', 'temporary', 'open', 'browser']),
+  open: new Set(['session', 'browser']),
+  collect: new Set(['session', 'answer', 'downloads', 'details']),
   poll: new Set(['session', 'answer', 'downloads', 'max-wait-seconds']),
-  wait: new Set(['session', 'answer', 'downloads', 'timeout-seconds', 'notify']),
-  complete: new Set(['session', 'answer', 'downloads', 'timeout-seconds']),
+  wait: new Set(['session', 'answer', 'downloads', 'timeout-seconds', 'notify', 'details']),
+  complete: new Set(['session', 'answer', 'downloads', 'timeout-seconds', 'details']),
   finish: new Set(['session', 'downloads']),
   cleanup: new Set(['session', 'downloads', 'discard']),
 };
 try {
-  if (!allowedOptions[command]) fail('Usage: grill-form.mjs create --project PATH < questions.json | wait|complete --session PATH | collect --session PATH | finish --session PATH | cleanup --session PATH --discard');
+  if (Number(process.versions.node.split('.')[0]) < 22) fail('grill-form requires Node.js 22 or newer');
+  if (!allowedOptions[command]) fail('Usage: grill-form.mjs create --project PATH --input questions.json [--open] | open --session PATH | wait|complete --session PATH | collect --session PATH | finish --session PATH | cleanup --session PATH --discard');
   const options = {};
   while (args.length) {
     const flag = args.shift();
     if (!flag.startsWith('--') || !allowedOptions[command].has(flag.slice(2)) || Object.hasOwn(options, flag.slice(2))) fail(`Unknown or repeated option: ${flag}`);
     const key = flag.slice(2);
-    if (key === 'discard' || key === 'temporary') options[key] = true;
+    if (['discard', 'temporary', 'open', 'details'].includes(key)) options[key] = true;
     else { const value = args.shift(); if (!value || value.startsWith('--')) fail(`Missing value for ${flag}`); options[key] = value; }
   }
-  await ({create, collect, wait, complete, poll, finish, cleanup}[command])(options);
+  await ({create, open, collect, wait, complete, poll, finish, cleanup}[command])(options);
 } catch (e) { process.stderr.write(JSON.stringify({status: 'error', message: e.message, help: fileURLToPath(new URL('../references/usage.md', import.meta.url)), instruction: 'Preserve existing files. Correct the reported input or consult help; do not bypass validation.'}) + '\n'); process.exitCode = 1; }

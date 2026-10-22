@@ -1,0 +1,58 @@
+{
+  "title": "Visual review examples",
+  "questions": [
+    {
+      "id": "waiting",
+      "prompt": "Which glyph best communicates waiting for a new reading?",
+      "recommendation": "Hourglass: it reads as waiting without suggesting an error.",
+      "options": [
+        {
+          "id": "hourglass",
+          "label": "Hourglass",
+          "preview": {
+            "height": 140,
+            "html": "<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#202328;color:#ecedf1;font:15px system-ui}small{color:#aeb3bd}header{display:flex;align-items:center;justify-content:space-between;gap:16px}svg{width:24px;height:24px;flex-shrink:0}.meter{flex:1;border-top:1px dashed #aeb3bd}.reading{display:flex;align-items:center;gap:20px;margin-top:28px}</style><header><strong>Work</strong><small>5h window</small></header><div class='reading'><div class='meter'></div><svg viewBox='0 0 24 24' fill='none' stroke='#aeb3bd' stroke-width='1.6' aria-label='Hourglass'><path d='M6 2h12M6 22h12M7 2v5l10 10v5M17 2v5L7 17v5'/></svg></div>"
+          }
+        },
+        {
+          "id": "dots",
+          "label": "Three dots",
+          "preview": {
+            "height": 140,
+            "html": "<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#202328;color:#ecedf1;font:15px system-ui}small{color:#aeb3bd}header{display:flex;align-items:center;justify-content:space-between;gap:16px}svg{width:24px;height:24px;flex-shrink:0}.meter{flex:1;border-top:1px dashed #aeb3bd}.reading{display:flex;align-items:center;gap:20px;margin-top:28px}</style><header><strong>Work</strong><small>5h window</small></header><div class='reading'><div class='meter'></div><svg viewBox='0 0 24 24' fill='none' stroke='#aeb3bd' stroke-width='1.6' aria-label='Three dots'><circle cx='5' cy='12' r='1'/><circle cx='12' cy='12' r='1'/><circle cx='19' cy='12' r='1'/></svg></div>"
+          }
+        },
+        {
+          "id": "ring",
+          "label": "Dashed ring",
+          "preview": {
+            "height": 140,
+            "html": "<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#202328;color:#ecedf1;font:15px system-ui}small{color:#aeb3bd}header{display:flex;align-items:center;justify-content:space-between;gap:16px}svg{width:24px;height:24px;flex-shrink:0}.meter{flex:1;border-top:1px dashed #aeb3bd}.reading{display:flex;align-items:center;gap:20px;margin-top:28px}</style><header><strong>Work</strong><small>5h window</small></header><div class='reading'><div class='meter'></div><svg viewBox='0 0 24 24' fill='none' stroke='#aeb3bd' stroke-width='1.6' aria-label='Dashed ring'><circle cx='12' cy='12' r='9' stroke-dasharray='3 3'/></svg></div>"
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "prompt": "Adjust the heading and accent until they feel right.",
+      "recommendation": "Try 24px and lavender as a starting point.",
+      "preview": {
+        "height": 300,
+        "state": {
+          "size": 24,
+          "accent": "lavender"
+        },
+        "html": "<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#202328;color:#ecedf1;font:15px system-ui}label{display:block;margin-bottom:18px}input,select{margin-left:12px;max-width:100%;accent-color:#b7a6ff}select{font:inherit}article{padding:20px;border:1px solid #737782;border-radius:10px}h2{margin:0 0 12px}p{margin:0;color:#aeb3bd}</style>\n<label>Heading size <input id=\"size\" type=\"range\" min=\"16\" max=\"36\"><output id=\"value\"></output></label>\n<label>Accent <select id=\"accent\"><option value=\"lavender\">Lavender</option><option value=\"mint\">Mint</option></select></label>\n<article><h2>Weekend plans</h2><p>Books, snacks, and a quiet afternoon.</p></article>\n<script>\nconst size=document.querySelector('#size'),accent=document.querySelector('#accent');\nfunction draw(){size.value=grill.state.size;accent.value=grill.state.accent;document.querySelector('#value').textContent=' '+grill.state.size+'px';const h=document.querySelector('h2');h.style.fontSize=grill.state.size+'px';h.style.color=grill.state.accent==='mint'?'#9de2c4':'#b7a6ff'}\nfunction update(){grill.setState({size:Number(size.value),accent:accent.value});draw()}\nsize.oninput=update;accent.onchange=update;draw();\n</script>"
+      }
+    },
+    {
+      "id": "layout",
+      "prompt": "What would make this reading summary clearer?",
+      "context": "Comment on any area, or use Notes for overall feedback.",
+      "preview": {
+        "height": 300,
+        "html": "<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#202328;color:#ecedf1;font:15px system-ui}header{display:flex;align-items:center;justify-content:space-between;gap:16px}h2{margin:0}small{color:#aeb3bd}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-top:24px}article{padding:20px;border:1px solid #737782;border-radius:10px}strong{display:block;font-size:26px;margin-top:8px}svg{width:24px;height:24px;color:#b7a6ff}p{margin-bottom:0;color:#aeb3bd}</style>\n<header><h2>Reading room</h2><small>This week</small></header><div class=\"cards\"><article><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-label=\"Book\"><path d=\"M12 5v15M3 4q5-2 9 1q4-3 9-1v15q-5-2-9 1q-4-3-9-1z\"/></svg><strong>4 books</strong><p>On your shelf</p></article><article><small>Reading goal</small><strong>3 of 5</strong><p>Two more to go</p></article></div>"
+      }
+    }
+  ]
+}

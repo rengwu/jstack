@@ -4,8 +4,7 @@ import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {notification} from './completion/codex.mjs';
 
-export async function start(wait) {
-  const transport = notification();
+export async function start(wait, transport = notification()) {
   if (!transport) return {status: 'fallback', reason: 'No completion adapter available'};
   return new Promise(resolve => {
     const child = spawn(wait[0], [...wait.slice(1), '--notify', JSON.stringify(transport.argv)],

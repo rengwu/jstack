@@ -1,8 +1,29 @@
 # Recovery and advanced use
 
-Normal use needs only SKILL.md and the script's returned next action. Collection uses a local Node CLI with built-ins; there is no server, package installation, or build step. Optional delivery adapters are separate from collection. `next.command` is quoted for POSIX shells; `next.argv` supplies the equivalent argument array for other runners.
+Normal use needs only SKILL.md and the script's returned next action. Collection uses a local Node CLI with built-ins; there is no server, package installation, or build step. Optional delivery adapters are separate from collection. Execute the returned `next.argv`, `wait.argv`, or `completion.argv` directly when the runner accepts argument arrays. The equivalent `command` strings are quoted for POSIX shells only; do not paste them into PowerShell.
 
-The host needs file access, ordinary command execution, Node, and access to the browser's downloaded answer file. Install the linked grill-me, plan, and wiki skills and shared references with their relative layout intact; copying only this skill's instructions is insufficient. Skill discovery and plugin installation use each host's own conventions. For a remote/container agent, supply an accessible download directory or explicit answer path; it cannot read a local browser's Downloads automatically.
+The host needs file access, ordinary command execution, Node.js 22 or newer, and access to the browser's downloaded answer file. Install the linked grill-me, plan, and wiki skills and shared references with their relative layout intact; copying only this skill's instructions is insufficient. Skill discovery and plugin installation use each host's own conventions. For a remote/container agent, supply an accessible download directory or explicit answer path; it cannot read a local browser's Downloads automatically.
+
+## Invocation
+
+Check `node --version` once. If Node is not on PATH, use an existing runtime's absolute path (`Get-Command node -ErrorAction SilentlyContinue` in PowerShell). If none is available, report the prerequisite; do not install runtimes or packages during an interview. Returned argv arrays retain the runtime used to create the form.
+
+`create --input PATH` reads UTF-8 JSON, including a BOM; omitting it or using `--input -` reads stdin. Keep the JSON file in the OS temporary directory. This avoids shell-specific heredocs and pipeline encodings. For PowerShell:
+
+```powershell
+$nodePath = (Get-Command node -ErrorAction Stop).Source # Or an existing node.exe's absolute path
+$grillCli = 'C:\path\to\grill-form\scripts\grill-form.mjs'
+$specPath = Join-Path ([IO.Path]::GetTempPath()) 'grill-questions.json'
+$specJson = '{"title":"Review","questions":[{"prompt":"What would you change?"}]}'
+[IO.File]::WriteAllText($specPath, $specJson, [Text.UTF8Encoding]::new($false))
+$created = & $nodePath $grillCli create --project 'C:\path\to\project' --temporary --input $specPath --open | ConvertFrom-Json
+# On submission, execute the returned action without reparsing shell text:
+$grillExe = $created.next.argv[0]
+$grillArgs = $created.next.argv[1..($created.next.argv.Count - 1)]
+& $grillExe @grillArgs
+```
+
+`--open` requests the OS default browser. Use `--open --browser EXECUTABLE` for a specific installed browser; the value is an executable path, not a command with flags. Default launchers have a five-second deadline. An explicit browser is detached after starting so the CLI does not wait for its window to close. `launch.status: requested` means the request was sent, not that the page was inspected. Failure returns `fallback` with `html` and `url`, preserving the session. Retry with the returned `open.argv`, optionally adding `--browser EXECUTABLE`.
 
 ## Completion without agent polling
 
@@ -31,6 +52,12 @@ Paste clipboard images directly into Notes or a region comment. Each becomes a n
 PNG, JPEG, GIF, and WebP are supported: up to 5 MiB per image, 20 images, and 20 MiB total per form. Numbering is shared across questions, and deleting a chip does not renumber the remaining images. Notes still allow 12,000 characters, including image labels. Images stay local and are embedded in the single answer JSON download. Pending or unreadable images block submission until they finish loading or their chips are removed. If browser draft storage is unavailable or full, the form shows a message to keep the tab open until download.
 
 The collector validates image types, size limits, and reference positions. Its output lists image metadata without base64 data. `finish` returns the saved image paths and links them from the transcript; inspect those files to interpret the inline references. Plain-text submissions from older forms remain supported.
+
+## Reading feedback
+
+Collection leads with choices and notes. `finalStates` contains submitted prototype settings; each comment's `stateAtComment` describes its own captured view and may differ. `area: "selected region"` identifies an area comment without dumping viewport and scroll geometry. Empty comment arrays are omitted; `status: untouched` remains unresolved.
+
+Use `collect --details` before finishing for the full previous output shape (`states`, comment `state`, `region`, and scroll positions). `wait` and `complete` accept the same flag. Receipts, transcripts, saved HTML, and wiki source JSON always retain the full details; this only changes terminal output. Image paths come from `finish`.
 
 ## Finish
 
@@ -81,10 +108,12 @@ For rounds with previews, `finish` also returns `preview`: a saved offline HTML 
 
 Only when changing this skill: edit the prepared HTML or scripts directly, then run `node --test scripts/grill-form.test.mjs` from the plugin root. Exercise the browser when changing the UI. Use disposable test sessions; do not mistake synthetic answers for user decisions. Preserve the one-way dependency on grill-me. Prebuilt renderer versions, hashes, and licenses are in [the vendor inventory](../assets/vendor/README.md); no install or bundling step is required during interviews.
 
-The optional browser test uses an installed Chrome/Chromium executable and Node built-ins:
+The optional browser tests use an installed Chrome/Chromium executable and Node built-ins:
 
 ```sh
 GRILL_FORM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node --test scripts/grill-form.test.mjs
 ```
 
 It runs an isolated headless browser with page networking disabled, checks rendering, iframe isolation, prototype state and comments, inline image editing, draft recovery, and expansion, and downloads synthetic answers into a disposable test directory. Without `GRILL_FORM_BROWSER`, browser tests are skipped. `GRILL_FORM_SCREENSHOT` optionally saves desktop/mobile PNGs, including `.images.png` and `.images-mobile.png` for the notes editor.
+
+Tests execute returned argv directly and wait for browser state and completed downloads. Windows symlink checks explicitly skip when the account cannot create them. Windows command construction is covered locally; a native Windows run is still needed to verify browser launching and the full suite there.

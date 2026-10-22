@@ -8,11 +8,11 @@ Describe capabilities and outcomes without requiring a particular agent, harness
 
 ## Completion and waiting
 
-Prefer automatic delivery without model polling. Keep the exact session path in conversation context; never consume another conversation's latest batch. Choose one route using the current harness's tools:
+Prefer automatic delivery without model polling. Keep the exact session path in conversation context; never consume another conversation's latest batch. Execute returned `argv` arrays directly when supported; `command` strings are POSIX-shell conveniences. Choose one route using the current harness's tools:
 
-1. If a background command's completion wakes the agent, run the returned `wait.command` once through that capability and end the turn. Do not detach it with shell `&`; the host must track its exit.
-2. Otherwise run `completion.command` once. The shared helper tries an available optional adapter, without installation or configuration. On `armed`, end the turn; its one local waiter will send one submission notice to the originating conversation.
-3. If no adapter is available, a tool that keeps one call pending and returns its final result can run `wait.command` once. Bound the helper's `--timeout-seconds` below the tool's timeout. A tool that merely returns a process ID requiring status checks does not qualify.
+1. If a background command's completion wakes the agent, run the returned `wait` action once through that capability and end the turn. Do not detach it with shell `&`; the host must track its exit.
+2. Otherwise run the `completion` action once. The shared helper tries an available optional adapter, without installation or configuration. On `armed`, end the turn; its one local waiter will send one submission notice to the originating conversation.
+3. If no adapter is available, a tool that keeps one call pending and returns its final result can run the `wait` action once. Bound the helper's `--timeout-seconds` below the tool's timeout. A tool that merely returns a process ID requiring status checks does not qualify.
 4. If neither route is available, explain that automatic delivery is unavailable here and ask the user to say “done” after submitting. Collect once on that message.
 
 Never poll status, repeat wait calls, or spawn an agent just to wait. On a timeout, interruption, error, or an existing wait attempt, preserve the session and use “done”; do not restart automatically. A draft close is not submission. [Completion details](input-completion.md) describe the shared helper and current compatibility evidence.

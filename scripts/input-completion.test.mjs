@@ -8,6 +8,7 @@ import {spawnSync, execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {randomUUID} from 'node:crypto';
 import {notification} from './completion/codex.mjs';
+import {until} from './helpers/fixtures.mjs';
 
 const execute = promisify(execFile);
 const grill = fileURLToPath(new URL('../skills/grill-form/scripts/grill-form.mjs', import.meta.url));
@@ -15,15 +16,6 @@ const capture = fileURLToPath(new URL('../skills/screencap/bin/Screencap.app/Con
 const env = {...process.env, CODEX_THREAD_ID: ''}; // Tests must never message a real conversation.
 const parse = result => { assert.equal(result.status, 0, result.stderr || result.stdout); return JSON.parse(result.stdout); };
 const call = (argv, input) => parse(spawnSync(argv[0], argv.slice(1), {env, input: input && JSON.stringify(input), encoding: 'utf8', timeout: 5000}));
-async function until(read, accept = Boolean) {
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    try { const value = await read(); if (accept(value)) return value; }
-    catch (e) { if (e.code !== 'ENOENT' && !(e instanceof SyntaxError)) throw e; }
-    await new Promise(resolve => setTimeout(resolve, 20));
-  }
-  assert.fail('Local completion did not arrive within five seconds');
-}
 async function fixture(t, kind = 'grill-form') {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-completion-'));
   const project = path.join(temp, "project ' $ `literal`"); await fs.mkdir(project);
@@ -32,15 +24,23 @@ async function fixture(t, kind = 'grill-form') {
     {title: 'Synthetic input', questions: [{prompt: 'Pick one', recommendation: 'A', options: ['A', 'B']}]});
   const session = created.session, log = path.join(temp, 'notice.txt');
   t.after(async () => { await fs.rm(session, {recursive: true, force: true}); await fs.rm(temp, {recursive: true, force: true}); });
-  const tools = path.join(temp, 'tools'); await fs.mkdir(tools);
-  await fs.writeFile(path.join(tools, 'codex'), `#!${process.execPath}
-if (process.argv.includes('--help')) console.log('--thread --message');
-else if (process.env.JSTACK_TEST_NOTIFY_FAIL) process.exit(1);
-else require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.argv.at(-1)+'\\n');
-`, {mode: 0o700});
-  const testEnv = {...env, PATH: tools + path.delimiter + env.PATH, CODEX_THREAD_ID: randomUUID(), JSTACK_TEST_NOTICE: log};
-  const args = ['complete', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])];
-  const complete = (...extra) => parse(spawnSync(program[0], [...program.slice(1), ...args, ...extra], {env: testEnv, encoding: 'utf8', timeout: 5000}));
+  const notifier = path.join(temp, 'notify.cjs');
+  await fs.writeFile(notifier, `
+if (process.env.JSTACK_TEST_NOTIFY_FAIL) process.exit(1);
+require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.argv.at(-1)+'\\n');
+`);
+  const testEnv = {...env, CODEX_THREAD_ID: randomUUID(), JSTACK_TEST_NOTICE: log};
+  const runner = path.join(temp, 'complete.mjs');
+  await fs.writeFile(runner, `
+import {start} from ${JSON.stringify(new URL('./input-completion.mjs', import.meta.url).href)};
+const transport = process.env.CODEX_THREAD_ID ? {argv:${JSON.stringify([process.execPath, notifier, '{message}'])}} : null;
+const result = await start(${JSON.stringify(program)}.concat(process.argv.slice(2)), transport);
+(result.status === 'error' ? process.stderr : process.stdout).write(JSON.stringify(result));
+if (result.status === 'error') process.exitCode = 1;
+`);
+  const completionProgram = [process.execPath, runner];
+  const args = ['wait', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])];
+  const complete = (...extra) => parse(spawnSync(completionProgram[0], [...completionProgram.slice(1), ...args, ...extra], {env: testEnv, encoding: 'utf8', timeout: 5000}));
   const state = () => fs.readFile(path.join(session, '.wait'), 'utf8').then(value => value.trim());
   const settled = () => until(state, value => /^(notified|failed|received|timed_out|stopped)/.test(value));
   const started = () => until(state);
@@ -60,7 +60,7 @@ else require('node:fs').appendFileSync(process.env.JSTACK_TEST_NOTICE, process.a
   }
   const collect = () => call([...program, 'collect', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : [])]);
   const finish = receipt => call([...program, 'finish', '--session', session, ...(kind === 'grill-form' ? ['--downloads', temp] : ['--receipt', receipt])]);
-  return {temp, session, log, program, testEnv, args, complete, state, settled, started, submit, collect, finish};
+  return {temp, session, log, program, completionProgram, testEnv, args, complete, state, settled, started, submit, collect, finish};
 }
 
 for (const kind of ['grill-form', 'screencap']) {
@@ -79,9 +79,8 @@ for (const kind of ['grill-form', 'screencap']) {
     assert.ok(!(await fs.readdir(f.session)).includes('completion.json'));
     const notices = (await fs.readFile(f.log, 'utf8')).trim().split('\n');
     assert.equal(notices.length, 1);
-    assert.ok(notices[0].includes(f.session));
+    assert.equal(notices[0], `${kind} ready: ${kind === 'grill-form' ? JSON.stringify(f.session) : f.session}`);
     assert.match(notices[0], new RegExp(`^${kind} ready: `));
-    assert.ok(!notices[0].includes(other.session));
     const result = f.collect(); assert.equal(result.status, 'received');
     if (kind === 'screencap') {
       assert.equal(result.items[0].feedback, 'Synthetic capture feedback');
@@ -107,7 +106,7 @@ for (const kind of ['grill-form', 'screencap']) {
 
   test(`${kind}: startup errors and delivery failures preserve the submission`, {skip: kind === 'screencap' && process.platform !== 'darwin'}, async t => {
     const f = await fixture(t, kind);
-    const invalid = spawnSync(f.program[0], [...f.program.slice(1), ...f.args, '--timeout-seconds', '0'], {env: f.testEnv, encoding: 'utf8'});
+    const invalid = spawnSync(f.completionProgram[0], [...f.completionProgram.slice(1), ...f.args, '--timeout-seconds', '0'], {env: f.testEnv, encoding: 'utf8'});
     assert.equal(invalid.status, 1);
     assert.equal(JSON.parse(invalid.stderr).status, 'error');
     await assert.rejects(fs.stat(path.join(f.session, '.wait')), {code: 'ENOENT'});
@@ -130,15 +129,14 @@ for (const kind of ['grill-form', 'screencap']) {
 
 test('unsupported host leaves the session untouched and returns a manual fallback', async t => {
   const f = await fixture(t), before = await fs.readdir(f.session);
-  f.testEnv.CODEX_THREAD_ID = '';
-  assert.equal(f.complete().status, 'fallback');
+  assert.equal(call([...f.program, 'complete', '--session', f.session]).status, 'fallback');
   assert.deepEqual(await fs.readdir(f.session), before);
   await f.submit(); assert.equal(f.collect().status, 'received');
 });
 
 test('concurrent starts claim only one completion attempt', async t => {
   const f = await fixture(t);
-  const invoke = () => execute(f.program[0], [...f.program.slice(1), ...f.args], {env: f.testEnv}).then(result => JSON.parse(result.stdout));
+  const invoke = () => execute(f.completionProgram[0], [...f.completionProgram.slice(1), ...f.args], {env: f.testEnv}).then(result => JSON.parse(result.stdout));
   const results = await Promise.all([invoke(), invoke()]);
   assert.deepEqual(results.map(r => r.status).sort(), ['armed', 'fallback']);
   await f.submit(); await until(f.state, value => value === 'notified');
@@ -152,15 +150,17 @@ test('malformed notification input leaves the session untouched', async t => {
   await assert.rejects(fs.stat(path.join(other.session, '.wait')), {code: 'ENOENT'});
 });
 
-test('Codex adapter checks capability and requires an exact thread identity', async t => {
-  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-codex-capability-'));
-  t.after(() => fs.rm(temp, {recursive: true, force: true}));
-  const file = path.join(temp, 'codex');
-  await fs.writeFile(file, '#!/bin/sh\nprintf "%s\\n" "--thread --message"\n', {mode: 0o700});
-  const adapted = {...env, PATH: temp, CODEX_THREAD_ID: randomUUID()};
-  assert.deepEqual(notification(adapted).argv, ['codex', 'queue', '--thread', adapted.CODEX_THREAD_ID, '--message', '{message}']);
-  assert.equal(notification({...adapted, CODEX_THREAD_ID: ''}), null);
-  assert.equal(notification({...adapted, CODEX_THREAD_ID: 'latest'}), null);
-  await fs.writeFile(file, '#!/bin/sh\nexit 1\n', {mode: 0o700});
-  assert.equal(notification(adapted), null);
+test('Codex adapter checks capability and requires an exact thread identity', () => {
+  const adapted = {...env, CODEX_THREAD_ID: randomUUID()};
+  const supported = (program, argv, options) => {
+    assert.equal(program, 'codex'); assert.deepEqual(argv, ['queue', '--help']);
+    assert.equal(options.env, adapted); assert.equal(options.timeout, 5000);
+    return '--thread --message';
+  };
+  assert.deepEqual(notification(adapted, supported).argv, ['codex', 'queue', '--thread', adapted.CODEX_THREAD_ID, '--message', '{message}']);
+  const unexpected = () => { assert.fail('Invalid identity must not probe a CLI'); };
+  assert.equal(notification({...adapted, CODEX_THREAD_ID: ''}, unexpected), null);
+  assert.equal(notification({...adapted, CODEX_THREAD_ID: 'latest'}, unexpected), null);
+  assert.equal(notification(adapted, () => '--message'), null);
+  assert.equal(notification(adapted, () => { throw new Error('unavailable'); }), null);
 });

@@ -2,7 +2,7 @@
 
 Choose the shape that helps the user respond: an open critique, a visual comparison, an interactive prototype, or a focused question. A round can mix these. Keep recommendations useful and specific. Render and inspect the form before presenting it when browser tools are available; disclose when inspection was unavailable. Never submit synthetic answers to a real review.
 
-The CLI accepts JSON on stdin: `{"title":"Review","questions":[...]}`. Each item can have a `prompt`, Markdown `context`, `preview`, `recommendation`, and `options`. All are optional individually; provide a prompt, context, or preview. Options may be strings or `{id,label,preview}` objects. Notes are always available. Partial feedback is accepted; use `required:true` only for an answer needed to proceed. Blank items remain unresolved.
+The CLI accepts JSON through `--input PATH` or stdin: `{"title":"Review","questions":[...]}`. Each item can have a `prompt`, Markdown `context`, `preview`, `recommendation`, and `options`. All are optional individually; provide a prompt, context, or preview. Options may be strings or `{id,label,preview}` objects. Notes are always available. Partial feedback is accepted; use `required:true` only for an answer needed to proceed. Blank items remain unresolved.
 
 ## Content
 
@@ -17,41 +17,11 @@ Every preview, including option previews, is a separate sandboxed iframe. Its st
 
 `preview` accepts `html`, optional `height` (64–1200 pixels, default 280), and `state` (initial JSON object). Use responsive HTML; the frame scrolls when content exceeds its height. Include accessible text labels for visual choices.
 
-## Open critique
+## Reusable examples
 
-Omit choices when the useful response is subjective.
+[examples.json](../assets/examples.json) is a complete round with visual glyph choices, a stateful size/accent control, and an open layout for region feedback. Copy the relevant item and adapt its content; each preview includes its own styles. Omit choices for subjective critique, and show actual icons or layouts in choice previews.
 
-```json
-{
-  "title": "Menu layout",
-  "questions": [{
-    "prompt": "What feels unclear in this menu?",
-    "recommendation": "Keep the account name prominent and the countdown secondary.",
-    "preview": {
-      "height": 180,
-      "html": "<style>body{margin:24px;font:16px system-ui;background:#202023;color:#eee}small{color:#aaa}</style><h3>Work</h3><small>62% · 2h 14m</small>"
-    }
-  }]
-}
-```
-
-## Visual choices
-
-Reuse the same preview format in options. Show the actual icon, layout, or sample in context rather than only naming it.
-
-```json
-{
-  "title": "Waiting indicator",
-  "questions": [{
-    "prompt": "Which waiting indicator reads better?",
-    "recommendation": "The hourglass conveys waiting more directly.",
-    "options": [
-      {"id":"hourglass","label":"Hourglass","preview":{"height":80,"html":"<style>body{margin:20px;font:16px system-ui}</style><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' aria-label='Hourglass'><path d='M6 2h12M6 22h12M7 2v5l10 10v5M17 2v5L7 17v5'/></svg> Waiting"}},
-      {"id":"dots","label":"Three dots","preview":{"height":80,"html":"<style>body{margin:20px;font:16px system-ui}</style><svg width='20' height='20' viewBox='0 0 24 24' aria-label='Three dots'><circle cx='5' cy='12' r='1.5'/><circle cx='12' cy='12' r='1.5'/><circle cx='19' cy='12' r='1.5'/></svg> Waiting"}}
-    ]
-  }]
-}
-```
+To inspect the samples, run the CLI with `create --project PROJECT_DIR --temporary --input SKILL_DIR/assets/examples.json --open`. Keep sample submissions in that disposable session, separate from a real review.
 
 ## Interactive review and comments
 

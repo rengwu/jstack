@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
+import {until} from './fixtures.mjs';
 
 export async function chrome(t) {
   const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'jstack-chrome-'));
@@ -57,6 +58,17 @@ export async function chrome(t) {
   await command('Network.emulateNetworkConditions', {offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0});
   function controller(command) {
     return {command, events,
+      waitFor(expression) {
+        return this.evaluate(`new Promise((resolve,reject)=>{
+          const deadline=Date.now()+5000;
+          const check=()=>{
+            try { if (${expression}) { resolve(true); return; } }
+            catch(error) { if (!(error instanceof ReferenceError)) { reject(error); return; } }
+            if(Date.now()>=deadline)reject(new Error('Timed out: '+${JSON.stringify(expression)}));
+            else setTimeout(check,20);
+          }; check();
+        })`);
+      },
       async evaluate(expression) {
         const result = await command('Runtime.evaluate', {expression, awaitPromise: true, returnByValue: true});
         if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
@@ -64,14 +76,21 @@ export async function chrome(t) {
       },
     };
   }
+  const attached = new Map();
   return {...controller(command),
+    frame(expression) {
+      return until(async () => {
+        for (const frame of await this.frames()) if (await frame.evaluate(expression)) return frame;
+      }, Boolean, {label: `Frame matching ${expression}`});
+    },
     async frames() {
       const {targetInfos} = await send('Target.getTargets');
       return Promise.all(targetInfos.filter(info=>info.type==='iframe').map(async info=>{
+        if (attached.has(info.targetId)) return attached.get(info.targetId);
         const {sessionId: child} = await send('Target.attachToTarget',{targetId:info.targetId,flatten:true});
         const childCommand=(method,params)=>send(method,params,child);
         await childCommand('Runtime.enable'); await childCommand('Network.enable');
-        return controller(childCommand);
+        const frame = controller(childCommand); attached.set(info.targetId, frame); return frame;
       }));
     }
   };

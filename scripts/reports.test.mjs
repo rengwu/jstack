@@ -1,3 +1,4 @@
+import {symlink} from './helpers/fixtures.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -35,7 +36,7 @@ test('custom report paths are supported without allowing directory escapes or sy
   const f=await fixture(t,{'checks/runs/one.md':report('Passed')});
   assert.equal(f.run('--runs-dir','checks/runs').status,0);
   assert.notEqual(f.run('--runs-dir','../outside').status,0);
-  await fs.symlink(path.join(f.root,'checks'),path.join(f.root,'alias'));
+  if (!await symlink(t, path.join(f.root,'checks'),path.join(f.root,'alias'))) return;
   assert.notEqual(f.run('--runs-dir','alias/runs').status,0);
 });
 

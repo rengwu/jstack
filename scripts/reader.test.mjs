@@ -1,3 +1,4 @@
+import {symlink} from './helpers/fixtures.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -72,10 +73,10 @@ test('attachments cannot escape evidence, follow symlinks, or link executable HT
     await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad]('+href+')\n');
     fails(f.run(),/Unsupported attachment|relative link/);
   }
-  await fs.symlink(path.join(f.root,'outside.txt'),path.join(f.root,'evidence/link.txt'));
+  if (!await symlink(t, path.join(f.root,'outside.txt'),path.join(f.root,'evidence/link.txt'))) return;
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad](evidence/link.txt)\n');
   fails(f.run(),/symlinked attachment/);
-  await fs.symlink(f.root,path.join(f.root,'evidence/linked-dir'));
+  if (!await symlink(t, f.root,path.join(f.root,'evidence/linked-dir'))) return;
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Bad](evidence/linked-dir/outside.txt)\n');
   fails(f.run(),/symlinked attachment/);
 });
@@ -108,7 +109,7 @@ test('images reject remote, missing, non-image and escaping paths including dupl
     await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n[Already linked](evidence/a.png)\n![Bad]('+href+')\n');
     fails(f.run(),/Unsupported|Missing|relative link/);
   }
-  await fs.symlink(path.join(f.root,'outside.png'),path.join(f.root,'evidence/link.png'));
+  if (!await symlink(t, path.join(f.root,'outside.png'),path.join(f.root,'evidence/link.png'))) return;
   await fs.writeFile(path.join(f.root,'index.md'),'# Test wiki\n![Bad](evidence/link.png)\n');
   fails(f.run(),/symlinked attachment/);
 });

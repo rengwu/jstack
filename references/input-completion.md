@@ -1,12 +1,12 @@
 # Input completion
 
-Both skills expose `wait.command`: one local process stays silent until submission, then prints the collector's JSON result and exits. It needs no harness API. A background-task notification or a single pending tool call can deliver that result to the agent. Follow [the shared selection policy](stack-contract.md#completion-and-waiting); a detached process by itself cannot wake an agent.
+Both skills expose `wait.argv` (and a POSIX-only `wait.command`): one local process stays silent until submission, then prints the collector's JSON result and exits. It needs no harness API. A background-task notification or a single pending tool call can deliver that result to the agent. Follow [the shared selection policy](stack-contract.md#completion-and-waiting); a detached process by itself cannot wake an agent.
 
 The default local deadline is one hour; `--timeout-seconds N` accepts 1–86400. Shorten it to fit the host's tool limit. Timeout, manual collection, or interruption never deletes the submission and never starts another wait. Closing the capture panel keeps its draft; a local waiter can still receive it if reopened and submitted before its deadline.
 
 ## Optional delivery
 
-`completion.command` runs the collector's `complete --session SESSION_DIR` command. A shared Node launcher checks for a notification adapter, starts that collector's `wait`, and exits after its startup acknowledgement. Only the collector remains running. The launcher knows nothing about either skill's files or submission format. It uses Node built-ins: no server, packages, account setup, or resident service.
+`completion.argv` runs the collector's `complete --session SESSION_DIR` command. A shared Node launcher checks for a notification adapter, starts that collector's `wait`, and exits after its startup acknowledgement. Only the collector remains running. The launcher knows nothing about either skill's files or submission format. It uses Node built-ins: no server, packages, account setup, or resident service.
 
 Each collector exclusively creates one `.wait` file to prevent duplicate attempts. It holds only the latest status: waiting, stopped, timed_out, received, notified, or failed. Manual collection stops the waiter. Original submissions and receipts remain authoritative; delivery does not save another copy of the answers. Old session markers are recognized to prevent accidental restarts after an upgrade.
 
@@ -14,7 +14,7 @@ Each collector exclusively creates one `.wait` file to prevent duplicate attempt
 
 The bundled optional adapter uses `CODEX_THREAD_ID` and an installed `codex queue --thread ... --message ...` command. It probes CLI support before launching; older versions remain usable through the other routes. It targets the exact originating conversation and never searches for a latest thread. The short notice, `screencap ready: SESSION_PATH` or `grill-form ready: SESSION_PATH`, identifies the saved submission. The resumed agent collects and validates it normally.
 
-Internally, the launcher passes the adapter's argument array through `wait --notify JSON_ARGV`; the collector replaces an argument exactly equal to `{message}` and executes it without a shell. `complete` and `wait` both accept `--timeout-seconds`; grill-form also accepts `--downloads` or `--answer` for a custom answer location.
+Internally, the launcher passes the adapter's argument array through `wait --notify JSON_ARGV`; the collector replaces an argument exactly equal to `{message}` and executes it without a shell. `complete` and `wait` both accept `--timeout-seconds`; grill-form also accepts `--downloads` or `--answer` for a custom answer location and `--details` for full comment geometry. Use argv arrays on Windows; [invocation examples](../skills/grill-form/references/usage.md#invocation) cover PowerShell and explicit Node paths.
 
 ## Waiting cost
 
