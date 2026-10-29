@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="classic">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src data: blob:; font-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Questionnaire</title>
+
+
+
+
+
+<link rel="stylesheet" href="fungi-ui/assets/ui.css">
+<link rel="stylesheet" href="workflow/assets/form.css">
+</head>
+<body>
+<main><header><h1 id="project-name"></h1><h2 id="title"></h2></header><form id="questions"></form></main>
+<noscript>Enable JavaScript to answer this offline form.</noscript>
+<script src="fungi-ui/assets/vendor/marked.js"></script>
+<script src="fungi-ui/assets/vendor/purify.js"></script>
+<script src="fungi-ui/assets/vendor/pele.js"></script>
+<script type="module">import('./workflow/assets/form.mjs').catch(error=>{const node=document.getElementById('message')??document.body.appendChild(document.createElement('p'));node.textContent='Could not load questionnaire: '+error.message;node.hidden=false;});</script>
+</body>
+</html>

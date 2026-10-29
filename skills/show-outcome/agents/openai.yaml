@@ -1,0 +1,4 @@
+interface:
+  display_name: "Show outcome"
+  short_description: "Rich result reports with optional feedback"
+  default_prompt: "Use $show-outcome to present results in its prepared window, with optional Notes and a detailed CLI summary."

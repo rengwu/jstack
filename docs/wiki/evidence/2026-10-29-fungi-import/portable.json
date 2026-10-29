@@ -1,0 +1,37 @@
+{
+  "root": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/jstack-fungi-export-xpisb5be",
+  "tests": [
+    "# tests 20",
+    "# suites 0",
+    "# pass 20",
+    "# fail 0",
+    "# cancelled 0",
+    "# skipped 0",
+    "# todo 0",
+    "# duration_ms 155.646667"
+  ],
+  "standalone": [
+    {
+      "workflow": "grill-form",
+      "root": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/jstack-fungi-export-xpisb5be/grill-form",
+      "driver": "native-smoke.mjs",
+      "bundle": {
+        "directory": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/grill-form-qvTcg6",
+        "html": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/grill-form-qvTcg6/form.html",
+        "theme": "classic",
+        "input": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/grill-form-qvTcg6/input.json"
+      }
+    },
+    {
+      "workflow": "show-outcome",
+      "root": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/jstack-fungi-export-xpisb5be/show-outcome",
+      "driver": "show-outcome-native-smoke.mjs",
+      "bundle": {
+        "directory": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/show-outcome-rzsAa2",
+        "html": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/show-outcome-rzsAa2/outcome.html",
+        "theme": "classic",
+        "input": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/show-outcome-rzsAa2/input.json"
+      }
+    }
+  ]
+}

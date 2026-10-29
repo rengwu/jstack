@@ -1,0 +1,92 @@
+[
+  {
+    "path": "skills/adhd",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/commit",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/feature-map",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/fungi",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/fungi-ui",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/grill-form",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/grill-form-adhd",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/grill-me",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/maintain-verification",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/plan",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/rule-lean",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/rule-plain-ui",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/show-outcome",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/verify-change",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/wiki",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "skills/work-until-grill",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": "archive/screencap/skills/screencap",
+    "passed": true,
+    "detail": "Skill is valid!"
+  },
+  {
+    "path": ".codex-plugin/plugin.json",
+    "passed": true,
+    "detail": "Plugin validation passed: /Users/rengwu/Desktop/Projects/jstack"
+  }
+]

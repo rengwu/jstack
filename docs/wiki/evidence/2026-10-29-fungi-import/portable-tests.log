@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: report has optional Notes and no silent acknowledgment submission
+ok 1 - report has optional Notes and no silent acknowledgment submission
+  ---
+  duration_ms: 0.996375
+  type: 'test'
+  ...
+# Subtest: next steps allow explicit multiple selections without Notes, and clear back to no feedback
+ok 2 - next steps allow explicit multiple selections without Notes, and clear back to no feedback
+  ---
+  duration_ms: 2.028
+  type: 'test'
+  ...
+# Subtest: selected actions restore alongside Notes and images; earlier report drafts remain readable
+ok 3 - selected actions restore alongside Notes and images; earlier report drafts remain readable
+  ---
+  duration_ms: 0.394833
+  type: 'test'
+  ...
+# Subtest: recommendations preserve their reason through selection and drafts without selecting by default
+ok 4 - recommendations preserve their reason through selection and drafts without selecting by default
+  ---
+  duration_ms: 0.347875
+  type: 'test'
+  ...
+# Subtest: next-step input rejects malformed or ambiguous choices
+ok 5 - next-step input rejects malformed or ambiguous choices
+  ---
+  duration_ms: 0.175083
+  type: 'test'
+  ...
+# Subtest: combined questions are rejected explicitly instead of discarded
+ok 6 - combined questions are rejected explicitly instead of discarded
+  ---
+  duration_ms: 0.075209
+  type: 'test'
+  ...
+# Subtest: inline image references and drafts round-trip; deleting a reference removes its attachment
+ok 7 - inline image references and drafts round-trip; deleting a reference removes its attachment
+  ---
+  duration_ms: 0.179292
+  type: 'test'
+  ...
+# Subtest: draft recovery rejects another report, wrong format, mixed answers and broken image references
+ok 8 - draft recovery rejects another report, wrong format, mixed answers and broken image references
+  ---
+  duration_ms: 0.118625
+  type: 'test'
+  ...
+# Subtest: oversize feedback or unsupported files fail before editing user data
+ok 9 - oversize feedback or unsupported files fail before editing user data
+  ---
+  duration_ms: 0.383667
+  type: 'test'
+  ...
+# Subtest: unknown schema and invalid report fields fail clearly
+ok 10 - unknown schema and invalid report fields fail clearly
+  ---
+  duration_ms: 0.542833
+  type: 'test'
+  ...
+# Subtest: outcome owns its page and modules, with no runtime dependency on the interview skill
+ok 11 - outcome owns its page and modules, with no runtime dependency on the interview skill
+  ---
+  duration_ms: 27.213916
+  type: 'test'
+  ...
+# Subtest: inline editors preserve actual image offsets even beside typed image-like text
+ok 12 - inline editors preserve actual image offsets even beside typed image-like text
+  ---
+  duration_ms: 0.219708
+  type: 'test'
+  ...
+# Subtest: partial feedback preserves untouched items and returns selected labels
+ok 13 - partial feedback preserves untouched items and returns selected labels
+  ---
+  duration_ms: 1.140417
+  type: 'test'
+  ...
+# Subtest: required answers and Something else retain their meaning
+ok 14 - required answers and Something else retain their meaning
+  ---
+  duration_ms: 0.394041
+  type: 'test'
+  ...
+# Subtest: PNG bytes round-trip through Fungi attachments and draft restoration
+ok 15 - PNG bytes round-trip through Fungi attachments and draft restoration
+  ---
+  duration_ms: 2.336083
+  type: 'test'
+  ...
+# Subtest: region comments preserve their own state separately from final state
+ok 16 - region comments preserve their own state separately from final state
+  ---
+  duration_ms: 0.339375
+  type: 'test'
+  ...
+# Subtest: oversize feedback and malformed references fail without mutating answers
+ok 17 - oversize feedback and malformed references fail without mutating answers
+  ---
+  duration_ms: 0.339667
+  type: 'test'
+  ...
+# Subtest: each assembled workflow retains input and resolves its own schema against the shared kit
+ok 18 - each assembled workflow retains input and resolves its own schema against the shared kit
+  ---
+  duration_ms: 47.229416
+  type: 'test'
+  ...
+# Subtest: a theme comes from the explicit option, then the personal setting, then the template default
+ok 19 - a theme comes from the explicit option, then the personal setting, then the template default
+  ---
+  duration_ms: 44.586166
+  type: 'test'
+  ...
+# Subtest: every theme is imported into the theme layer and every bundled font exists
+ok 20 - every theme is imported into the theme layer and every bundled font exists
+  ---
+  duration_ms: 1.155125
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 155.646667

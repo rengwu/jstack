@@ -1,6 +1,6 @@
 # jstack development
 
-This plugin contains fourteen skills: work-until-grill, grill-me, grill-form, grill-form-adhd, plan, wiki, feature-map, verify-change, maintain-verification, rule-lean, rule-plain-ui, adhd, screencap, and commit. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules. `rule-lean` and `rule-plain-ui` provide independent implementation and UI guidance, respectively, and do not require a wiki workflow.
+This plugin contains sixteen active skills: work-until-grill, grill-me, grill-form, grill-form-adhd, show-outcome, fungi, fungi-ui, plan, wiki, feature-map, verify-change, maintain-verification, rule-lean, rule-plain-ui, adhd, and commit. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules. `rule-lean` and `rule-plain-ui` provide independent implementation and UI guidance, respectively, and do not require a wiki workflow.
 
 All skills, workflows, and mechanical helpers must follow [agent and harness independence](references/stack-contract.md#agent-and-harness-independence). This applies to jstack development as well as project work using the skills.
 
@@ -10,4 +10,8 @@ Resolve the target project before writing and follow the [target project boundar
 
 Run `node --test scripts/*.test.mjs` for reader or report-checker behavior changes. Build/check `examples/wiki/` when the example changes. Validate all skill frontmatter and the plugin manifest with the installed skill-creator/plugin-creator validators before handoff. Plugin-authoring changes belong in this source directory; project work using the skills belongs in the target project. The original Desktop planning-wiki is a preserved starting reference.
 
-`grill-form` is an optional presentation layer over the unchanged `grill-me`; keep that dependency one-way. Use its prepared offline HTML template and CLI during interviews, with no server, frameworks, build step, or package installation. Run `node --test scripts/grill-form.test.mjs` for form/collector changes. Keep temporary session files outside the plugin and target project.
+`grill-form` is an optional Fungi presentation layer over the unchanged `grill-me`; keep that dependency one-way. `show-outcome` presents results independently. Both workflows own their input, interpretation and prepared pages, use sibling `fungi-ui` assets and assemblers, and follow `fungi` for native sessions and completion. Keep all skill resources in this repository; installed workflows must not rely on another source checkout. Fungi and Node.js 22+ are runtime prerequisites. Routine callers supply JSON and run the prepared assembler without reading the component guide or developing UI. No package installation or browser-tab launcher is needed.
+
+Run `node --test scripts/*.test.mjs` for Fungi workflow or shared UI changes, then the relevant native smoke checks in `docs/wiki/verification/setup.md`. Retain generated bundles and Fungi results for reopening; keep synthetic sessions outside the plugin and target project. Fungi owns completion for its workflows.
+
+Screencap is deprecated and preserved under `archive/screencap/`, including its original relative skill/script layout, app, source, completion helper, references, tests, and mockups. Keep it outside active skill discovery and the default test suite. Explicit archive checks run with `node --test archive/screencap/scripts/*.test.mjs`; see its README. Preserve mixed-feature historical wiki records in place.

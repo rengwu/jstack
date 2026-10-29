@@ -1,6 +1,6 @@
 ---
 title: jstack development
-updated: 2026-10-21
+updated: 2026-10-30
 ---
 # jstack development
 
@@ -8,6 +8,11 @@ Development decisions, findings, open questions, and verification evidence for j
 
 ## Development notes
 
+- [Features](features/index.md) — expected behavior and verification recipes.
+- [Fungi workflows in jstack](decisions/fungi-workflows.md) — the self-contained daily-use bundle and replacement of the browser-based grill-form.
+- [Fungi verification setup](verification/setup.md) — local tests, native workflow checks, and portable installation checks.
+- [Fungi import verification](verification/runs/2026-10-29-fungi-import.md) — results for this migration.
+- [Screencap archive verification](verification/runs/2026-10-30-screencap-archive.md) — preserved files and separate active/archive checks after deprecation.
 - [Development wiki policy](decisions/development-wiki.md) — the accepted scope and tracking policy for this wiki.
 - [Windows agent workflow feedback](discussions/2026-10-21-windows-agent-workflow.md) — observed friction, proposed improvements, what worked, and suggested priorities.
 

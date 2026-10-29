@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fungi"
+  short_description: "Shared support for local interactive interfaces"
+  default_prompt: "Use $fungi to present this workflow’s interface and collect the response."

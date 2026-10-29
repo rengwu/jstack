@@ -1,4 +1,4 @@
 interface:
   display_name: "Grill Form"
-  short_description: "Review designs and answer questions in offline forms."
-  default_prompt: "Use $grill-form to present this work visually, collect my feedback, and clean up the temporary session."
+  short_description: "Decision interviews and interactive visual reviews"
+  default_prompt: "Use $grill-form to collect the decisions and feedback needed for this task."

@@ -1,0 +1,13 @@
+{
+  "result": "Passed",
+  "skill_frontmatter": {
+    "validator": "skill-creator/scripts/quick_validate.py",
+    "count": 17,
+    "passed": 17
+  },
+  "plugin_manifest": {
+    "validator": "plugin-creator/scripts/validate_plugin.py",
+    "passed": true,
+    "version": "0.3.0"
+  }
+}

@@ -1,0 +1,334 @@
+TAP version 13
+# Subtest: screencap: silent detached wait sends one notice and preserves the collectible submission
+ok 1 - screencap: silent detached wait sends one notice and preserves the collectible submission
+  ---
+  duration_ms: 1283.021125
+  type: 'test'
+  ...
+# Subtest: screencap: timeout and manual collection stop waiting without losing later submissions
+ok 2 - screencap: timeout and manual collection stop waiting without losing later submissions
+  ---
+  duration_ms: 1304.3265
+  type: 'test'
+  ...
+# Subtest: screencap: startup errors and delivery failures preserve the submission
+ok 3 - screencap: startup errors and delivery failures preserve the submission
+  ---
+  duration_ms: 1337.261041
+  type: 'test'
+  ...
+# Subtest: screencap: old wait markers prevent an automatic restart
+ok 4 - screencap: old wait markers prevent an automatic restart
+  ---
+  duration_ms: 82.418875
+  type: 'test'
+  ...
+# Subtest: unsupported host leaves the session untouched and returns a manual fallback
+ok 5 - unsupported host leaves the session untouched and returns a manual fallback
+  ---
+  duration_ms: 103.225625
+  type: 'test'
+  ...
+# Subtest: concurrent starts claim only one completion attempt
+ok 6 - concurrent starts claim only one completion attempt
+  ---
+  duration_ms: 1210.722083
+  type: 'test'
+  ...
+# Subtest: malformed notification input leaves the session untouched
+ok 7 - malformed notification input leaves the session untouched
+  ---
+  duration_ms: 20.456916
+  type: 'test'
+  ...
+# Subtest: Codex adapter checks capability and requires an exact thread identity
+ok 8 - Codex adapter checks capability and requires an exact thread identity
+  ---
+  duration_ms: 0.37275
+  type: 'test'
+  ...
+# Subtest: original Markdown navigation, duplicate anchors, and stale snapshot detection
+ok 9 - original Markdown navigation, duplicate anchors, and stale snapshot detection
+  ---
+  duration_ms: 269.608417
+  type: 'test'
+  ...
+# Subtest: nested report resolves an encoded evidence link relative to the HTML and hashes its contents
+ok 10 - nested report resolves an encoded evidence link relative to the HTML and hashes its contents
+  ---
+  duration_ms: 251.202375
+  type: 'test'
+  ...
+# Subtest: custom metadata renders generically on any page with escaped labels and values
+ok 11 - custom metadata renders generically on any page with escaped labels and values
+  ---
+  duration_ms: 76.08275
+  type: 'test'
+  ...
+# Subtest: missing attachments, invalid dates, and broken Markdown targets fail the build
+ok 12 - missing attachments, invalid dates, and broken Markdown targets fail the build
+  ---
+  duration_ms: 218.797333
+  type: 'test'
+  ...
+# Subtest: attachments cannot escape evidence, follow symlinks, or link executable HTML
+ok 13 - attachments cannot escape evidence, follow symlinks, or link executable HTML
+  ---
+  duration_ms: 444.381417
+  type: 'test'
+  ...
+# Subtest: a duplicate attachment cannot bypass fragment validation
+ok 14 - a duplicate attachment cannot bypass fragment validation
+  ---
+  duration_ms: 75.211792
+  type: 'test'
+  ...
+# Subtest: nested inline images use validated attachments and detect content changes
+ok 15 - nested inline images use validated attachments and detect content changes
+  ---
+  duration_ms: 230.111458
+  type: 'test'
+  ...
+# Subtest: images reject remote, missing, non-image and escaping paths including duplicate fragments
+ok 16 - images reject remote, missing, non-image and escaping paths including duplicate fragments
+  ---
+  duration_ms: 834.963708
+  type: 'test'
+  ...
+# Subtest: raw HTML cannot bypass image validation or inject executable attributes
+ok 17 - raw HTML cannot bypass image validation or inject executable attributes
+  ---
+  duration_ms: 88.843292
+  type: 'test'
+  ...
+# Subtest: evidence is not treated as wiki content
+ok 18 - evidence is not treated as wiki content
+  ---
+  duration_ms: 141.625292
+  type: 'test'
+  ...
+# Subtest: generic attachments directory works without a planning or verification page
+ok 19 - generic attachments directory works without a planning or verification page
+  ---
+  duration_ms: 154.912917
+  type: 'test'
+  ...
+# Subtest: verification accepts its three outcomes and ignores unrelated page metadata
+ok 20 - verification accepts its three outcomes and ignores unrelated page metadata
+  ---
+  duration_ms: 80.775458
+  type: 'test'
+  ...
+# Subtest: invalid, missing, and duplicate result metadata cannot pass report validation
+ok 21 - invalid, missing, and duplicate result metadata cannot pass report validation
+  ---
+  duration_ms: 50.389875
+  type: 'test'
+  ...
+# Subtest: custom report paths are supported without allowing directory escapes or symlinks
+ok 22 - custom report paths are supported without allowing directory escapes or symlinks
+  ---
+  duration_ms: 138.528042
+  type: 'test'
+  ...
+# Subtest: missing or empty report directories do not produce a misleading success
+ok 23 - missing or empty report directories do not produce a misleading success
+  ---
+  duration_ms: 92.398375
+  type: 'test'
+  ...
+# Subtest: committed app is universal, signed, and matches its source plist
+ok 24 - committed app is universal, signed, and matches its source plist
+  ---
+  duration_ms: 46.922416
+  type: 'test'
+  ...
+# Subtest: native note layout grows without clipping or nested scrolling
+ok 25 - native note layout grows without clipping or nested scrolling
+  ---
+  duration_ms: 1923.4155
+  type: 'test'
+  ...
+# Subtest: create isolates sessions, restricts permissions, and draft collection checks once
+ok 26 - create isolates sessions, restricts permissions, and draft collection checks once
+  ---
+  duration_ms: 52.17025
+  type: 'test'
+  ...
+# Subtest: collection pairs full paths and feedback, preserves files, and finish requires exact receipt
+ok 27 - collection pairs full paths and feedback, preserves files, and finish requires exact receipt
+  ---
+  duration_ms: 74.744292
+  type: 'test'
+  ...
+# Subtest: renamed app still collects and finishes batches saved before the rename
+ok 28 - renamed app still collects and finishes batches saved before the rename
+  ---
+  duration_ms: 49.300833
+  type: 'test'
+  ...
+# Subtest: changed notes or image data invalidate a collected receipt
+ok 29 - changed notes or image data invalidate a collected receipt
+  ---
+  duration_ms: 68.004458
+  type: 'test'
+  ...
+# Subtest: finish preflights unexpected files before deleting any captures
+ok 30 - finish preflights unexpected files before deleting any captures
+  ---
+  duration_ms: 43.471291
+  type: 'test'
+  ...
+# Subtest: session symlinks, image traversal, duplicate images, and blank submissions are refused
+ok 31 - session symlinks, image traversal, duplicate images, and blank submissions are refused
+  ---
+  duration_ms: 89.900208
+  type: 'test'
+  ...
+# Subtest: collector refuses symlinked captures and never removes the outside target
+ok 32 - collector refuses symlinked captures and never removes the outside target
+  ---
+  duration_ms: 27.737333
+  type: 'test'
+  ...
+# Subtest: shell commands quote session paths containing metacharacters
+ok 33 - shell commands quote session paths containing metacharacters
+  ---
+  duration_ms: 29.254708
+  type: 'test'
+  ...
+# Subtest: invalid commands and missing projects do not create a session
+ok 34 - invalid commands and missing projects do not create a session
+  ---
+  duration_ms: 53.177583
+  type: 'test'
+  ...
+# Subtest: report has optional Notes and no silent acknowledgment submission
+ok 35 - report has optional Notes and no silent acknowledgment submission
+  ---
+  duration_ms: 1.06725
+  type: 'test'
+  ...
+# Subtest: next steps allow explicit multiple selections without Notes, and clear back to no feedback
+ok 36 - next steps allow explicit multiple selections without Notes, and clear back to no feedback
+  ---
+  duration_ms: 2.552125
+  type: 'test'
+  ...
+# Subtest: selected actions restore alongside Notes and images; earlier report drafts remain readable
+ok 37 - selected actions restore alongside Notes and images; earlier report drafts remain readable
+  ---
+  duration_ms: 0.422791
+  type: 'test'
+  ...
+# Subtest: recommendations preserve their reason through selection and drafts without selecting by default
+ok 38 - recommendations preserve their reason through selection and drafts without selecting by default
+  ---
+  duration_ms: 0.377625
+  type: 'test'
+  ...
+# Subtest: next-step input rejects malformed or ambiguous choices
+ok 39 - next-step input rejects malformed or ambiguous choices
+  ---
+  duration_ms: 0.185083
+  type: 'test'
+  ...
+# Subtest: combined questions are rejected explicitly instead of discarded
+ok 40 - combined questions are rejected explicitly instead of discarded
+  ---
+  duration_ms: 0.081416
+  type: 'test'
+  ...
+# Subtest: inline image references and drafts round-trip; deleting a reference removes its attachment
+ok 41 - inline image references and drafts round-trip; deleting a reference removes its attachment
+  ---
+  duration_ms: 0.209042
+  type: 'test'
+  ...
+# Subtest: draft recovery rejects another report, wrong format, mixed answers and broken image references
+ok 42 - draft recovery rejects another report, wrong format, mixed answers and broken image references
+  ---
+  duration_ms: 0.135542
+  type: 'test'
+  ...
+# Subtest: oversize feedback or unsupported files fail before editing user data
+ok 43 - oversize feedback or unsupported files fail before editing user data
+  ---
+  duration_ms: 0.417084
+  type: 'test'
+  ...
+# Subtest: unknown schema and invalid report fields fail clearly
+ok 44 - unknown schema and invalid report fields fail clearly
+  ---
+  duration_ms: 0.506667
+  type: 'test'
+  ...
+# Subtest: outcome owns its page and modules, with no runtime dependency on the interview skill
+ok 45 - outcome owns its page and modules, with no runtime dependency on the interview skill
+  ---
+  duration_ms: 52.825625
+  type: 'test'
+  ...
+# Subtest: inline editors preserve actual image offsets even beside typed image-like text
+ok 46 - inline editors preserve actual image offsets even beside typed image-like text
+  ---
+  duration_ms: 0.288208
+  type: 'test'
+  ...
+# Subtest: partial feedback preserves untouched items and returns selected labels
+ok 47 - partial feedback preserves untouched items and returns selected labels
+  ---
+  duration_ms: 3.411667
+  type: 'test'
+  ...
+# Subtest: required answers and Something else retain their meaning
+ok 48 - required answers and Something else retain their meaning
+  ---
+  duration_ms: 0.476542
+  type: 'test'
+  ...
+# Subtest: PNG bytes round-trip through Fungi attachments and draft restoration
+ok 49 - PNG bytes round-trip through Fungi attachments and draft restoration
+  ---
+  duration_ms: 2.729208
+  type: 'test'
+  ...
+# Subtest: region comments preserve their own state separately from final state
+ok 50 - region comments preserve their own state separately from final state
+  ---
+  duration_ms: 0.458542
+  type: 'test'
+  ...
+# Subtest: oversize feedback and malformed references fail without mutating answers
+ok 51 - oversize feedback and malformed references fail without mutating answers
+  ---
+  duration_ms: 0.408541
+  type: 'test'
+  ...
+# Subtest: each assembled workflow retains input and resolves its own schema against the shared kit
+ok 52 - each assembled workflow retains input and resolves its own schema against the shared kit
+  ---
+  duration_ms: 86.685958
+  type: 'test'
+  ...
+# Subtest: a theme comes from the explicit option, then the personal setting, then the template default
+ok 53 - a theme comes from the explicit option, then the personal setting, then the template default
+  ---
+  duration_ms: 77.068375
+  type: 'test'
+  ...
+# Subtest: every theme is imported into the theme layer and every bundled font exists
+ok 54 - every theme is imported into the theme layer and every bundled font exists
+  ---
+  duration_ms: 4.269208
+  type: 'test'
+  ...
+1..54
+# tests 54
+# suites 0
+# pass 54
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5433.112042

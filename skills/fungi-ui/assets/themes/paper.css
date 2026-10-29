@@ -1,0 +1,41 @@
+/* Paper: a reading column set like Wikipedia. Serif headings over a sans body, ruled rows and booktabs tables instead of boxes.
+   Type and structure are shared with paper-dark, which supplies only its own colours. */
+[data-theme=paper]{color-scheme:light;
+--ui-bg:#fbf9f3;--ui-surface:#fffdf8;--ui-surface-2:#f3efe4;--ui-code-bg:#f2eee3;--ui-hover:#f5f1e6;
+--ui-text:#2b2924;--ui-text-2:#3d3a33;--ui-text-3:#6c6657;--ui-border:#e4ddcb;--ui-border-2:#cfc6b0;
+--ui-accent:#1d4e89;--ui-accent-text:#1d4e89;--ui-accent-soft:transparent;--ui-selected-text:#1d4e89;--ui-focus:#1d4e89;--ui-link:#1d4e89;
+--ui-primary-bg:#2b2924;--ui-primary-text:#fbf9f3;--ui-secondary-bg:transparent;--ui-secondary-text:#2b2924;--ui-secondary-border:#c9c2b1;
+--ui-chip-bg:#f3eddc;--ui-chip-hover:#ebe3cc;--ui-chip-border:#c9bfa5;--ui-chip-text:#5a4a22;
+--ui-danger:#a3361f;--ui-status:#6c6657;--ui-backdrop:#2b29248c;--ui-scrim:#2b292459;--ui-shadow:0 18px 60px #2b292433}
+
+/* Wikipedia's own stacks: Linux Libertine headings (Georgia where it is not installed) and the system sans-serif body. */
+:is([data-theme=paper],[data-theme=paper-dark]){
+--ui-font:sans-serif;--ui-font-heading:'Linux Libertine',Georgia,Times,'Source Serif 4',serif;--ui-font-control:var(--ui-font);--ui-font-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+--ui-font-size:15px;--ui-line-height:1.6;--ui-page-width:760px;--ui-reading-size:16px;--ui-reading-line:1.65;--ui-reading-width:720px;
+--ui-title-size:30px;--ui-title-weight:400;--ui-title-tracking:0;--ui-legend-size:22px;--ui-subhead-size:20px;--ui-heading-weight:400;--ui-control-size:14px;--ui-small-size:12.5px;--ui-code-size:13px;
+--ui-radius-sm:2px;--ui-radius:3px;--ui-radius-lg:4px;--ui-button-padding:9px 18px}
+
+/* Small labels and table heads use the mono face, set small and tracked. */
+:is([data-theme=paper],[data-theme=paper-dark]) :is(.notes-label,.choice-badge,.comment-heading,.rich-content th){font:400 11px/1.4 var(--ui-font-mono);text-transform:uppercase;letter-spacing:.08em}
+:is([data-theme=paper],[data-theme=paper-dark]) .notes-label{color:var(--ui-text-3)}
+:is([data-theme=paper],[data-theme=paper-dark]) legend{width:100%;padding-bottom:6px;border-bottom:1px solid var(--ui-border)}
+/* As on Wikipedia, major headings are ruled serif and minor ones bold sans. */
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content :is(h1,h2){padding-bottom:4px;border-bottom:1px solid var(--ui-border)}
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content :is(h3,h4,h5,h6){font:700 calc(var(--ui-subhead-size)*.85)/1.4 var(--ui-font)}
+
+/* Choices are ruled rows, not cards. */
+:is([data-theme=paper],[data-theme=paper-dark]) .choices{gap:0;border-top:1px solid var(--ui-border)}
+:is([data-theme=paper],[data-theme=paper-dark]) .choice{border:0;border-bottom:1px solid var(--ui-border);border-radius:0;padding:11px 4px;font-size:var(--ui-control-size)}
+:is([data-theme=paper],[data-theme=paper-dark]) .choice:has(input:checked){border-color:var(--ui-border);background:none}
+:is([data-theme=paper],[data-theme=paper-dark]) .choice:focus-within{outline-offset:0}
+:is([data-theme=paper],[data-theme=paper-dark]) .choice-card{border-width:1px}
+
+/* Booktabs tables: heavy top and bottom rules, a hairline under the head, no verticals. */
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content table{border-top:1.5px solid var(--ui-text);border-bottom:1.5px solid var(--ui-text);font-size:var(--ui-control-size)}
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content :is(th,td){border:0;padding:7px 18px 7px 0}
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content th{background:none;color:var(--ui-text-3);border-bottom:1px solid var(--ui-text)}
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content blockquote{border-left-width:2px}
+:is([data-theme=paper],[data-theme=paper-dark]) .description.has-expansion{border:0;padding:0}
+:is([data-theme=paper],[data-theme=paper-dark]) .rich-content a{text-underline-offset:2px}
+
+:is([data-theme=paper],[data-theme=paper-dark]) .notes-editor{font-size:var(--ui-control-size);line-height:1.8}

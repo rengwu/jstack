@@ -1,0 +1,8 @@
+/* Paper dark: paper's type and structure (declared in paper.css) on a warm dark ground. */
+[data-theme=paper-dark]{color-scheme:dark;
+--ui-bg:#191815;--ui-surface:#201f1b;--ui-surface-2:#26241f;--ui-code-bg:#24221e;--ui-hover:#23211d;
+--ui-text:#e8e3d8;--ui-text-2:#d2ccbf;--ui-text-3:#a59e8f;--ui-border:#36332c;--ui-border-2:#4d483e;
+--ui-accent:#8fb0e3;--ui-accent-text:#9db9e6;--ui-accent-soft:transparent;--ui-selected-text:#9db9e6;--ui-focus:#9db9e6;--ui-link:#9db9e6;
+--ui-primary-bg:#e8e3d8;--ui-primary-text:#191815;--ui-secondary-bg:transparent;--ui-secondary-text:#e8e3d8;--ui-secondary-border:#5a5448;
+--ui-chip-bg:#2a2822;--ui-chip-hover:#34312a;--ui-chip-border:#4f4a3f;--ui-chip-text:#d8c38e;
+--ui-danger:#f08a75;--ui-status:#a59e8f;--ui-backdrop:#000000a6;--ui-scrim:#00000066;--ui-shadow:0 18px 60px #0008}

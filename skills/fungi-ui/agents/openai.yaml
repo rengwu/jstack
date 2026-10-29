@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fungi UI"
+  short_description: "Shared components for Fungi workflows"
+  default_prompt: "Use $fungi-ui to compose this interface from shared components and assemble it for Fungi."

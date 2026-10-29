@@ -1,51 +1,31 @@
-# Authoring a review
+# Authoring
 
-Choose the shape that helps the user respond: an open critique, a visual comparison, an interactive prototype, or a focused question. A round can mix these. Keep recommendations useful and specific. Render and inspect the form before presenting it when browser tools are available; disclose when inspection was unavailable. Never submit synthetic answers to a real review.
+Write JSON, run the workflow’s assembler, then open the returned page. See the [launch instructions](../SKILL.md). Do not develop a new page per interview. The source HTML composes shared components and must be assembled with the sibling `fungi-ui` kit.
 
-The CLI accepts JSON through `--input PATH` or stdin: `{"title":"Review","questions":[...]}`. Each item can have a `prompt`, Markdown `context`, `preview`, `recommendation`, and `options`. All are optional individually; provide a prompt, context, or preview. Options may be strings or `{id,label,preview}` objects. Notes are always available. Partial feedback is accepted; use `required:true` only for an answer needed to proceed. Blank items remain unresolved.
-
-## Content
-
-| Content | Authoring |
-| --- | --- |
-| Prose, tables, code | Markdown in `context`; Marked + DOMPurify. Raw HTML is shown as text. |
-| Diagrams | Fenced `mermaid` blocks in `context`; bundled Pele. Flowcharts, sequences, states, classes, ER diagrams, pie charts, and other Pele-supported types. No configuration directives/frontmatter, links, external images, or custom icon callbacks. |
-| Icons, images, styled layouts | `preview.html` containing native SVG, embedded raster data URLs, HTML, and CSS. |
-| Interactive prototypes | The same preview with inline JavaScript; use the state API below for meaningful adjustments. |
-
-Every preview, including option previews, is a separate sandboxed iframe. Its styles never enter the form or another preview; form styles never enter it. Include the preview's own styles. Scripts cannot access the parent document. External styles, scripts, fonts, images, network requests, nested frames, and form submissions are blocked. Embed assets; no CDN, packages, server, or per-round build. The prepared template and CLI handle the review UI.
-
-`preview` accepts `html`, optional `height` (64–1200 pixels, default 280), and `state` (initial JSON object). Use responsive HTML; the frame scrolls when content exceeds its height. Include accessible text labels for visual choices.
-
-## Reusable examples
-
-[examples.json](../assets/examples.json) is a complete round with visual glyph choices, a stateful size/accent control, and an open layout for region feedback. Copy the relevant item and adapt its content; each preview includes its own styles. Omit choices for subjective critique, and show actual icons or layouts in choice previews.
-
-To inspect the samples, run the CLI with `create --project PROJECT_DIR --temporary --input SKILL_DIR/assets/examples.json --open`. Keep sample submissions in that disposable session, separate from a real review.
-
-## Interactive review and comments
-
-Open-ended previews offer **Comment on preview**: drag a rectangle anywhere, then write a comment. No target markup is needed. Saved comments reopen the selected area with its prototype state, viewport, and scroll positions. Keyboard users can move the rectangle with arrows, resize with Shift + arrows, and press Enter to comment. Choice questions use selection and shared Notes, without region-comment controls. Clicking anywhere in an option card selects it, including its interactive preview. Notes and comments accept inline clipboard images.
-
-Read `window.grill.state` to restore the initial or saved state. Call `window.grill.setState({...})` with a complete JSON object when a meaningful control changes. DOM changes alone are not captured. Area previews replay the saved source and state; they are not screenshots. Avoid clocks, randomness, and external dependencies when reproducing a submitted view matters.
-
-For example, use `state:{"size":16}` with this `preview.html`:
-
-```html
-<style>body{margin:24px;font:16px system-ui}</style>
-<h3>Work</h3>
-<label>Heading size <input type="range" min="12" max="28"></label>
-<script>
-const control = document.querySelector('input');
-const draw = () => {
-  control.value = grill.state.size;
-  document.querySelector('h3').style.fontSize = grill.state.size + 'px';
-};
-control.oninput = () => { grill.setState({size:Number(control.value)}); draw(); };
-draw();
-</script>
+```json
+{
+  "projectName": "My project",
+  "title": "Release decisions",
+  "questions": [{
+    "id": "scope",
+    "prompt": "Which scope should we ship first?",
+    "recommendation": "Start with the core flow so we can observe real usage.",
+    "options": ["Core flow", "Full workflow"]
+  }, {
+    "id": "concerns",
+    "prompt": "What would block you from using this?"
+  }]
+}
 ```
 
-The collector saves the original preview source, the submitted state, and comments in a reopenable offline review returned as `preview`. Wiki transcripts link a JSON source/state record, since the existing wiki reader does not accept HTML attachments. Feedback records what the user submitted; the agent still interprets accepted decisions.
+Use 1–10 questions, up to 8 options per question. `number` can continue a prior round. IDs are optional; explicit IDs use letters, digits, `_` and `-`, start with a letter/digit, and have at most 80 characters. `other` is reserved. Options can be strings or `{id,label,preview}` objects. Notes and “Something else” are built in; the latter needs an explanation. No answer is selected by default.
 
-Limits: 1–10 items, up to 8 choices per item, 12,000 characters per Markdown context or state object, 150 diagram edges, 20 comments per item. Preview HTML allows 4 million characters, with 16 million across the input JSON. Other field and image limits are in [usage](usage.md).
+Each item needs a `prompt`, `context`, or `preview`. Recommendations and choices are optional. `required:true` is for an answer necessary to proceed; otherwise partial feedback is accepted. Empty items remain unresolved, and a completely blank form cannot submit.
+
+`context` supports offline Markdown, tables, code and fenced Mermaid diagrams through bundled Marked, DOMPurify and Pele. Raw HTML is text. Omit diagram configuration directives, links, external images and custom icons. External navigation is disabled.
+
+`preview:{html,height,state}` shows a sandboxed inline frame. Height is 64–1200 pixels (default 280); state is a JSON object. Include the preview’s own styles. Embed SVG or raster data URLs. External scripts, styles, fonts, requests and nested frames are blocked. For interactive controls, read `window.fungiPreview.state` and call `window.fungiPreview.setState({...})` (the existing `window.grill` alias also works) with the complete state when a meaningful value changes. DOM changes alone do not persist. Avoid clocks and randomness when the submitted view must be reproducible.
+
+Open previews support region comments; option previews select an option. Notes and comments accept pasted PNG/JPEG/GIF/WebP images, represented by numbered chips. Review [examples.json](../assets/examples.json) for visual options, a stateful control and region feedback. Example content is not a project decision.
+
+Limits inherited from jstack: title 200 characters; prompt 2,000; recommendation 3,000; option label 1,000; notes/context/state 12,000; 20 comments per item; 20 images with 5 MiB per image and 20 MiB total. The runtime’s advertised JSON and artifact limits also apply and can be lower. Split large rounds rather than changing the transport limits. Drafts save after a short typing pause; only the “Draft saved” acknowledgment establishes persistence.

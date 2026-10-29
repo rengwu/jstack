@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="classic">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Outcome</title>
+<link rel="stylesheet" href="fungi-ui/assets/ui.css">
+<link rel="stylesheet" href="workflow/assets/outcome.css">
+</head>
+<body>
+<main>
+<header><p id="project-name"></p><h1 id="title">Outcome</h1></header>
+<article id="outcome-report" aria-label="Outcome"></article>
+<form id="feedback">
+<fieldset id="next-steps" hidden><legend>Next steps</legend><div id="next-step-options"></div></fieldset>
+<div id="notes-label">Notes</div>
+<div id="notes-host"></div>
+</form>
+
+</main>
+
+<script src="fungi-ui/assets/vendor/marked.js"></script>
+<script src="fungi-ui/assets/vendor/purify.js"></script>
+<script src="fungi-ui/assets/vendor/pele.js"></script>
+<script type="module">import('./workflow/assets/outcome.mjs').catch(error=>{const node=document.getElementById('message')??document.body.appendChild(document.createElement('p'));node.textContent=error.message;node.hidden=false;});</script>
+</body>
+</html>

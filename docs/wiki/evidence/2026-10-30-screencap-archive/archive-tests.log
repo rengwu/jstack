@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: screencap: silent detached wait sends one notice and preserves the collectible submission
+ok 1 - screencap: silent detached wait sends one notice and preserves the collectible submission
+  ---
+  duration_ms: 1255.175958
+  type: 'test'
+  ...
+# Subtest: screencap: timeout and manual collection stop waiting without losing later submissions
+ok 2 - screencap: timeout and manual collection stop waiting without losing later submissions
+  ---
+  duration_ms: 1267.489583
+  type: 'test'
+  ...
+# Subtest: screencap: startup errors and delivery failures preserve the submission
+ok 3 - screencap: startup errors and delivery failures preserve the submission
+  ---
+  duration_ms: 1307.522667
+  type: 'test'
+  ...
+# Subtest: screencap: old wait markers prevent an automatic restart
+ok 4 - screencap: old wait markers prevent an automatic restart
+  ---
+  duration_ms: 78.239875
+  type: 'test'
+  ...
+# Subtest: unsupported host leaves the session untouched and returns a manual fallback
+ok 5 - unsupported host leaves the session untouched and returns a manual fallback
+  ---
+  duration_ms: 100.73025
+  type: 'test'
+  ...
+# Subtest: concurrent starts claim only one completion attempt
+ok 6 - concurrent starts claim only one completion attempt
+  ---
+  duration_ms: 1189.727666
+  type: 'test'
+  ...
+# Subtest: malformed notification input leaves the session untouched
+ok 7 - malformed notification input leaves the session untouched
+  ---
+  duration_ms: 22.62275
+  type: 'test'
+  ...
+# Subtest: Codex adapter checks capability and requires an exact thread identity
+ok 8 - Codex adapter checks capability and requires an exact thread identity
+  ---
+  duration_ms: 0.454167
+  type: 'test'
+  ...
+# Subtest: committed app is universal, signed, and matches its source plist
+ok 9 - committed app is universal, signed, and matches its source plist
+  ---
+  duration_ms: 31.288584
+  type: 'test'
+  ...
+# Subtest: native note layout grows without clipping or nested scrolling
+ok 10 - native note layout grows without clipping or nested scrolling
+  ---
+  duration_ms: 1058.633208
+  type: 'test'
+  ...
+# Subtest: create isolates sessions, restricts permissions, and draft collection checks once
+ok 11 - create isolates sessions, restricts permissions, and draft collection checks once
+  ---
+  duration_ms: 43.719083
+  type: 'test'
+  ...
+# Subtest: collection pairs full paths and feedback, preserves files, and finish requires exact receipt
+ok 12 - collection pairs full paths and feedback, preserves files, and finish requires exact receipt
+  ---
+  duration_ms: 64.752666
+  type: 'test'
+  ...
+# Subtest: renamed app still collects and finishes batches saved before the rename
+ok 13 - renamed app still collects and finishes batches saved before the rename
+  ---
+  duration_ms: 39.129
+  type: 'test'
+  ...
+# Subtest: changed notes or image data invalidate a collected receipt
+ok 14 - changed notes or image data invalidate a collected receipt
+  ---
+  duration_ms: 65.884
+  type: 'test'
+  ...
+# Subtest: finish preflights unexpected files before deleting any captures
+ok 15 - finish preflights unexpected files before deleting any captures
+  ---
+  duration_ms: 38.9525
+  type: 'test'
+  ...
+# Subtest: session symlinks, image traversal, duplicate images, and blank submissions are refused
+ok 16 - session symlinks, image traversal, duplicate images, and blank submissions are refused
+  ---
+  duration_ms: 77.445416
+  type: 'test'
+  ...
+# Subtest: collector refuses symlinked captures and never removes the outside target
+ok 17 - collector refuses symlinked captures and never removes the outside target
+  ---
+  duration_ms: 23.112042
+  type: 'test'
+  ...
+# Subtest: shell commands quote session paths containing metacharacters
+ok 18 - shell commands quote session paths containing metacharacters
+  ---
+  duration_ms: 26.45375
+  type: 'test'
+  ...
+# Subtest: invalid commands and missing projects do not create a session
+ok 19 - invalid commands and missing projects do not create a session
+  ---
+  duration_ms: 44.017292
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5300.116958
