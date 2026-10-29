@@ -1,0 +1,16 @@
+{
+  "scope": "Prepared grill-form controls; public bridge test double",
+  "bundle": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/fungi-ui-iv5O08",
+  "checks": [
+    "12 questions and 15 options",
+    "Radio, checkbox, label, keyboard, preview toggle and clear",
+    "Something else with other selections",
+    "Draft restoration and array results",
+    "1200 px and 420 px layouts",
+    "v1 draft restores to live controls and submits v2",
+    "13,000-character notes and 25 pasted images",
+    "Runtime budget error preserves editor content and prior draft; editing recovers"
+  ],
+  "consoleErrors": [],
+  "result": "Passed"
+}

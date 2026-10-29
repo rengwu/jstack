@@ -14,7 +14,7 @@ async function start(){
  const allNotes=()=>[value,...value.comments];
  for(const note of allNotes())for(const image of note.images??[]){const file=ready.attachments.find(a=>a.key===image.artifact);if(!file)throw new Error('Missing gallery image.');image.dataUrl=await blobToDataURL(file.blob);delete image.artifact;delete image.mimeType;}
  let feedback;const changed=()=>feedback?.changed();
- const notes=createNotes({values:allNotes,limits:{count:20,fileBytes:Math.min(5*1024*1024,ready.limits.artifactBytes),totalBytes:Math.min(20*1024*1024,ready.limits.totalArtifactBytes)},onChange:changed});
+ const notes=createNotes({values:allNotes,limits:{fileBytes:ready.limits.artifactBytes,totalBytes:ready.limits.totalArtifactBytes},onChange:changed});
  const add=node=>form.insertBefore(node,controls.actions);
  // Themes are the layered @import rules of ui.css; classic is the unlayered default.
  const root=document.documentElement,switcher=document.getElementById('themes');

@@ -35,7 +35,7 @@ export function createComments({id=crypto.randomUUID(),previews,value:answer,not
   const cancel=element('button','Cancel','quiet');cancel.type='button';
   const remove=element('button','Delete comment','quiet');remove.type='button';
   let committed=false;
-  const ready=()=>{save.disabled=!comment.notes.trim()||comment.notes.length>12000||(comment.images??[]).some(image=>!image.dataUrl)};
+  const ready=()=>{save.disabled=!comment.notes.trim()||(comment.images??[]).some(image=>!image.dataUrl)};
   const editor=readonly?null:editors.createEditor({id:id+'-comment-'+(++nextComment),value:comment,onChange:ready});
   const notes=editor?.notes??commentBody(comment);
   if(!readonly)notes.setAttribute('aria-label','Comment on '+label(comment));
@@ -57,7 +57,6 @@ export function createComments({id=crypto.randomUUID(),previews,value:answer,not
  }
  function add(key,region,current){
   if(readOnly)return;
-  if(answer.comments.length>=20){box.append(element('p','This item has 20 comments. Edit or remove one before adding another.','error'));return}
   const comment={preview:key,region,state:JSON.parse(JSON.stringify(current)),notes:''};
   answer.comments.push(comment);compose(comment,true);
  }

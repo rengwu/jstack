@@ -28,7 +28,7 @@ const {element:control,input}=createChoice({
 });
 ```
 
-`type` defaults to `radio`; use a shared `name` for a radio group. Recommendations display a badge and reason, with accessible label/description associations; they never preselect a choice. `createChoiceCard({control,preview,onSelect})` combines a choice with a visual preview. `onSelect` can call the choice input's `click()` method.
+`type` defaults to `radio`; use a shared `name` for a radio group. Recommendations display a badge and reason, with accessible label/description associations; they never preselect a choice. `createChoiceCard({control,preview,onSelect})` combines a choice with a visual preview. `onSelect` can call the choice input's `click()` method. Card-background clicks invoke it; events from the contained label/control do not, so a checkbox toggles once.
 
 `createFeedbackControls({cancelLabel?,submitLabel?})` returns `{actions,cancel,submit,status,message}`. Append the three containers `actions`, `status`, `message` where the workflow needs them. Default labels are Cancel and Submit feedback. The default IDs support one form per page; change IDs if composing multiple independent forms.
 
@@ -48,14 +48,14 @@ Create one Notes context per interface so image IDs and limits cover all editors
 const answer={notes:'',images:[],comments:[]};
 const notes=createNotes({
   values:()=>[answer,...answer.comments],
-  limits:{count:20,fileBytes:5*1024*1024,totalBytes:20*1024*1024},
+  limits:{fileBytes:ready.limits.artifactBytes,totalBytes:ready.limits.totalArtifactBytes},
   onChange:()=>feedback?.changed()
 });
 const editor=notes.createEditor({id:'notes',label:'Notes',value:answer});
 container.append(editor.notes,editor.error);
 ```
 
-`values()` returns all live note objects. Each has `{notes,images?}`; images use `{id,offset,dataUrl}`. Clamp limits to the values advertised by `fungi.ready()`. Restore saved attachments to data URLs before creating the context. The constructor validates restored images, references and limits.
+`values()` returns all live note objects. Each has `{notes,images?}`; images use `{id,offset,dataUrl}`. Pass the file and aggregate artifact budgets advertised by `fungi.ready()`; there is no fixed note-length or image-count cap. Restore saved attachments to data URLs before creating the context. The constructor validates restored images, references and limits.
 
 Editors mutate their supplied note object and call the context's `onChange`. An editor-specific `onChange` callback can also update a dialog's controls. `editor.dispose()` stops pending file-read callbacks from changing a discarded editor. `notes.ready()` reports whether all Notes and images can be serialized. `notes.fragment(value)` renders noneditable Notes, and `notes.previewImage(id)` opens an image. `notes.read(node)` extracts editor text/reference positions.
 
@@ -79,9 +79,9 @@ const view=createPreview({
 container.append(view,comments.box);
 ```
 
-`createPreview` accepts `preview`, optional current `state`, `label`, `onState`, `onSelect`, `onRegion`, `commentable` (default true), `readOnly` (default false), and a captured `snapshot`. It returns the preview element with a `dispose()` method for removed views. Set `commentable:false` for visual-choice previews; use `onSelect` to select their radio control.
+`createPreview` accepts `preview`, optional current `state`, `label`, `onState`, `onSelect`, `onRegion`, `commentable` (default true), `readOnly` (default false), and a captured `snapshot`. It returns the preview element with a `dispose()` method for removed views. Set `commentable:false` for visual-choice previews; use `onSelect` to select a radio or toggle a checkbox.
 
-Authored HTML runs in an opaque-origin iframe with no network, parent DOM access or nested frames. Inside it, use `window.fungiPreview.state` and `window.fungiPreview.setState(completeState)`. The legacy `window.grill` alias remains supported. State is a JSON object within 12,000 characters. The bridge accepts state only from the matching frame/token. Only state, scroll positions and validated region geometry cross the boundary.
+Authored HTML runs in an opaque-origin iframe with no network, parent DOM access or nested frames. Inside it, use `window.fungiPreview.state` and `window.fungiPreview.setState(completeState)`. The legacy `window.grill` alias remains supported. State is a JSON object; workflow serialization enforces the runtime payload budget. The bridge accepts state only from the matching frame/token. Only state, scroll positions and validated region geometry cross the boundary.
 
 `createComments` accepts a preview map, a value with `comments`, the shared Notes context, optional preview `labels`, `readOnly`, and `onChange`. It returns `{box,add}`. `add(key,region,state)` opens the editor and captures the prototype state with the comment. Save commits; cancel restores the prior comment; delete removes it. Comments use `{preview,region,state,notes,images?}`. A comment's state is independent of the preview's latest state. The caller owns interpretation and schema validation.
 

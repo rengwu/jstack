@@ -33,11 +33,14 @@ Optional browser drivers accept an already-installed Puppeteer module and Chromi
 
 ```sh
 node scripts/ui-browser-smoke.mjs PUPPETEER_MODULE CHROME EVIDENCE/gallery
+node scripts/grill-form-browser-smoke.mjs PUPPETEER_MODULE CHROME EVIDENCE/grill-form
 node scripts/show-outcome-browser-smoke.mjs PUPPETEER_MODULE CHROME EVIDENCE/outcome
 node scripts/ui-theme-smoke.mjs PUPPETEER_MODULE CHROME EVIDENCE/themes
 ```
 
 They start an isolated headless browser and local fixture server, block external requests, inject a public bridge test double, capture desktop/narrow layouts, and close the browser/server afterward. They check component interactions, save/submit recovery, theme contrast, fonts, and overflow; they do not prove a live host callback or physical OS clipboard behavior. Inspect screenshots when changing appearance.
+
+The grill-form browser driver checks radio/checkbox/label/preview and keyboard interaction, clearing, v1 draft conversion, 25 pasted images, long notes, and an advertised JSON-budget failure followed by recovery. Its native counterpart exercises 12 questions, 15 options, 21 comments, long notes/state, and retained selections through cancellation and reopening.
 
 ## Portable layout and documentation
 

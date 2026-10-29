@@ -1,0 +1,87 @@
+[
+  {
+    "skill": "skills/adhd",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/commit",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/feature-map",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/fungi",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/fungi-ui",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/grill-form",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/grill-form-adhd",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/grill-me",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/maintain-verification",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/plan",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/rule-lean",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/rule-plain-ui",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/show-outcome",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/verify-change",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/wiki",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "skill": "skills/work-until-grill",
+    "passed": true,
+    "output": "Skill is valid!"
+  },
+  {
+    "plugin": "jstack",
+    "passed": true,
+    "output": "Plugin validation passed: /Users/rengwu/Desktop/Projects/jstack"
+  }
+]

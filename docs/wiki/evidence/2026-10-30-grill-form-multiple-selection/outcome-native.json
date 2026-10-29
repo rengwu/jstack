@@ -1,0 +1,126 @@
+{
+  "binary": "/Users/rengwu/.fungi/bin/fungi",
+  "directory": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/fungi-outcome-smoke-RZFifu",
+  "version": {
+    "kind": "version",
+    "protocol": 1,
+    "version": "v0.1.0-alpha.2"
+  },
+  "doctor": {
+    "available": true,
+    "kind": "doctor",
+    "protocol": 1,
+    "renderer": "wails",
+    "runtime": "WKWebView"
+  },
+  "reportClosed": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "a05f6b4657f9a9f5efd157f7321a8615",
+    "outcome": "cancelled",
+    "artifacts": []
+  },
+  "reportSubmitted": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "835ddbf42462a6a89bdb5261db84f90e",
+    "outcome": "submitted",
+    "data": {
+      "schema": "outcome/v1",
+      "outcomeId": "native-report",
+      "title": "Synthetic outcome — not project decisions",
+      "selectedNextSteps": [],
+      "answers": [
+        {
+          "questionId": "outcome-notes",
+          "choiceId": null,
+          "choice": null,
+          "notes": "Native optional note [Image #1]",
+          "status": "feedback",
+          "images": [
+            {
+              "id": 1,
+              "offset": 21,
+              "artifact": "image-1",
+              "mimeType": "image/png"
+            }
+          ]
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "id": "b5dbabf2b10ca4cadd16c1f0ed33142a2e7faf0beb1e2319b88a2dd24747d064",
+        "key": "image-1",
+        "name": "image-1.png",
+        "mediaType": "image/png",
+        "path": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/fungi-outcome-smoke-RZFifu/sessions/835ddbf42462a6a89bdb5261db84f90e/artifacts/b5dbabf2b10ca4cadd16c1f0ed33142a2e7faf0beb1e2319b88a2dd24747d064",
+        "bytes": 68,
+        "sha256": "b5dbabf2b10ca4cadd16c1f0ed33142a2e7faf0beb1e2319b88a2dd24747d064"
+      }
+    ]
+  },
+  "stepsClosed": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "cc0fb9fbb451b256138d206398862f44",
+    "outcome": "cancelled",
+    "artifacts": []
+  },
+  "stepsSubmitted": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "55d257e0f37213d7e91eae701c2c7466",
+    "outcome": "submitted",
+    "data": {
+      "schema": "outcome/v1",
+      "outcomeId": "native-report",
+      "title": "Synthetic outcome — not project decisions",
+      "selectedNextSteps": [
+        {
+          "id": "scope",
+          "label": "Decide import scope",
+          "recommendation": "Set the boundary before designing the import flow."
+        },
+        {
+          "id": "chips",
+          "label": "Review reply chips"
+        }
+      ],
+      "answers": [
+        {
+          "questionId": "outcome-notes",
+          "choiceId": null,
+          "choice": null,
+          "notes": "",
+          "status": "untouched",
+          "images": []
+        }
+      ]
+    },
+    "artifacts": []
+  },
+  "questions": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "d93f0717d354bf6bf0cd3ef9afee3605",
+    "outcome": "submitted",
+    "data": {
+      "fixture": "questions",
+      "message": "Outcome presents a report and Notes. Use a separate session for questions."
+    },
+    "artifacts": []
+  },
+  "invalid": {
+    "protocol": 1,
+    "kind": "result",
+    "session": "47dbaccd7d2748c5b7ad80970d7c3622",
+    "outcome": "submitted",
+    "data": {
+      "fixture": "invalid",
+      "message": "Unrecognized outcome schema."
+    },
+    "artifacts": []
+  },
+  "result": "Passed"
+}

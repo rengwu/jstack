@@ -1,0 +1,58 @@
+{
+  "binary": "/Users/rengwu/.fungi/bin/fungi",
+  "directory": "/var/folders/00/h_k67s0j5dq0qvg6ylqysk2w0000gn/T/fungi-theme-smoke-WaXgOr",
+  "version": {
+    "kind": "version",
+    "protocol": 1,
+    "version": "v0.1.0-alpha.2"
+  },
+  "results": [
+    {
+      "theme": "classic",
+      "session": "4fe6db9760850df1a7b1a862245e5b13",
+      "fixture": "theme",
+      "background": "rgb(22, 21, 19)",
+      "bgToken": "#161513",
+      "bodyFont": "IBM Plex Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      "fonts": [
+        "IBM Plex Mono loaded",
+        "IBM Plex Mono unloaded",
+        "IBM Plex Sans loaded",
+        "IBM Plex Sans unloaded"
+      ],
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) wails.io",
+      "failures": []
+    },
+    {
+      "theme": "paper",
+      "session": "ee8a1232d9ce7ae1ed35b4394c06f178",
+      "fixture": "theme",
+      "background": "rgb(251, 249, 243)",
+      "bgToken": "#fbf9f3",
+      "bodyFont": "sans-serif",
+      "fonts": [
+        "IBM Plex Mono loaded",
+        "IBM Plex Mono unloaded",
+        "IBM Plex Sans unloaded"
+      ],
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) wails.io",
+      "failures": []
+    },
+    {
+      "theme": "paper-dark",
+      "session": "571d1b423d87cd777f58fb94188c2686",
+      "fixture": "theme",
+      "background": "rgb(25, 24, 21)",
+      "bgToken": "#191815",
+      "bodyFont": "sans-serif",
+      "fonts": [
+        "IBM Plex Mono loaded",
+        "IBM Plex Mono unloaded",
+        "IBM Plex Sans unloaded"
+      ],
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) wails.io",
+      "failures": []
+    }
+  ],
+  "result": "Passed"
+}

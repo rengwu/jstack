@@ -5,7 +5,7 @@ function previewBridge(token, initial, restore) {
  let current = initial;
  const copy = value => {
   const json = JSON.stringify(value);
-  if (!value || typeof value !== 'object' || Array.isArray(value) || json.length > 12000) throw new Error('Use a state object within 12,000 characters');
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Use a JSON state object');
   return JSON.parse(json);
  };
  Object.defineProperty(window, 'grill', {value: Object.freeze({
@@ -23,10 +23,10 @@ function previewBridge(token, initial, restore) {
   if (event.source !== parent || event.data?.grill !== token || event.data.type !== 'capture-region') return;
   const scroll = [];
   for (const node of document.querySelectorAll('html,body,body *')) {
-   if ((!node.scrollLeft && !node.scrollTop) || scroll.length >= 64) continue;
+   if (!node.scrollLeft && !node.scrollTop) continue;
    const path = [];
    for (let child=node; child.parentElement; child=child.parentElement) path.unshift([...child.parentElement.children].indexOf(child));
-   if (path.length <= 32) scroll.push({path,x:node.scrollLeft,y:node.scrollTop});
+   scroll.push({path,x:node.scrollLeft,y:node.scrollTop});
   }
   send('region', {request:event.data.value, state:copy(current), scroll});
  });
@@ -129,12 +129,12 @@ export function createPreview({preview,label='Preview',state:currentState,onStat
   if(event.source!==frame.contentWindow||event.data?.grill!==token||readOnly||snapshot)return;
   const {type,value}=event.data;
   try{
-   if(type==='state'&&value&&typeof value==='object'&&!Array.isArray(value)&&JSON.stringify(value).length<=12000){
+   if(type==='state'&&value&&typeof value==='object'&&!Array.isArray(value)){
     onState(JSON.parse(JSON.stringify(value)));
    }else if(type==='select')onSelect?.();
    else if(type==='region'&&pending&&value?.request===pending.request){
     const region={...pending.region,scroll:value.scroll};
-    if(!validRegion(region)||!value.state||typeof value.state!=='object'||Array.isArray(value.state)||JSON.stringify(value.state).length>12000)return;
+    if(!validRegion(region)||!value.state||typeof value.state!=='object'||Array.isArray(value.state))return;
     mode(false);onRegion(region,value.state);
    }
   }catch{} // Malformed messages cannot alter the parent form.

@@ -1,0 +1,57 @@
+{
+  "scope": "Shared gallery components, headless Chromium with injected public bridge",
+  "result": "Passed",
+  "resultData": {
+    "data": {
+      "schema": "fungi-ui-gallery/v1",
+      "value": {
+        "notes": "A shared editor [Image #1]",
+        "images": [
+          {
+            "id": 1,
+            "offset": 16,
+            "artifact": "image-1",
+            "mimeType": "image/png"
+          }
+        ],
+        "comments": [
+          {
+            "preview": "main",
+            "region": {
+              "x": 28,
+              "y": 20,
+              "width": 120,
+              "height": 80,
+              "viewportWidth": 950,
+              "viewportHeight": 210,
+              "scroll": []
+            },
+            "state": {
+              "roomy": false
+            },
+            "notes": "Keep this spacing",
+            "images": []
+          }
+        ],
+        "selected": [
+          "custom"
+        ],
+        "state": {
+          "roomy": true
+        }
+      }
+    },
+    "submits": 1,
+    "artifacts": 1
+  },
+  "pageErrors": [],
+  "checks": [
+    "CSS override",
+    "PNG paste, preview, keyboard delete and browser undo command",
+    "Interactive preview state",
+    "Keyboard region selection and comment",
+    "Captured comment state differs from final preview state",
+    "420 px layout",
+    "One submission despite double click"
+  ]
+}

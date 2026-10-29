@@ -13,7 +13,7 @@ export function createChoice({type='radio',id,name,value,label,checked=false,rec
  input.addEventListener('change',()=>onChange(input.checked,input.value));node.append(input,copy);return {element:node,input};
 }
 export function createChoiceCard({control,preview,onSelect}){
- const card=element('div',undefined,'choice-card');card.addEventListener('click',onSelect);card.append(preview,control);return card;
+ const card=element('div',undefined,'choice-card');card.addEventListener('click',event=>{if(!control.contains(event.target))onSelect();});card.append(preview,control);return card;
 }
 export function createFeedbackControls({cancelLabel='Cancel',submitLabel='Submit feedback'}={}){
  const actions=element('div');actions.id='actions';

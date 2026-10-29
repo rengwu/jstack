@@ -10,7 +10,7 @@ Read and follow [fungi](../fungi/SKILL.md) for availability, presentation, and r
 
 Establish what the user needs to decide or review. For decision interviews, use [grill-me](../grill-me/SKILL.md) and [plan](../plan/SKILL.md) when available; otherwise ask consequential unresolved questions and recommend an answer when useful. For design critique, show the design and invite open feedback. Reuse settled context.
 
-Write a UTF-8 JSON file in a unique temporary directory. Use [authoring](references/authoring.md) for the schema, previews, and examples. Keep rounds to 1–10 items. Show the design being judged when appearance matters; allow notes and partial feedback. Unanswered items remain unresolved.
+Write a UTF-8 JSON file in a unique temporary directory. Use [authoring](references/authoring.md) for the schema, previews, and examples. Use focused rounds suited to the task; question and option counts have no fixed cap. Use `selection: "multiple"` when several answers can apply; single selection is the default. Show the design being judged when appearance matters; allow notes and partial feedback. Unanswered items remain unresolved.
 
 ## Present the form
 
@@ -30,9 +30,9 @@ Keep the returned bundle for the session and any reopening. Prefer a 1200 × 900
 
 ## Interpret the feedback
 
-For a submitted result, require `data.schema: grill-form/v1`. If the schema is unrecognized, preserve the result and report incompatibility before interpreting it.
+For a submitted result, accept `data.schema: grill-form/v2` or retained `grill-form/v1` results. If the schema is unrecognized, preserve the result and report incompatibility before interpreting it.
 
-`data.answers` includes the original question, selected label, notes, `status`, final prototype `states`, and comments. A comment’s `state` is its own captured view; it may differ from final `states`. `status: untouched` is unresolved, never approval. Images use inline `[Image #N]` references and `artifact` keys; preserve their positions when interpreting the notes.
+`data.answers` includes the original question, `selection`, every selected ID in `choiceIds` and matching label in `choices`, notes, `status`, final prototype `states`, and comments. The arrays use option order; read all selections. Retained v1 results use scalar `choiceId`/`choice` instead. Compatible v1 drafts restore into the new format. A comment’s `state` is its own captured view; it may differ from final `states`. `status: untouched` is unresolved, never approval. Images use inline `[Image #N]` references and `artifact` keys; preserve their positions when interpreting the notes.
 
 ## Continue the work
 

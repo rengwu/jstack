@@ -23,7 +23,7 @@ export function normalizeInput(input){
 }
 
 export function snapshot(spec,notes,images,limits,submitted=false,selectedIds=[],imageReferences){
- check(typeof notes==='string'&&notes.length<=12000,'Keep Notes within 12,000 characters.');
+ check(typeof notes==='string','Provide Notes as text.');
  check(Array.isArray(selectedIds)&&new Set(selectedIds).size===selectedIds.length&&selectedIds.every(id=>spec.nextSteps.some(step=>step.id===id)),'Select only next steps from this outcome.');
  const selectedNextSteps=spec.nextSteps.filter(step=>selectedIds.includes(step.id)).map(step=>({...step}));
  check(!submitted||notes.trim()||selectedNextSteps.length,'Add some feedback before submitting.');
@@ -32,16 +32,15 @@ export function snapshot(spec,notes,images,limits,submitted=false,selectedIds=[]
   const id=Number(match[1]),blob=images.get(id);
   if(imageReferences!==undefined)check(blob&&Number.isSafeInteger(match.index)&&match.index>=0&&notes.slice(match.index,match.index+`[Image #${id}]`.length)===`[Image #${id}]`&&!seen.has(id),'Invalid editor image reference.');
   if(!blob||seen.has(id))continue;
-  check(Number.isSafeInteger(id)&&id>0&&id<=1000000,'Invalid image reference.');
+  check(Number.isSafeInteger(id)&&id>0,'Invalid image reference.');
   check(Object.hasOwn(imageTypes,blob.type),'Paste a PNG, JPEG, GIF or WebP image.');
-  check(blob.size<=Math.min(5*1024*1024,limits.artifactBytes),'An image exceeds the file limit.');
+  check(blob.size<=limits.artifactBytes,'An image exceeds the file limit.');
   seen.add(id);
   const key='image-'+id;
   references.push({id,offset:match.index,artifact:key,mimeType:blob.type});
   attachments.push({key,name:key+'.'+imageTypes[blob.type],blob});
  }
- check(attachments.length<=20,'Use at most 20 images.');
- check(attachments.reduce((sum,a)=>sum+a.blob.size,0)<=Math.min(20*1024*1024,limits.totalArtifactBytes),'Images exceed the session limit.');
+ check(attachments.reduce((sum,a)=>sum+a.blob.size,0)<=limits.totalArtifactBytes,'Images exceed the session limit.');
  const data={schema:SCHEMA,outcomeId:spec.id,title:spec.title,selectedNextSteps,answers:[{
   questionId:NOTES_ID,choiceId:null,choice:null,notes,status:notes.trim()?'feedback':'untouched',images:references
  }]};

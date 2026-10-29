@@ -24,7 +24,7 @@ After each answer round, recompute the ready questions. Answers can eliminate br
 
 ## Ask a round
 
-- Ask at most **10 questions per round**. Typically batch **6–10** when that many useful independent questions are ready. Ask fewer when appropriate; never pad a round to reach six.
+- Batch ready, independent questions into focused rounds suited to the task. There is no fixed question-count cap; use shorter rounds when they make answering easier and never pad a round to reach a target.
 - Group questions by topic when useful and number them consistently across rounds so the user can answer by number.
 - Each numbered question asks one decision and includes a concise recommended answer with its reason. Offer short alternatives when they clarify a tradeoff. Do not hide additional questions in sub-bullets or a compound prompt.
 - Keep each question self-contained. Explain only the context needed to make the choice, and identify why a consequential choice matters.

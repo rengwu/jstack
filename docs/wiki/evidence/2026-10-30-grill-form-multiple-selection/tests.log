@@ -1,0 +1,244 @@
+TAP version 13
+# Subtest: original Markdown navigation, duplicate anchors, and stale snapshot detection
+ok 1 - original Markdown navigation, duplicate anchors, and stale snapshot detection
+  ---
+  duration_ms: 357.454375
+  type: 'test'
+  ...
+# Subtest: nested report resolves an encoded evidence link relative to the HTML and hashes its contents
+ok 2 - nested report resolves an encoded evidence link relative to the HTML and hashes its contents
+  ---
+  duration_ms: 374.248542
+  type: 'test'
+  ...
+# Subtest: custom metadata renders generically on any page with escaped labels and values
+ok 3 - custom metadata renders generically on any page with escaped labels and values
+  ---
+  duration_ms: 86.761833
+  type: 'test'
+  ...
+# Subtest: missing attachments, invalid dates, and broken Markdown targets fail the build
+ok 4 - missing attachments, invalid dates, and broken Markdown targets fail the build
+  ---
+  duration_ms: 387.331
+  type: 'test'
+  ...
+# Subtest: attachments cannot escape evidence, follow symlinks, or link executable HTML
+ok 5 - attachments cannot escape evidence, follow symlinks, or link executable HTML
+  ---
+  duration_ms: 554.663208
+  type: 'test'
+  ...
+# Subtest: a duplicate attachment cannot bypass fragment validation
+ok 6 - a duplicate attachment cannot bypass fragment validation
+  ---
+  duration_ms: 111.054375
+  type: 'test'
+  ...
+# Subtest: nested inline images use validated attachments and detect content changes
+ok 7 - nested inline images use validated attachments and detect content changes
+  ---
+  duration_ms: 284.257
+  type: 'test'
+  ...
+# Subtest: images reject remote, missing, non-image and escaping paths including duplicate fragments
+ok 8 - images reject remote, missing, non-image and escaping paths including duplicate fragments
+  ---
+  duration_ms: 824.529667
+  type: 'test'
+  ...
+# Subtest: raw HTML cannot bypass image validation or inject executable attributes
+ok 9 - raw HTML cannot bypass image validation or inject executable attributes
+  ---
+  duration_ms: 82.245
+  type: 'test'
+  ...
+# Subtest: evidence is not treated as wiki content
+ok 10 - evidence is not treated as wiki content
+  ---
+  duration_ms: 136.908583
+  type: 'test'
+  ...
+# Subtest: generic attachments directory works without a planning or verification page
+ok 11 - generic attachments directory works without a planning or verification page
+  ---
+  duration_ms: 156.426625
+  type: 'test'
+  ...
+# Subtest: verification accepts its three outcomes and ignores unrelated page metadata
+ok 12 - verification accepts its three outcomes and ignores unrelated page metadata
+  ---
+  duration_ms: 70.679666
+  type: 'test'
+  ...
+# Subtest: invalid, missing, and duplicate result metadata cannot pass report validation
+ok 13 - invalid, missing, and duplicate result metadata cannot pass report validation
+  ---
+  duration_ms: 69.003958
+  type: 'test'
+  ...
+# Subtest: custom report paths are supported without allowing directory escapes or symlinks
+ok 14 - custom report paths are supported without allowing directory escapes or symlinks
+  ---
+  duration_ms: 184.425709
+  type: 'test'
+  ...
+# Subtest: missing or empty report directories do not produce a misleading success
+ok 15 - missing or empty report directories do not produce a misleading success
+  ---
+  duration_ms: 195.02675
+  type: 'test'
+  ...
+# Subtest: report has optional Notes and no silent acknowledgment submission
+ok 16 - report has optional Notes and no silent acknowledgment submission
+  ---
+  duration_ms: 0.959208
+  type: 'test'
+  ...
+# Subtest: next steps allow explicit multiple selections without Notes, and clear back to no feedback
+ok 17 - next steps allow explicit multiple selections without Notes, and clear back to no feedback
+  ---
+  duration_ms: 0.753917
+  type: 'test'
+  ...
+# Subtest: selected actions restore alongside Notes and images; earlier report drafts remain readable
+ok 18 - selected actions restore alongside Notes and images; earlier report drafts remain readable
+  ---
+  duration_ms: 0.393
+  type: 'test'
+  ...
+# Subtest: recommendations preserve their reason through selection and drafts without selecting by default
+ok 19 - recommendations preserve their reason through selection and drafts without selecting by default
+  ---
+  duration_ms: 0.372209
+  type: 'test'
+  ...
+# Subtest: next-step input rejects malformed or ambiguous choices
+ok 20 - next-step input rejects malformed or ambiguous choices
+  ---
+  duration_ms: 0.172
+  type: 'test'
+  ...
+# Subtest: combined questions are rejected explicitly instead of discarded
+ok 21 - combined questions are rejected explicitly instead of discarded
+  ---
+  duration_ms: 0.076459
+  type: 'test'
+  ...
+# Subtest: inline image references and drafts round-trip; deleting a reference removes its attachment
+ok 22 - inline image references and drafts round-trip; deleting a reference removes its attachment
+  ---
+  duration_ms: 0.1865
+  type: 'test'
+  ...
+# Subtest: draft recovery rejects another report, wrong format, mixed answers and broken image references
+ok 23 - draft recovery rejects another report, wrong format, mixed answers and broken image references
+  ---
+  duration_ms: 0.126958
+  type: 'test'
+  ...
+# Subtest: oversize feedback or unsupported files fail before editing user data
+ok 24 - oversize feedback or unsupported files fail before editing user data
+  ---
+  duration_ms: 0.443042
+  type: 'test'
+  ...
+# Subtest: unknown schema and invalid report fields fail clearly
+ok 25 - unknown schema and invalid report fields fail clearly
+  ---
+  duration_ms: 0.499917
+  type: 'test'
+  ...
+# Subtest: outcome owns its page and modules, with no runtime dependency on the interview skill
+ok 26 - outcome owns its page and modules, with no runtime dependency on the interview skill
+  ---
+  duration_ms: 109.962542
+  type: 'test'
+  ...
+# Subtest: inline editors preserve actual image offsets even beside typed image-like text
+ok 27 - inline editors preserve actual image offsets even beside typed image-like text
+  ---
+  duration_ms: 0.3145
+  type: 'test'
+  ...
+# Subtest: partial feedback preserves untouched items and returns selected labels
+ok 28 - partial feedback preserves untouched items and returns selected labels
+  ---
+  duration_ms: 1.626417
+  type: 'test'
+  ...
+# Subtest: required answers and Something else retain their meaning
+ok 29 - required answers and Something else retain their meaning
+  ---
+  duration_ms: 0.331584
+  type: 'test'
+  ...
+# Subtest: PNG bytes round-trip through Fungi attachments and draft restoration
+ok 30 - PNG bytes round-trip through Fungi attachments and draft restoration
+  ---
+  duration_ms: 0.9635
+  type: 'test'
+  ...
+# Subtest: region comments preserve their own state separately from final state
+ok 31 - region comments preserve their own state separately from final state
+  ---
+  duration_ms: 0.303334
+  type: 'test'
+  ...
+# Subtest: oversize feedback and malformed references fail without mutating answers
+ok 32 - oversize feedback and malformed references fail without mutating answers
+  ---
+  duration_ms: 0.215125
+  type: 'test'
+  ...
+# Subtest: multiple selections are ordered, persisted together, and can be cleared
+ok 33 - multiple selections are ordered, persisted together, and can be cleared
+  ---
+  duration_ms: 0.486209
+  type: 'test'
+  ...
+# Subtest: v1 drafts migrate without losing notes, images, or preview and comment states
+ok 34 - v1 drafts migrate without losing notes, images, or preview and comment states
+  ---
+  duration_ms: 3.387167
+  type: 'test'
+  ...
+# Subtest: large rounds, fields, comments, images, and state use the runtime budget
+ok 35 - large rounds, fields, comments, images, and state use the runtime budget
+  ---
+  duration_ms: 12.504583
+  type: 'test'
+  ...
+# Subtest: an image larger than the old 5 MiB cap is accepted within the advertised file budget
+ok 36 - an image larger than the old 5 MiB cap is accepted within the advertised file budget
+  ---
+  duration_ms: 1580.933541
+  type: 'test'
+  ...
+# Subtest: each assembled workflow retains input and resolves its own schema against the shared kit
+ok 37 - each assembled workflow retains input and resolves its own schema against the shared kit
+  ---
+  duration_ms: 171.326291
+  type: 'test'
+  ...
+# Subtest: a theme comes from the explicit option, then the personal setting, then the template default
+ok 38 - a theme comes from the explicit option, then the personal setting, then the template default
+  ---
+  duration_ms: 155.018708
+  type: 'test'
+  ...
+# Subtest: every theme is imported into the theme layer and every bundled font exists
+ok 39 - every theme is imported into the theme layer and every bundled font exists
+  ---
+  duration_ms: 14.692042
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3427.538542

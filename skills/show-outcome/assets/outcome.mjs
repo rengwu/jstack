@@ -16,7 +16,7 @@ async function start(){
  const value={notes:draft.notes,images:[]};
  for(const ref of ready.draft?.answers[0].images??[])value.images.push({id:ref.id,offset:ref.offset,dataUrl:await blobToDataURL(draft.images.get(ref.id))});
  let feedback;const changed=()=>feedback?.changed();
- const notes=createNotes({values:()=>[value],limits:{count:20,fileBytes:Math.min(5*1024*1024,ready.limits.artifactBytes),totalBytes:Math.min(20*1024*1024,ready.limits.totalArtifactBytes)},onChange:changed});
+ const notes=createNotes({values:()=>[value],limits:{fileBytes:ready.limits.artifactBytes,totalBytes:ready.limits.totalArtifactBytes},onChange:changed});
  const editor=notes.createEditor({id:'notes',label:'Notes',value});
  document.getElementById('notes-host').append(editor.notes,editor.error);
  const choices=document.getElementById('next-step-options');document.getElementById('next-steps').hidden=!spec.nextSteps.length;

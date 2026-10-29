@@ -93,7 +93,7 @@ test('draft recovery rejects another report, wrong format, mixed answers and bro
 
 test('oversize feedback or unsupported files fail before editing user data',()=>{
  const images=new Map([[1,png]]);
- assert.throws(()=>snapshot(spec,'x'.repeat(12001),images,limits),/12,000/);
+ assert.equal(snapshot(spec,'x'.repeat(12001),images,limits).data.answers[0].notes.length,12001);
  assert.throws(()=>snapshot(spec,'[Image #1]',images,{...limits,artifactBytes:1}),/file limit/);
  assert.throws(()=>snapshot(spec,'Saved',images,{...limits,jsonBytes:2}),/too large/);
  assert.throws(()=>snapshot(spec,'[Image #2]',new Map([[2,new Blob(['x'],{type:'image/svg+xml'})]]),limits),/PNG/);

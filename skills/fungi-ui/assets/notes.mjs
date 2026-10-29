@@ -52,7 +52,7 @@ function restoreImages() {
   let end = 0;
   if (!Array.isArray(answer.images ?? [])) throw new Error('Invalid draft images');
   for (const image of answer.images ?? []) {
-   if (!Number.isSafeInteger(image.id) || image.id < 1 || image.id > 1_000_000 || imageAssets.has(image.id) ||
+   if (!Number.isSafeInteger(image.id) || image.id < 1 || imageAssets.has(image.id) ||
        !Number.isSafeInteger(image.offset) || image.offset < end || answer.notes.slice(image.offset, image.offset + imageToken(image.id).length) !== imageToken(image.id) ||
        typeof image.dataUrl !== 'string' || !/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image.dataUrl)) throw new Error('Invalid draft image');
    const base64 = image.dataUrl.split(',')[1], bytes = atob(base64).length;
@@ -62,7 +62,7 @@ function restoreImages() {
    end = image.offset + imageToken(image.id).length;
   }
  }
- if (imageAssets.size > limits.count || [...imageAssets.values()].reduce((sum, image) => sum + image.bytes, 0) > limits.totalBytes) throw new Error('Draft images too large');
+ if ([...imageAssets.values()].reduce((sum, image) => sum + image.bytes, 0) > limits.totalBytes) throw new Error('Draft images too large');
 }
 function previewImage(id) {
  const asset = imageAssets.get(id);
@@ -80,7 +80,7 @@ function previewImage(id) {
  previewDialog.showModal();
 }
 function notesReady() {
- return allNotes().every(answer => answer.notes.length <= 12000 && (answer.images ?? []).every(image => !!image.dataUrl));
+ return allNotes().every(answer => (answer.images ?? []).every(image => !!image.dataUrl));
 }
 const allNotes=values;
 function createEditor({id=crypto.randomUUID(),label='Notes',value:answer,onChange=()=>{}}) {
@@ -110,9 +110,8 @@ function createEditor({id=crypto.randomUUID(),label='Notes',value:answer,onChang
   Object.assign(answer, readNotes(notes));
   const failed = answer.images.some(image => imageAssets.get(image.id)?.failed);
   const pending = answer.images.some(image => !image.dataUrl);
-  const tooLong = answer.notes.length > 12000;
-  notes.setAttribute('aria-invalid', String(tooLong || failed));
-  warn(tooLong ? 'Keep notes within 12,000 characters.' : failed ? 'An image could not be read. Delete its chip and paste it again.' : pending ? 'Reading image…' : '');
+  notes.setAttribute('aria-invalid', String(!!failed));
+  warn(failed ? 'An image could not be read. Delete its chip and paste it again.' : pending ? 'Reading image…' : '');
   onUpdate(); onChange();
  }
  // Editing commands preserve native undo, including image insertion/deletion.
@@ -163,14 +162,14 @@ function createEditor({id=crypto.randomUUID(),label='Notes',value:answer,onChang
   const files = [...clipboard.items].filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean);
   const active = allNotes().flatMap(answer => answer.images ?? []);
   function fits(incoming) {
-   if (active.length + incoming.length > limits.count || active.reduce((sum, image) => sum + imageAssets.get(image.id).bytes, 0) + incoming.reduce((sum, image) => sum + image.bytes, 0) > limits.totalBytes) {
-    warn('Images exceed this interface’s count or size limit.'); return false;
+   if (active.reduce((sum, image) => sum + imageAssets.get(image.id).bytes, 0) + incoming.reduce((sum, image) => sum + image.bytes, 0) > limits.totalBytes) {
+    warn('Images exceed Fungi’s session byte limit.'); return false;
    }
    return true;
   }
   if (files.length) {
    if (files.some(file => !imageTypes.has(file.type))) { warn('Paste a PNG, JPEG, GIF, or WebP image.'); return; }
-   if (files.some(file => file.size > limits.fileBytes)) { warn('An image exceeds this interface’s file limit.'); return; }
+   if (files.some(file => file.size > limits.fileBytes)) { warn('An image exceeds Fungi’s file byte limit.'); return; }
    if (!fits(files.map(file => ({bytes: file.size})))) return;
    const pending = files.map(file => {
     const id = nextImageId++; imageAssets.set(id, {bytes: file.size}); return {id, file};
@@ -194,7 +193,7 @@ function createEditor({id=crypto.randomUUID(),label='Notes',value:answer,onChang
   // that happens to contain "[Image #1]" remains ordinary text.
   try {
    const copied = JSON.parse(clipboard.getData('application/x-fungi-ui-notes'));
-   if (copied.sessionId === sessionId && typeof copied.notes === 'string' && copied.notes.length <= 12000 && Array.isArray(copied.images) && copied.images.length) {
+   if (copied.sessionId === sessionId && typeof copied.notes === 'string' && Array.isArray(copied.images) && copied.images.length) {
     let end = 0;
     const valid = copied.images.every(image => {
      const token = imageToken(image.id);

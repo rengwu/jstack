@@ -33,6 +33,16 @@
       ]
     },
     {
+      "id": "improvements",
+      "prompt": "Which improvements should we explore?",
+      "selection": "multiple",
+      "options": [
+        "Search",
+        "Activity overview",
+        "Workspace recipes"
+      ]
+    },
+    {
       "id": "settings",
       "prompt": "Adjust the heading and accent until they feel right.",
       "recommendation": "Try 24px and lavender as a starting point.",
