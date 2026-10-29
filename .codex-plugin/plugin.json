@@ -13,7 +13,10 @@
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use plan to discuss an idea and record it with wiki in the current project."
+    "defaultPrompt": "Use plan to discuss an idea and record it with wiki in the current project.",
+    "brandColor": "#4A5670",
+    "composerIcon": "./assets/composer-icon.png",
+    "logo": "./assets/logo.png"
   },
   "repository": "https://github.com/rengwu/jstack"
 }

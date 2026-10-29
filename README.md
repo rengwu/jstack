@@ -1,6 +1,10 @@
 # jstack
 
+<img src="assets/logo.png" alt="jstack icon: a balanced cairn of four stones" width="34%" align="right">
+
 A collection of sixteen active skills for daily development: clarify designs, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+
+<br clear="right">
 
 ## Skills
 
