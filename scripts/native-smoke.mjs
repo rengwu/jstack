@@ -29,6 +29,12 @@ try{
  const multi=[...document.querySelectorAll('input[name="many"]')];
  check(multi.length===16&&multi.every(input=>input.type==='checkbox'),'Multiple choices must render checkboxes');
  const multiField=multi[0].closest('fieldset');
+ const visualChoices=multiField.querySelector('.visual-choices');
+ const cards=[...visualChoices.querySelectorAll('.choice-card')];
+ check(cards.length===3,'Expected three preview alternatives');
+ for(const card of cards){
+  check(Math.abs(card.getBoundingClientRect().width-visualChoices.getBoundingClientRect().width)<1,'Each visual choice must use the full question width');
+ }
 
  if(!ready.draft){
   check(multi.every(input=>!input.checked),'Selections must start empty');
@@ -90,7 +96,7 @@ const input={projectName:'Disposable native check',title:'Synthetic fixture — 
  {id:'notes',prompt:'Fixture notes and PNG'},
  {id:'preview',prompt:'Fixture diagram and preview',context:'```mermaid\nflowchart LR\n A --> B\n```',preview:{state:{size:16},html:'<p>Fixture preview</p><script>setTimeout(()=>{if(grill.state.size===16)grill.setState({size:20})},100);addEventListener("message",e=>{if(e.data==="fixture-final")grill.setState({size:22,text:"x".repeat(13000)})})</script>'}},
  {id:'untouched',prompt:'Leave blank'},
- {id:'many',prompt:'Choose several proposals',selection:'multiple',options:Array.from({length:15},(_,i)=>({id:'proposal'+(i+1),label:'Proposal '+(i+1),...(i<2?{preview:{height:80,html:'<button>Proposal preview</button>'}}:{})}))},
+ {id:'many',prompt:'Choose several proposals',selection:'multiple',options:Array.from({length:15},(_,i)=>({id:'proposal'+(i+1),label:'Proposal '+(i+1),...(i<3?{preview:{height:80,html:'<button>Proposal preview</button>'}}:{})}))},
  ...Array.from({length:7},(_,i)=>({id:'extra'+i,prompt:'Additional review '+(i+1)}))
 ]};
 await writeFile(path.join(directory,'input.json'),JSON.stringify(input));

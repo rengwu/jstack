@@ -10,7 +10,7 @@ Read and follow [fungi](../fungi/SKILL.md) for availability, presentation, and r
 
 Establish what the user needs to decide or review. For decision interviews, use [grill-me](../grill-me/SKILL.md) and [plan](../plan/SKILL.md) when available; otherwise ask consequential unresolved questions and recommend an answer when useful. For design critique, show the design and invite open feedback. Reuse settled context.
 
-Write a UTF-8 JSON file in a unique temporary directory. Use [authoring](references/authoring.md) for the schema, previews, and examples. Use focused rounds suited to the task; question and option counts have no fixed cap. Use `selection: "multiple"` when several answers can apply; single selection is the default. Show the design being judged when appearance matters; allow notes and partial feedback. Unanswered items remain unresolved.
+Write a UTF-8 JSON file in a unique temporary directory. Use [authoring](references/authoring.md) for the schema, previews, and examples. Use focused rounds suited to the task; question and option counts have no fixed cap. Use `selection: "multiple"` when several answers can apply; single selection is the default. For visual comparisons, give each alternative its own option preview. The form stacks these at full question width so users can inspect window layouts, controls and text. Show the design being judged when appearance matters; allow notes and partial feedback. Unanswered items remain unresolved.
 
 ## Present the form
 

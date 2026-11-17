@@ -1,7 +1,7 @@
 ---
 title: Fungi workflow verification setup
 section: Verification
-updated: 2026-10-30
+updated: 2026-11-18
 ---
 # Fungi workflow verification setup
 
@@ -40,7 +40,9 @@ node scripts/ui-theme-smoke.mjs PUPPETEER_MODULE CHROME EVIDENCE/themes
 
 They start an isolated headless browser and local fixture server, block external requests, inject a public bridge test double, capture desktop/narrow layouts, and close the browser/server afterward. They check component interactions, save/submit recovery, theme contrast, fonts, and overflow; they do not prove a live host callback or physical OS clipboard behavior. Inspect screenshots when changing appearance.
 
-The grill-form browser driver checks radio/checkbox/label/preview and keyboard interaction, clearing, v1 draft conversion, 25 pasted images, long notes, and an advertised JSON-budget failure followed by recovery. Its native counterpart exercises 12 questions, 15 options, 21 comments, long notes/state, and retained selections through cancellation and reopening.
+The grill-form browser driver checks radio/checkbox/label/preview and keyboard interaction, clearing, v1 draft conversion, 25 pasted images, long notes, and an advertised JSON-budget failure followed by recovery. In the native grill-form check, three preview alternatives must each measure the full width of the choice list. Stacking them gives settings windows and other detailed designs room for their controls and labels. This check passed in Fungi v0.1.0-alpha.2 on 2026-11-18.
+
+The native driver also exercises 12 questions, 15 options, 21 comments, long notes/state, and retained selections through cancellation and reopening.
 
 ## Portable layout and documentation
 
