@@ -13,7 +13,8 @@ function string(value, name, optional = false) {
   return value.trim();
 }
 function id(value, name) {
-  requireValue(typeof value === 'string' && idPattern.test(value) && value !== 'other', `Invalid ${name}`);
+  requireValue(value !== 'other', `Invalid ${name}: "other" is reserved for the built-in "Something else" choice`);
+  requireValue(typeof value === 'string' && idPattern.test(value), `Invalid ${name}: ${JSON.stringify(value)}`);
   return value;
 }
 function snapshot(value) {

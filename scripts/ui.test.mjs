@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {mkdtemp,readFile,writeFile,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 import {assemble,themes} from '../skills/fungi-ui/scripts/assemble.mjs';
 test('each assembled workflow retains input and resolves its own schema against the shared kit',async()=>{
  const dir=await mkdtemp(path.join(tmpdir(),'ui-assembly-test-')),input=path.join(dir,'input.json');
@@ -37,4 +38,17 @@ test('every theme is imported into the theme layer and every bundled font exists
  const assets=new URL('../skills/fungi-ui/assets/',import.meta.url),css=await readFile(new URL('ui.css',assets),'utf8');
  for(const name of (await themes()).slice(1))assert.ok(css.includes(`@import url(themes/${name}.css) layer(fungi-theme);`),name);
  for(const [,file] of (await readFile(new URL('fonts.css',assets),'utf8')).matchAll(/url\(([^)]+)\)/g))await access(new URL(file,assets));
+});
+test('workflow assemblers reject input their page would reject, before producing a bundle',async()=>{
+ const dir=await mkdtemp(path.join(tmpdir(),'ui-validate-test-')),input=path.join(dir,'input.json');
+ const run=skill=>spawnSync(process.execPath,[fileURLToPath(new URL('../skills/'+skill+'/scripts/assemble.mjs',import.meta.url)),'--input',input],{encoding:'utf8'});
+ await writeFile(input,JSON.stringify({title:'T',questions:[{prompt:'P',options:[{id:'other',label:'Different'}]}]}));
+ let result=run('grill-form');
+ assert.equal(result.status,1);assert.equal(result.stdout,'');assert.match(result.stderr,/Invalid option id: "other" is reserved/);
+ await writeFile(input,JSON.stringify({title:'T',questions:[{prompt:'P',options:[{id:'different',label:'Different'}]}]}));
+ result=run('grill-form');
+ assert.equal(result.status,0,result.stderr);await access(JSON.parse(result.stdout).html);
+ await writeFile(input,JSON.stringify({title:'T'}));
+ result=run('show-outcome');
+ assert.equal(result.status,1);assert.equal(result.stdout,'');assert.match(result.stderr,/Unrecognized outcome schema/);
 });

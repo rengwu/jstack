@@ -1,7 +1,7 @@
 {
   "name": "jstack",
   "version": "0.4.0",
-  "description": "Run Fungi interviews and result windows, create plain UI, implement lean solutions, map features, and verify changes.",
+  "description": "Run Fungi interviews and result windows, design icons and plain UI, implement lean solutions, map features, and verify changes.",
   "author": {
     "name": "rengwu"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "jstack",
     "shortDescription": "Fungi reviews, result windows, and development skills.",
-    "longDescription": "Skills support autonomous work with Fungi decision interviews, native visual reviews and interactive prototypes, rich result windows, shared UI components and themes, planning, plain UI, lean implementation, feature maps, and evidence-based verification, with generic wiki operations for project records.",
+    "longDescription": "Skills support autonomous work with Fungi decision interviews, native visual reviews and interactive prototypes, icon design, rich result windows, shared UI components and themes, planning, plain UI, lean implementation, feature maps, and evidence-based verification, with generic wiki operations for project records.",
     "developerName": "rengwu",
     "category": "Productivity",
     "capabilities": [],

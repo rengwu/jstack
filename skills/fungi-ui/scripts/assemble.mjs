@@ -24,12 +24,13 @@ function applyTheme(html,theme){
  return html.replace(tag[0],themed);
 }
 // A fresh retained bundle preserves page assets across edits, waiting and reopen.
-export async function assemble({assets,entry,input,prefix='fungi-ui-',theme,settings=settingsPath()}){
+// validate receives the parsed input and throws on a spec the page would reject, so no bundle is produced for it.
+export async function assemble({assets,entry,input,prefix='fungi-ui-',theme,settings=settingsPath(),validate}){
  const source=assets instanceof URL?fileURLToPath(assets):path.resolve(assets);
  if(path.basename(entry)!==entry||!entry.endsWith('.html'))throw new Error('Entry must name an HTML file in assets.');
  let html=await readFile(path.join(source,entry),'utf8');
  const inputText=input===undefined?undefined:await readFile(path.resolve(input),'utf8');
- if(inputText!==undefined)JSON.parse(inputText);
+ if(inputText!==undefined){const parsed=JSON.parse(inputText);validate?.(parsed);}
  const chosen=theme??await preferredTheme(settings);
  if(chosen!==undefined){
   const available=await themes();

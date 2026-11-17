@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" alt="jstack icon: a balanced cairn of four stones" width="34%" align="right">
 
-A collection of sixteen active skills for daily development: clarify designs, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of seventeen active skills for daily development: clarify designs, explore icons, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 <br clear="right">
 
@@ -14,6 +14,7 @@ A collection of sixteen active skills for daily development: clarify designs, pr
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
 | [grill-form](skills/grill-form/SKILL.md) | Present interviews, visual reviews, and interactive previews in Fungi; collect decisions and feedback |
 | [grill-form-adhd](skills/grill-form-adhd/SKILL.md) | Use grill-form with ADHD writing guidance for questions and answers |
+| [icon-design](skills/icon-design/SKILL.md) | Create four distinct icon prototypes from visual references and present them in grill-form for direction selection |
 | [show-outcome](skills/show-outcome/SKILL.md) | Present rich results in Fungi with optional feedback, selectable next steps, and a detailed CLI summary |
 | [fungi](skills/fungi/SKILL.md) | Handle Fungi availability, native sessions, completion, and response collection |
 | [fungi-ui](skills/fungi-ui/SKILL.md) | Compose and style Fungi interfaces with shared components, themes, and assembly helpers |
@@ -45,6 +46,7 @@ Example requests:
 
 - “Use grill-me to clarify this feature, then record our decisions in this project's wiki.”
 - “Use grill-form to interview me in Fungi.”
+- “Use icon-design to explore an icon for this app; show four directions in grill-form.”
 - “Use show-outcome for results in this conversation.”
 - “Use feature-map to document conversation renaming and its expected outcomes.”
 - “Use verify-change to check this fix and record what passed, failed, or remains untested.”
@@ -58,6 +60,8 @@ Example requests:
 `show-outcome` owns a separate report page with rich content, optional Notes, and selectable next steps. Both workflows follow [fungi](skills/fungi/SKILL.md) for availability and completion. [fungi-ui](skills/fungi-ui/SKILL.md) owns reusable components and the `classic`, `paper`, and `paper-dark` themes. A personal `~/.config/fungi-ui/settings.json` setting can override the template theme. Component guidance is for authoring interfaces; prepared workflow callers only supply JSON, assemble, launch, and interpret the result.
 
 Grill-form accepts a JSON input file. Feedback separates final prototype settings from comment-time snapshots, and inline image references resolve to Fungi artifacts. See its [workflow](skills/grill-form/SKILL.md), [authoring guide](skills/grill-form/references/authoring.md), and [reusable visual examples](skills/grill-form/assets/examples.json).
+
+`icon-design` uses App Icons, ktnr's Dribbble shots, and Icon Museum as default references. It creates four distinct icon prototypes and uses `grill-form` for the user's direction choice. Keep it with the `grill-form`, `fungi`, and `fungi-ui` siblings when installing individually.
 
 `plan` reuses existing project documentation and asks before adopting jstack wiki when none exists. `feature-map` and verification workflows use `wiki` for document operations. Wiki renders generic metadata. The report checker in `verify-change` validates its own outcome vocabulary and report location; the reader does not interpret those states.
 

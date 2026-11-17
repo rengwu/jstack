@@ -1,0 +1,150 @@
+{
+  "date": "2026-11-15",
+  "scope": "icon-design skill authoring and existing grill-form integration; no generated icon quality evaluation",
+  "build": {
+    "revision": "73a44f88c494a72c1ef0e0b2c9b06953644d740d",
+    "dirty": true,
+    "note": "Includes pre-existing assembler validation edits.",
+    "platform": "Darwin 27.0.0 arm64",
+    "node": "v24.22.3",
+    "sha256": {
+      ".codex-plugin/plugin.json": "dd088058ef2b5eb18e3a400cc83e3a7549103bb6c0e577fe9efe3dd6c3313976",
+      "AGENTS.md": "be28b484d848c1152369a605c6d93ced3299ffb3458a0d20820af27384fe0f3e",
+      "README.md": "d77271fac21a834490a124b3059bc7dae3810f9f671700823494d0d038eb8229",
+      "references/stack-contract.md": "3cce4e6c6065183c63ed931732876edcac35f36fc18fdbf5ff97e131c7439901",
+      "scripts/native-smoke.mjs": "13fb1b6fea7bdf5221ba84ac405238469798cfa50ae558f465786652b44ebf75",
+      "skills/fungi-ui/SKILL.md": "86f8f066545e3ca3cb74cf07f9bea612a11943c0b929ae39baca268e0ba0d0b2",
+      "skills/fungi-ui/assets/comments.mjs": "b0730ff8bdbe4fb813d5ce763d3310f7803445407954f6c967da07edbeaa0308",
+      "skills/fungi-ui/assets/controls.mjs": "1c5eb462fed86a39e6e66a4dfbbc70f3ca71195950061293aab814e63265a914",
+      "skills/fungi-ui/assets/dom.mjs": "57d6ab5d319e04b70d0d9fe131e3a51a1e2e6f63f5b741bb85632e90061db331",
+      "skills/fungi-ui/assets/feedback.mjs": "20dc23d8a36c01e3416b6e9416b605aa8d9f7570216454d929ac3034bddc31c0",
+      "skills/fungi-ui/assets/files.mjs": "281446b10752ce44dca38782f0f2d50a5aa6f35bfbd973a8e98d4d3c078cf729",
+      "skills/fungi-ui/assets/fonts.css": "d7fb19cda31494139731ca4ea43cd8cc9230b66c02561827173cd9ff4b9cd0b5",
+      "skills/fungi-ui/assets/gallery.mjs": "92d2f84ae841a0a9099b7eb802caf3201b82f716c228fbbf882bb723246448da",
+      "skills/fungi-ui/assets/notes.mjs": "5af5c95eff570eddb9142d4af0e65255d883cf7c2bcc2a0384844612b4df7830",
+      "skills/fungi-ui/assets/preview.mjs": "718134d008796ead4482a944af0c29859f61b1e8891749100f3e0d893512c646",
+      "skills/fungi-ui/assets/regions.mjs": "6287136f4335679a4cfb8447c90aee0c18947a57600b0202deca59db973848c0",
+      "skills/fungi-ui/assets/rich-content.mjs": "b8a5ca18b0cafb4187d5f02b669ca87d6f33acc94f8a9201b79cabdd2c2d51c7",
+      "skills/fungi-ui/assets/themes/paper-dark.css": "2e44dba4ffd24d4b5a9c8554abc8c7f127b4966a08644949b3c25474912e6c5c",
+      "skills/fungi-ui/assets/themes/paper.css": "d0b6885e3bc8dbbab342d7a48b7c63ce7a3c59f8a35fa0f6a47c1af221b5e512",
+      "skills/fungi-ui/assets/ui.css": "ff049093654815aaf77b8299a73d026a0935d29aa65adff466f057c2b982c2dc",
+      "skills/fungi-ui/assets/vendor/README.md": "d15c091587066d3f9b23ad83eaf2a7b3418b4f8053300cc6ce2326c2e70692ca",
+      "skills/fungi-ui/examples/gallery.html": "b45d8bf96a6753eb2359e7495fa472f1096f4ff864ed4bdfc2e6a96b1f911bbe",
+      "skills/fungi-ui/references/components.md": "938b139f2a33cb27925996d3cd8778ec51b0175964fa05925be8e9d56121a99a",
+      "skills/fungi-ui/references/provenance.md": "7643723f0b42564a55a65332e71a05d5fe93ebc557abb0f1d1c1509f8500fb7f",
+      "skills/fungi-ui/scripts/assemble.mjs": "e2f3a362f1bff8654e7f1e7432afac3175fdb5be22f56de398d627364b4eb013",
+      "skills/fungi-ui/scripts/gallery.mjs": "5a81f4f058fef512df1cfaa71deaa6e816ee8473aa7698ff340f3074bc6b8b78",
+      "skills/fungi/SKILL.md": "fd4d8da5a657e6219e531545c7080da6145af67d7665e9b238ba45ac1c217fe9",
+      "skills/fungi/references/recovery.md": "e82b9c54a0036f2eb902d9b7f53df2d58a3c2eaddbd178db10ffbf6fdefbed47",
+      "skills/grill-form/SKILL.md": "223b4bf30a39372932d7e842a13afc71eccb6c9aa1e4cadc0f464cf3937b210c",
+      "skills/grill-form/assets/form.css": "27f2f0893067c88cca7b98da32fe0bfd26530d63f3ff1a522921ce7590fa22e8",
+      "skills/grill-form/assets/form.html": "2fc977b2d75aec9b27f415227636c2eb78348cceae8571202fc16b129183ccc2",
+      "skills/grill-form/assets/form.mjs": "11761aedeac745eebede692bd02692b9c0fc7a463ce7874734ba67bb557e00ce",
+      "skills/grill-form/assets/model.mjs": "7a04628a9479f8584048d7ca612c494fdbbb7f97489cf7331af032a79265d82a",
+      "skills/grill-form/assets/transport.mjs": "16c59d46f18022ffcac9a192842767c4d8499516cb025ac4d16bc8d1699eb3ca",
+      "skills/grill-form/references/authoring.md": "9501a087dd109e2b1a7dd94b501299d9c0436111e6599eefdec07be14cc7b88b",
+      "skills/grill-form/references/provenance.md": "b3b25c2d1d41d71bdb38ca1c9a7702ef75e62f021187d835f09d72eb6072a6b4",
+      "skills/grill-form/scripts/assemble.mjs": "f627f40375185694927fd5c7beca66d3fa02f2b756a652e3e92ce20298c22a89",
+      "skills/icon-design/SKILL.md": "ffac8e0787f8ee993b45e7dde1ca9aac9296a84cbe6a81013dcb3d2919ff19ed",
+      "skills/icon-design/agents/openai.yaml": "5942080acefd7b5fe193889a74b64afb2562dc5ad87ceeb994f6cef6420f8938"
+    }
+  },
+  "skill_validator": {
+    "path": "/Users/rengwu/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+    "results": {
+      "adhd": [
+        true,
+        "Skill is valid!"
+      ],
+      "commit": [
+        true,
+        "Skill is valid!"
+      ],
+      "feature-map": [
+        true,
+        "Skill is valid!"
+      ],
+      "fungi": [
+        true,
+        "Skill is valid!"
+      ],
+      "fungi-ui": [
+        true,
+        "Skill is valid!"
+      ],
+      "grill-form": [
+        true,
+        "Skill is valid!"
+      ],
+      "grill-form-adhd": [
+        true,
+        "Skill is valid!"
+      ],
+      "grill-me": [
+        true,
+        "Skill is valid!"
+      ],
+      "icon-design": [
+        true,
+        "Skill is valid!"
+      ],
+      "maintain-verification": [
+        true,
+        "Skill is valid!"
+      ],
+      "plan": [
+        true,
+        "Skill is valid!"
+      ],
+      "rule-lean": [
+        true,
+        "Skill is valid!"
+      ],
+      "rule-plain-ui": [
+        true,
+        "Skill is valid!"
+      ],
+      "show-outcome": [
+        true,
+        "Skill is valid!"
+      ],
+      "verify-change": [
+        true,
+        "Skill is valid!"
+      ],
+      "wiki": [
+        true,
+        "Skill is valid!"
+      ],
+      "work-until-grill": [
+        true,
+        "Skill is valid!"
+      ]
+    }
+  },
+  "plugin_manifest": {
+    "validator": "Unavailable: installed plugin-creator has no validate_plugin.py",
+    "fallback": "JSON parsing, plugin identity and version, changed description types, asset paths, skills directory, and icon-design discovery passed. This is not full plugin validation."
+  },
+  "local_markdown_links_checked": 44,
+  "tests": {
+    "command": "node --test scripts/*.test.mjs",
+    "passed": 40,
+    "failed": 0
+  },
+  "native_grill_form": {
+    "command": "node scripts/native-smoke.mjs /Users/rengwu/.fungi/bin/fungi",
+    "result": "Passed",
+    "version": {
+      "kind": "version",
+      "protocol": 1,
+      "version": "v0.1.0-alpha.2"
+    },
+    "binary_sha256": "c62bed6989dff20f212e27caf97d90bf18e8bab50c220c1d4200b9c143945314",
+    "retained_evidence": "/var/folders/6p/xl7_flsd7yzb18m26wrjv2lw0000gn/T/fungi-grill-smoke-DjEsqM/evidence.json",
+    "retained_evidence_sha256": "caac8282623664d6d90e2307197e559ed2cc779d8d67117cd48690b61dfcc69d",
+    "cancelled_session": "4814f08e0410158f443d27d10926d240",
+    "submitted_session": "c6f275ade9fc7bc5977c85027de8d9d6",
+    "checks": "Cancellation, draft restore, selection, notes, PNG artifact, preview state, comments, and submission."
+  }
+}

@@ -1,6 +1,6 @@
 ---
 title: jstack development
-updated: 2026-10-30
+updated: 2026-11-15
 ---
 # jstack development
 
@@ -11,6 +11,8 @@ Development decisions, findings, open questions, and verification evidence for j
 - [Features](features/index.md) — expected behavior and verification recipes.
 - [Fungi workflows in jstack](decisions/fungi-workflows.md) — the self-contained daily-use bundle and replacement of the browser-based grill-form.
 - [Grill-form multiple selection and content limits](discussions/2026-10-30-grill-form-multiple-selection.md) — accepted checkbox support and removal of arbitrary content caps.
+- [Assemblers validate input before opening](discussions/2026-11-15-assembler-input-validation.md) — workflow input is checked at assembly, so authoring mistakes never reach the user's window.
+- [Icon design skill](discussions/2026-11-15-icon-design.md) — four distinct icon prototypes from reference galleries, presented in grill-form for direction selection.
 - [jstack icon](discussions/2026-10-30-jstack-icon.md) — the accepted realistic cairn icon, its assets and manifest fields, and the three review rounds.
 - [Fungi verification setup](verification/setup.md) — local tests, native workflow checks, and portable installation checks.
 - [Fungi import verification](verification/runs/2026-10-29-fungi-import.md) — results for this migration.

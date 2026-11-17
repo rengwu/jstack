@@ -1,6 +1,6 @@
 # Authoring
 
-Write JSON, run the workflow’s assembler, then open the returned page. See the [launch instructions](../SKILL.md). Do not develop a new page per interview. The source HTML composes shared components and must be assembled with the sibling `fungi-ui` kit.
+Write JSON, run the workflow’s assembler, then open the returned page. See the [launch instructions](../SKILL.md). The assembler validates the input and exits with the reason instead of producing a bundle when it is invalid; fix the JSON and run it again. Do not develop a new page per interview. The source HTML composes shared components and must be assembled with the sibling `fungi-ui` kit.
 
 ```json
 {
