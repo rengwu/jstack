@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" alt="jstack icon: a balanced cairn of four stones" width="34%" align="right">
 
-A collection of seventeen active skills for daily development: clarify designs, explore icons, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of eighteen active skills for daily development: clarify designs, explore visual directions, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 <br clear="right">
 
@@ -15,6 +15,7 @@ A collection of seventeen active skills for daily development: clarify designs, 
 | [grill-form](skills/grill-form/SKILL.md) | Present interviews, visual reviews, and interactive previews in Fungi; collect decisions and feedback |
 | [grill-form-adhd](skills/grill-form-adhd/SKILL.md) | Use grill-form with ADHD writing guidance for questions and answers |
 | [icon-design](skills/icon-design/SKILL.md) | Create four distinct icon prototypes from visual references and present them in grill-form for direction selection |
+| [visual-spikes](skills/visual-spikes/SKILL.md) | Compare 3–4 visual prototypes in grill-form and refine the one you pick |
 | [show-outcome](skills/show-outcome/SKILL.md) | Present rich results in Fungi with optional feedback, selectable next steps, and a detailed CLI summary |
 | [fungi](skills/fungi/SKILL.md) | Handle Fungi availability, native sessions, completion, and response collection |
 | [fungi-ui](skills/fungi-ui/SKILL.md) | Compose and style Fungi interfaces with shared components, themes, and assembly helpers |
