@@ -10,6 +10,4 @@ Look at these references before designing, along with any the user supplies:
 - https://dribbble.com/ktnr/shots
 - https://icon.museum/
 
-Create four distinct prototypes for the user to pick a direction from. Present them in [grill-form](../grill-form/SKILL.md) as one single-selection question, with each prototype's artwork embedded in its option.
-
-Refine the chosen direction.
+Use [visual-spikes](../visual-spikes/SKILL.md) with the user's brief and these references, starting with four icon prototypes.

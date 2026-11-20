@@ -62,7 +62,7 @@ Example requests:
 
 Grill-form accepts a JSON input file. Feedback separates final prototype settings from comment-time snapshots, and inline image references resolve to Fungi artifacts. See its [workflow](skills/grill-form/SKILL.md), [authoring guide](skills/grill-form/references/authoring.md), and [reusable visual examples](skills/grill-form/assets/examples.json).
 
-`icon-design` uses App Icons, ktnr's Dribbble shots, and Icon Museum as default references. It creates four distinct icon prototypes and uses `grill-form` for the user's direction choice. Keep it with the `grill-form`, `fungi`, and `fungi-ui` siblings when installing individually.
+`icon-design` uses App Icons, ktnr's Dribbble shots, and Icon Museum as default references. It calls `visual-spikes` with four icon directions. For an individual installation, keep `icon-design`, `visual-spikes`, `grill-form`, `fungi`, and `fungi-ui` in sibling directories.
 
 `plan` reuses existing project documentation and asks before adopting jstack wiki when none exists. `feature-map` and verification workflows use `wiki` for document operations. Wiki renders generic metadata. The report checker in `verify-change` validates its own outcome vocabulary and report location; the reader does not interpret those states.
 

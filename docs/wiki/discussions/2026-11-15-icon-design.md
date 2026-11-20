@@ -1,7 +1,7 @@
 ---
 title: Icon design skill
 section: Discussions
-updated: 2026-11-15
+updated: 2026-11-19
 status: Accepted
 ---
 # Icon design skill
@@ -28,3 +28,7 @@ The user found the first version too long and asked for a complete rewrite match
 - The installed plugin-creator package has no `validate_plugin.py`. Fallback checks passed for manifest JSON, identity/version, changed description fields, referenced asset paths, and skill discovery; full plugin validation remains unavailable.
 
 The [validation evidence](../evidence/2026-11-15-icon-design/validation.json) records source hashes, runtime identity, results, and retained native-session evidence. Report metadata and the rebuilt development wiki passed their structural checks. This change authors the reusable workflow; no product icon has been commissioned or selected, and generated icon quality has not been evaluated in this task.
+
+## Composition with visual-spikes
+
+On 2026-11-19, `icon-design` began passing the icon brief, references, and four-prototype count to [visual-spikes](2026-11-19-visual-spikes.md) for prototyping, grill-form selection, and refinement. Both sibling skill links resolved, all 18 skills passed frontmatter validation, all 40 tests passed, and the native grill-form smoke check passed.

@@ -39,7 +39,7 @@ Create folders only when used. Keep one authoritative feature description. Use r
 - `work-until-grill`: completion, routing consequential user decisions to `grill-form`.
 - `grill-me`: interviews; `plan` interprets and records accepted outcomes and open questions.
 - `grill-form`: optional Fungi presentation and feedback interpretation; `grill-me` stays independent of it.
-- `icon-design`: reference study, icon prototypes, and refinement; delegates direction selection and feedback to `grill-form`.
+- `icon-design` supplies the icon brief and references to `visual-spikes`.
 - `visual-spikes` creates visual prototypes and refines the user's choice collected through `grill-form`.
 - `show-outcome`: result presentation with optional feedback and selectable next steps.
 - `fungi`: availability, native sessions, delivery, collection, and recovery for Fungi workflows.
