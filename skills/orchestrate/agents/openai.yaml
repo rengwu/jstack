@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchestrate"
+  short_description: "Orchestrator and one implementor agent, talking through mail files"
+  default_prompt: "Use $orchestrate to run this project with an implementor agent: I'll talk to you, you write briefs and review its work."

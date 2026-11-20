@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" alt="jstack icon: a balanced cairn of four stones" width="34%" align="right">
 
-A collection of eighteen active skills for daily development: clarify designs, explore visual directions, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of nineteen active skills for daily development: clarify designs, explore visual directions, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 <br clear="right">
 
@@ -12,6 +12,7 @@ A collection of eighteen active skills for daily development: clarify designs, e
 | --- | --- |
 | [work-until-grill](skills/work-until-grill/SKILL.md) | Continue work autonomously and use grill-form when a consequential decision needs user input |
 | [grill-me](skills/grill-me/SKILL.md) | Clarify designs in dependency-aware rounds, with up to ten questions per round and no session-wide limit |
+| [orchestrate](skills/orchestrate/SKILL.md) | Run a project as orchestrator with one implementor agent in another session; briefs, pushback, review and commits pass through mail files |
 | [grill-form](skills/grill-form/SKILL.md) | Present interviews, visual reviews, and interactive previews in Fungi; collect decisions and feedback |
 | [grill-form-adhd](skills/grill-form-adhd/SKILL.md) | Use grill-form with ADHD writing guidance for questions and answers |
 | [icon-design](skills/icon-design/SKILL.md) | Create four distinct icon prototypes from visual references and present them in grill-form for direction selection |
@@ -44,6 +45,7 @@ Use `rule-plain-ui` on its own or alongside other skills when designing or imple
 Example requests:
 
 - “Use work-until-grill to implement this autonomously; grill me when a consequential decision needs my input.”
+- “Use orchestrate: you write the briefs and review, an implementor agent builds.”
 
 - “Use grill-me to clarify this feature, then record our decisions in this project's wiki.”
 - “Use grill-form to interview me in Fungi.”

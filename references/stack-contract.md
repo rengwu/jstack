@@ -37,6 +37,7 @@ Create folders only when used. Keep one authoritative feature description. Use r
 ## Ownership and scope
 
 - `work-until-grill`: completion, routing consequential user decisions to `grill-form`.
+- `orchestrate`: an orchestrator session and one implementor session exchanging briefs, reviews and reports through mail files; disputes go to `grill-form`.
 - `grill-me`: interviews; `plan` interprets and records accepted outcomes and open questions.
 - `grill-form`: optional Fungi presentation and feedback interpretation; `grill-me` stays independent of it.
 - `icon-design` supplies the icon brief and references to `visual-spikes`.
