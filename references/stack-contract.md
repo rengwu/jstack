@@ -42,6 +42,7 @@ Create folders only when used. Keep one authoritative feature description. Use r
 - `grill-form`: optional Fungi presentation and feedback interpretation; `grill-me` stays independent of it.
 - `icon-design` supplies the icon brief and references to `visual-spikes`.
 - `visual-spikes` creates visual prototypes and refines the user's choice collected through `grill-form`.
+- `site-analysis`: a study of one website's design, kept as a standalone page group in the target project's wiki; uses `wiki` for pages and `grill-form` to confirm a large site's page sample.
 - `show-outcome`: result presentation with optional feedback and selectable next steps.
 - `fungi`: availability, native sessions, delivery, collection, and recovery for Fungi workflows.
 - `fungi-ui`: reusable UI components, themes, and assembly; workflows own composition and schemas.

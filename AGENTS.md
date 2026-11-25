@@ -1,6 +1,6 @@
 # jstack development
 
-This plugin contains nineteen active skills: work-until-grill, orchestrate, grill-me, grill-form, grill-form-adhd, icon-design, visual-spikes, show-outcome, fungi, fungi-ui, plan, wiki, feature-map, verify-change, maintain-verification, rule-lean, rule-plain-ui, adhd, and commit. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules. `rule-lean` and `rule-plain-ui` provide independent implementation and UI guidance, respectively, and do not require a wiki workflow.
+This plugin contains twenty active skills: work-until-grill, orchestrate, grill-me, grill-form, grill-form-adhd, icon-design, visual-spikes, site-analysis, show-outcome, fungi, fungi-ui, plan, wiki, feature-map, verify-change, maintain-verification, rule-lean, rule-plain-ui, adhd, and commit. Shared record formats and ownership rules live in `references/stack-contract.md`; link to that file instead of duplicating its rules. `rule-lean` and `rule-plain-ui` provide independent implementation and UI guidance, respectively, and do not require a wiki workflow.
 
 All skills, workflows, and mechanical helpers must follow [agent and harness independence](references/stack-contract.md#agent-and-harness-independence). This applies to jstack development as well as project work using the skills.
 

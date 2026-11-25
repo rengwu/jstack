@@ -15,6 +15,7 @@ Development decisions, findings, open questions, and verification evidence for j
 - [Icon design skill](discussions/2026-11-15-icon-design.md) — four distinct icon prototypes from reference galleries, presented in grill-form for direction selection.
 - [Visual spikes](discussions/2026-11-19-visual-spikes.md) — a choice of visual prototypes across design media.
 - [Orchestrate](discussions/2026-11-20-orchestrate.md) — an orchestrator and one implementor agent working through mail files; the decisions from two grill-form rounds.
+- [Site analysis](discussions/2026-11-24-site-analysis.md) — a website design study kept as a standalone wiki group; the decisions from two grill-form rounds.
 - [jstack icon](discussions/2026-10-30-jstack-icon.md) — the accepted realistic cairn icon, its assets and manifest fields, and the three review rounds.
 - [Fungi verification setup](verification/setup.md) — local tests, native workflow checks, and portable installation checks.
 - [Fungi import verification](verification/runs/2026-10-29-fungi-import.md) — results for this migration.

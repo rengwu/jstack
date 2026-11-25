@@ -1,0 +1,4 @@
+interface:
+  display_name: "Site Analysis"
+  short_description: "Study a website's design and record it in the wiki."
+  default_prompt: "Use $site-analysis to study this website's design and record it in this project's wiki."

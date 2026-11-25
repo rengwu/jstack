@@ -2,7 +2,7 @@
 
 <img src="assets/logo.png" alt="jstack icon: a balanced cairn of four stones" width="34%" align="right">
 
-A collection of nineteen active skills for daily development: clarify designs, explore visual directions, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
+A collection of twenty active skills for daily development: clarify designs, explore visual directions, study websites, present results, create plain UI, implement lean solutions, map features, and verify changes. Fungi powers native interviews, visual reviews, and result windows. Planning reuses the project's existing documentation. A Markdown wiki and bundled offline HTML reader support feature maps and verification evidence.
 
 <br clear="right">
 
@@ -17,6 +17,7 @@ A collection of nineteen active skills for daily development: clarify designs, e
 | [grill-form-adhd](skills/grill-form-adhd/SKILL.md) | Use grill-form with ADHD writing guidance for questions and answers |
 | [icon-design](skills/icon-design/SKILL.md) | Create four distinct icon prototypes from visual references and present them in grill-form for direction selection |
 | [visual-spikes](skills/visual-spikes/SKILL.md) | Compare 3–4 visual prototypes in grill-form and refine the one you pick |
+| [site-analysis](skills/site-analysis/SKILL.md) | Study a website's design language, layout, content blocks, typography and interactions as a standalone group of wiki pages |
 | [show-outcome](skills/show-outcome/SKILL.md) | Present rich results in Fungi with optional feedback, selectable next steps, and a detailed CLI summary |
 | [fungi](skills/fungi/SKILL.md) | Handle Fungi availability, native sessions, completion, and response collection |
 | [fungi-ui](skills/fungi-ui/SKILL.md) | Compose and style Fungi interfaces with shared components, themes, and assembly helpers |
@@ -50,6 +51,7 @@ Example requests:
 - “Use grill-me to clarify this feature, then record our decisions in this project's wiki.”
 - “Use grill-form to interview me in Fungi.”
 - “Use icon-design to explore an icon for this app; show four directions in grill-form.”
+- “Use site-analysis to study example.com and record it in this project's wiki.”
 - “Use show-outcome for results in this conversation.”
 - “Use feature-map to document conversation renaming and its expected outcomes.”
 - “Use verify-change to check this fix and record what passed, failed, or remains untested.”
